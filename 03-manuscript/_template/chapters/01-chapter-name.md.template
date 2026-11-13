@@ -1,0 +1,18 @@
+# Chapter 1: [Chapter Title]
+
+<!-- REQUIRED HEADING FORMAT: "# Chapter N: Title". The engine uses it for the
+running head ("CHAPTER N"), the TOC entry, and the EPUB nav; the "Chapter N:"
+prefix is stripped from the display title. The first h1 + first paragraph get
+the drop cap.
+
+Structure that makes a Soft Life chapter work:
+  - Open with a scene or a hard truth
+  - Name the problem precisely
+  - Teach the principle / framework
+  - Walk a worked example (Amara-style client story)
+  - End with "Your Move" — 3 concrete actions for the reader
+
+Markdown features supported by the print/EPUB styles:
+  - "- [ ] " task lines become checkbox items
+  - "---" becomes a centered • • • scene break
+  - tables, blockquotes, h2/h3, bold/italic all styled -->

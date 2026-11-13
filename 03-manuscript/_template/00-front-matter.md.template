@@ -1,0 +1,34 @@
+# [Book Title]
+
+## Contents
+
+<!-- GENERATED TOC lives here in finished books: Introduction / Parts / Chapters /
+Back matter, one `## ` entry per line. The build engine strips this section and
+generates the real Contents page with page numbers, so a plain list is fine
+while drafting. Keep the marker "## Contents" — the engine splits on it. -->
+
+---
+
+## Copyright
+
+*The [Book Title]*
+
+Copyright © 2026 [Author Name]. All rights reserved.
+
+No part of this publication may be reproduced, distributed, or transmitted in
+any form or by any means without the prior written permission of the publisher,
+except for brief quotations in reviews and other noncommercial uses permitted
+by copyright law.
+
+**Publisher:** Gabochie Books
+**Website:** studio.gabochie.com
+**Contact:** admin@gabochie.com
+**ISBN:** [ISBN]
+
+**Placeholders:** Replace every [SQUARE-BRACKET] placeholder before publishing.
+Reader-facing templates (worksheets the reader fills in) intentionally keep
+their placeholders.
+
+---
+
+*For [dedication line].*

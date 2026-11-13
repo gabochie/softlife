@@ -1,0 +1,22 @@
+# Templates, Worksheets & Resources
+
+<!-- Back matter opens on a fresh page; its h1 becomes the running head and the
+[back].toc_label TOC entry. Recreate these sections for each book:
+
+  ## Templates & Worksheets
+  Fill-in templates referenced by the chapters (placeholders stay visible —
+  this is reader-facing). Checklists use "- [ ] " lines.
+
+  ## The Automation Stack Directory
+  The six systems table (Capture / Communicate / Schedule / Deliver /
+  Get paid / Analyze) as a | System | Purpose | Tool | Cost | table, plus
+  "Recommended first automations" list. Keep tool names as [PLACEHOLDER]
+  brackets — the curated, affiliate-linked list lives at studio.gabochie.com.
+
+  ## Resources & Further Reading
+  Books list — monetized via Amazon Associates + Bookshop.org storefront
+  (never linked inside the book itself).
+
+  ## About the Author
+  Author bio boilerplate lives in 01-positioning/series-bible.md.
+-->

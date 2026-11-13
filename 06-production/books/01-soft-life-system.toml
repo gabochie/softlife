@@ -1,0 +1,133 @@
+# Book configuration — The Soft Life System (Book 1 of the Soft Life Series)
+#
+# Per-book values only. Shared series constants (publisher, language, trim size,
+# brand colors) live in the build engine's defaults and the series template
+# (books/_template.toml). To add a book: copy books/_template.toml, fill it in,
+# write the manuscript from 03-manuscript/_template/, and run:
+#   python3 build.py 02-soft-life-budgeting
+
+[book]
+id = "01-soft-life-system"                # directory name for outputs + CLI arg
+slug = "the-soft-life-system"             # base name for output files
+title = "The Soft Life System"
+subtitle = "How to Automate Your Solopreneur Business to Work 15 Hours a Week"
+author = "Deon ChristoLove"
+year = "2026"
+uuid_seed = "softlife-book-01"            # stable EPUB identifier seed
+manuscript_dir = "03-manuscript/01-soft-life-system"    # relative to project root
+cover = "05-assets/covers/01-soft-life-system/cover-soft-life-system-v1.png"  # relative to project root
+description = "A practical operating system for solopreneurs who want to simplify their offers, systemize delivery, automate operations, and build a business that runs on fifteen hours a week."
+subjects = [
+    "Business & Economics / Small Business",
+    "Self-Help / Personal Growth / Success",
+]
+
+[intro]
+toc_label = "Introduction: The 15-Hour Promise"
+
+[back]
+toc_label = "Templates, Worksheets & Resources"
+
+# Parts in reading order. `start`/`end` are 1-based chapter numbers (inclusive).
+[[parts]]
+id = "part1"
+number = "Part I"
+title = "The Hustle Trap"
+subtitle = "Why your business owns you — and why willpower won't fix it."
+start = 1
+end = 3
+
+[[parts]]
+id = "part2"
+number = "Part II"
+title = "The SOFT Method"
+subtitle = "The architecture of a lighter business."
+start = 4
+end = 7
+
+[[parts]]
+id = "part3"
+number = "Part III"
+title = "The 15-Hour Week"
+subtitle = "Designing the operating system that protects your time."
+start = 8
+end = 10
+
+[[parts]]
+id = "part4"
+number = "Part IV"
+title = "The Inner Game"
+subtitle = "Protecting the soft life from the inside out."
+start = 11
+end = 13
+
+[[parts]]
+id = "part5"
+number = "Part V"
+title = "The First 90 Days"
+subtitle = "From insight to a business that feels good."
+start = 14
+end = 15
+
+# Chapters in reading order, inside manuscript_dir/chapters/.
+[[chapters]]
+file = "01-the-hustle-hangover.md"
+
+[[chapters]]
+file = "02-the-hidden-cost-of-doing-everything.md"
+
+[[chapters]]
+file = "03-the-soft-life-audit.md"
+
+[[chapters]]
+file = "04-simplify-the-one-offer-business.md"
+
+[[chapters]]
+file = "05-o-offer-package-your-genius-into-premium.md"
+
+[[chapters]]
+file = "06-f-fulfill-build-the-machine-that-delivers.md"
+
+[[chapters]]
+file = "07-t-transfer-hire-your-invisible-team.md"
+
+[[chapters]]
+file = "08-the-15-hour-week-blueprint.md"
+
+[[chapters]]
+file = "09-the-automation-stack.md"
+
+[[chapters]]
+file = "10-the-quiet-growth-engine.md"
+
+[[chapters]]
+file = "11-boundaries-are-the-business.md"
+
+[[chapters]]
+file = "12-the-soft-life-mindset.md"
+
+[[chapters]]
+file = "13-when-life-happens.md"
+
+[[chapters]]
+file = "14-the-90-day-soft-life-launch-plan.md"
+
+[[chapters]]
+file = "15-staying-soft-the-maintenance-system.md"
+
+# Back-cover copy for the print cover wrap. HTML allowed in headline.
+[cover_back]
+series_line = "The Soft Life Series"
+headline = "You left your job for freedom.<br/>So why does your business feel like a job?"
+lede = "You're not lazy. You're not ungrateful. You're not bad at business. You're just running a business that was built around your labor instead of your life."
+blurb = "<em>The Soft Life System</em> is your blueprint for a different way: a complete operating system for the solopreneur who wants to work less, earn well, and live more."
+bullets = [
+    "The SOFT Method: Simplify, Offer, Fulfill, Transfer",
+    "The 15-Hour Week Blueprint",
+    "The Delivery Machine",
+    "The Transfer Ladder",
+    "The Quiet Growth Engine",
+    "The 90-Day Soft Life Launch Plan",
+]
+punch = "Because success shouldn't cost you your life."
+isbn_line = "ISBN [ISBN]<br/>Barcode area"

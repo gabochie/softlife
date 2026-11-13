@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local dev database (auto-seeded on first run)
+08-app/server/softlife.db
+*.db
+
+# Regenerable build artifacts
+# - audiobook audio: rebuilt with 07-audiobook/generate_audio.py + master.py
+07-audiobook/*/audio/
+07-audiobook/*/audio-raw/
+# - heavy preview files inside the review dist (duplicates of the above)
+06-production/dist/audio-sample/
+06-production/dist/01-soft-life-system/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db

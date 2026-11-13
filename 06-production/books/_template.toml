@@ -1,0 +1,68 @@
+# =============================================================================
+# Soft Life Series — new book template
+# =============================================================================
+# To add a book to the series:
+#
+#   1. cp books/_template.toml books/<book-id>.toml        (e.g. 02-soft-life-budgeting)
+#   2. cp -r 03-manuscript/_template 03-manuscript/<book-id>
+#      and rename every .template file, removing the .template extension
+#   3. Write the manuscript (keep the file/heading conventions below)
+#   4. Drop the cover art PNG into 05-assets/covers/<book-id>/ and set [book].cover
+#   5. python3 build.py <book-id>
+#      → dist/<book-id>/<slug>.epub, <slug>-print.pdf, <slug>.md,
+#        <slug>-cover-wrap.pdf, <slug>-cover-front.pdf
+#
+# Conventions the engine relies on (do not change):
+#   - 00-front-matter.md  : title page, copyright, dedication...; ends with
+#                           "## Contents" section (stripped from output; TOC is
+#                           generated with real page numbers)
+#   - 01-introduction.md  : first body section, opens with an # h1
+#   - chapters/*.md       : each opens with "# Chapter N: Title"
+#   - 99-back-matter.md   : templates/worksheets/resources + About the Author
+#   - part/chapter numbering in [[parts]] must match the chapter files
+
+[book]
+id = "02-soft-life-budgeting"       # = config filename; also the dist/ subfolder
+slug = "the-soft-life-budgeting"    # base name for output files
+title = "The Soft Life Budgeting"   # final title goes here
+subtitle = ""                       # EPUB subtitle metadata
+author = "Deon ChristoLove"
+year = "2026"
+uuid_seed = "softlife-book-02"      # must be unique per book; never reuse
+manuscript_dir = "03-manuscript/02-soft-life-budgeting"
+cover = "05-assets/covers/02-soft-life-budgeting/cover-soft-life-budgeting-v1.png"
+description = ""                    # EPUB/retailer description, 1–2 sentences
+subjects = [
+    "Business & Economics / Small Business",
+    "Self-Help / Personal Growth / Success",
+]
+
+[intro]
+toc_label = "Introduction"          # how the introduction reads in the TOC
+
+[back]
+toc_label = "Templates, Worksheets & Resources"
+
+# Parts in reading order. start/end are 1-based chapter numbers (inclusive),
+# and the ranges must tile the chapter list with no gaps or overlaps.
+[[parts]]
+id = "part1"
+number = "Part I"
+title = ""
+subtitle = ""
+start = 1
+end = 0                             # replace 0 with the real end chapter
+
+# One [[chapters]] entry per chapter file, in reading order.
+[[chapters]]
+file = "01-chapter-name.template"
+
+# Back-cover copy for the print cover wrap (HTML allowed in headline/blurb).
+[cover_back]
+series_line = "The Soft Life Series"
+headline = ""
+lede = ""                           # the empathetic "you're not..." paragraph
+blurb = ""                          # what the book is, with <em>title</em>
+bullets = []                        # 4–6 "Inside:" promise bullets
+punch = ""                          # one-line closer
+isbn_line = "ISBN [ISBN]<br/>Barcode area"

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>The Soft Life System — Review</title>
+<style>
+  :root { --plum:#2a0f4a; --gold:#d9b46a; --cream:#f5ead9; --ink:#1c1220; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#f4f0ea; color:var(--ink); }
+  header { background:var(--plum); color:var(--cream); padding:28px 20px; }
+  header p { margin:6px 0 0; color:#c9b7a0; font-size:14px; }
+  h1 { margin:0; font-size:22px; letter-spacing:-0.01em; }
+  main { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .card { background:#fff; border-radius:12px; padding:18px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card h2 { font-size:16px; margin:0 0 6px; }
+  .card p { font-size:13px; color:#6b5f70; margin:0 0 14px; line-height:1.5; }
+  .btn { display:inline-block; background:var(--plum); color:var(--cream); text-decoration:none; padding:10px 14px; border-radius:8px; font-size:13px; font-weight:600; }
+  .btn.secondary { background:#e9e0d3; color:var(--plum); }
+  .preview { width:100%; border-radius:8px; border:1px solid #e2d8cb; display:block; margin-top:12px; }
+  iframe { width:100%; height:78vh; border:1px solid #e2d8cb; border-radius:12px; background:#fff; }
+  .note { font-size:12px; color:#7a6f80; margin-top:10px; }
+  .guide { background:#fff; border:1px solid #e2d8cb; border-radius:12px; padding:6px 22px 26px; max-height:none; overflow:visible; }
+  .guide h1 { font-size:20px; margin:18px 0 8px; }
+  .guide h2 { font-size:16px; margin:26px 0 8px; padding-bottom:5px; border-bottom:2px solid #d9b46a; }
+  .guide h3 { font-size:14px; margin:18px 0 6px; color:#2a0f4a; }
+  .guide table { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0 16px; display:block; overflow-x:auto; }
+  .guide th { background:#2a0f4a; color:#f5ead9; text-align:left; padding:7px 9px; }
+  .guide td { border-bottom:1px solid #eee4d6; padding:6px 9px; vertical-align:top; }
+  .guide tr:nth-child(even) td { background:#faf6ef; }
+  .guide li { margin-bottom:3px; }
+  .guide blockquote { border-left:3px solid #d9b46a; margin:12px 0; padding:4px 14px; color:#5f5364; background:#faf6ef; }
+  .guide hr { border:none; border-top:1px solid #e8dfd3; margin:24px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>The Soft Life System — Review</h1>
+  <p>Print interior, cover wrap, front cover, and marketing materials. Built by 06-production/build.py.</p>
+</header>
+<main>
+  <div class="grid">
+    <div class="card">
+      <h2>⭐ Sales + sample page (NEW)</h2>
+      <p>Membership funnel prototype: free read-aloud trial (intro + Ch1, email gate), book offer, DIY/DWY/DFY ladder, affiliate CTA. Plan: 04-marketing/membership-pwa-plan.md.</p>
+      <a class="btn" href="sample.html" target="_blank" rel="noopener">Open sample page</a>
+    </div>
+    <div class="card">
+      <h2>Print interior</h2>
+      <p>192 pages · 6 × 9 in · black &amp; white · running heads, TOC, drop caps.</p>
+      <a class="btn" href="01-soft-life-system/the-soft-life-system-print.pdf" target="_blank" rel="noopener">Open print PDF</a>
+      <a class="btn secondary" href="01-soft-life-system/the-soft-life-system-print.pdf" download>Download</a>
+    </div>
+    <div class="card">
+      <h2>Cover wrap</h2>
+      <p>Full wrap: back cover, spine, front cover. 12.687 × 9.25 in with bleed.</p>
+      <a class="btn" href="01-soft-life-system/the-soft-life-system-cover-wrap.pdf" target="_blank" rel="noopener">Open cover wrap</a>
+      <a class="btn secondary" href="01-soft-life-system/the-soft-life-system-cover-wrap.pdf" download>Download</a>
+      <img class="preview" src="cover-wrap-preview.png" alt="Cover wrap preview"/>
+    </div>
+    <div class="card">
+      <h2>Front cover</h2>
+      <p>Front cover with 0.125 in bleed. 6.25 × 9.25 in.</p>
+      <a class="btn" href="01-soft-life-system/the-soft-life-system-cover-front.pdf" target="_blank" rel="noopener">Open front cover</a>
+      <img class="preview" src="cover-front-preview.png" alt="Front cover preview"/>
+    </div>
+    <div class="card">
+      <h2>EPUB</h2>
+      <p>EPUB 3 ebook with cover, nested navigation, and per-chapter files.</p>
+      <a class="btn" href="01-soft-life-system/the-soft-life-system.epub" download>Download EPUB</a>
+    </div>
+    <div class="card">
+      <h2>The Soft Life Stack (draft)</h2>
+      <p>studio.gabochie.com/stack page — affiliate resource list segmented for Africa/Ghana
+      and US/UK/Canada. Every tool has a verified affiliate program.</p>
+      <a class="btn" href="stack.html" target="_blank" rel="noopener">Review stack page</a>
+      <p class="note">Dashed links = affiliate link pending approval.</p>
+    </div>
+    <div class="card">
+      <h2>Affiliate resource guide</h2>
+      <p>Internal plan: programs, commissions, cookies, payout notes, regional tool map,
+      disclosure templates, and registration checklist.</p>
+      <a class="btn" href="#affiliate-guide">View guide (inline below)</a>
+      <a class="btn secondary" href="affiliate-plan.html">Open standalone page</a>
+    </div>
+  </div>
+
+  <h2 style="margin:28px 0 10px;font-size:17px;">Interior samples</h2>
+  <div class="grid">
+    <div class="card">
+      <h2>Contents</h2>
+      <img class="preview" src="int-toc.png" alt="Contents page"/>
+    </div>
+    <div class="card">
+      <h2>Part divider</h2>
+      <img class="preview" src="int-part.png" alt="Part divider page"/>
+    </div>
+    <div class="card">
+      <h2>Chapter opening</h2>
+      <img class="preview" src="int-ch1.png" alt="Chapter 1 opening with drop cap"/>
+    </div>
+    <div class="card">
+      <h2>Body spread</h2>
+      <img class="preview" src="int-ch4.png" alt="Chapter 4 body page"/>
+    </div>
+    <div class="card">
+      <h2>About the Author</h2>
+      <img class="preview" src="int-about.png" alt="About the Author page"/>
+    </div>
+  </div>
+
+  <h2 id="affiliate-guide" style="margin:28px 0 10px;font-size:17px;">Affiliate resource guide (inline)</h2>
+  <div class="guide">
+<h1>The Soft Life System — Affiliate Resource Guide</h1>
+<p>Monetization plan for the tools and books recommended to readers. The curated resource
+list lives on <strong>studio.gabochie.com</strong> — every link below should be registered to you, then
+placed on that page and in your emails/social posts. <strong>Never put affiliate links inside the
+book itself</strong> (Amazon KDP prohibits affiliate links in Kindle books, and in-book links can't
+be updated after print runs anyway).</p>
+<p>Prepared Nov 11, 2026. Terms verified where marked ✅ (from official pages or multiple
+recent directories); unverified items marked ⚠️ — confirm on the program page before
+relying on the numbers.</p>
+<hr />
+<h2>How to use this guide</h2>
+<ol>
+<li>Register for the <strong>Tier 1</strong> programs first (best fit + easiest approval). Approval can take
+   days to weeks, so start now.</li>
+<li>Build one page on studio.gabochie.com: "The Soft Life Stack — tools I actually use,"
+   with your affiliate links and a clear disclosure at the top.</li>
+<li>Each program pays through a different network. You'll need accounts on
+   <strong>PartnerStack, Impact, Partnerize, CJ/Awin, and Dub</strong> — one signup each, then apply to
+   individual programs from inside.</li>
+<li>Disclose on every page/post that contains a link (see disclosure templates at the end).</li>
+</ol>
+<hr />
+<h2>Tier 1 — Register first (best fit, easy approval)</h2>
+<h3>Kit (formerly ConvertKit) — email marketing ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 50% of each referred customer's first 12 months; 10–20% recurring
+  indefinitely after that if you refer 10+ paying customers/year (Bronze/Silver/Gold tiers)</li>
+<li><strong>Cookie:</strong> 90 days · <strong>Network:</strong> PartnerStack · <strong>Min. payout:</strong> $5 (PayPal/Stripe)</li>
+<li><strong>Apply:</strong> kit.com/affiliates</li>
+<li><strong>Why:</strong> The book's "Communicate" role. Creator-focused, matches the reader perfectly.
+  ~$175–200 per conversion on the entry paid plan.</li>
+</ul>
+<h3>systeme.io — all-in-one funnels/email/courses ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 60% lifetime recurring, no application, no cap, free plan for referrals</li>
+<li><strong>Cookie:</strong> lifetime attribution · <strong>Network:</strong> in-house · <strong>Payouts:</strong> from $30</li>
+<li><strong>Apply:</strong> systeme.io/affiliate-program</li>
+<li><strong>Why:</strong> All-in-one budget tool (funnels + email + courses + automation). Very popular
+  with African solopreneurs; strong fit for the book's "start simple" message. ~$10/mo
+  recurring per referral at entry pricing — compounds over time.</li>
+</ul>
+<h3>Pabbly Connect — automation ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 30% recurring for the lifetime of the customer (20% flat on lifetime deals)</li>
+<li><strong>Cookie:</strong> 365 days · <strong>Network:</strong> in-house · <strong>Min. payout:</strong> $50 (PayPal / INR bank)</li>
+<li><strong>Apply:</strong> pabbly.com/affiliates</li>
+<li><strong>Why:</strong> The book's "automation engine" role at a budget price. Longest cookie in the
+  category; open sign-up; India-based so INR payouts work. No paid-search ads allowed.</li>
+</ul>
+<h3>Make.com — automation ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 35% recurring for 12 months</li>
+<li><strong>Cookie:</strong> not published · <strong>Network:</strong> in-house · <strong>Approval:</strong> open sign-up</li>
+<li><strong>Why:</strong> The premium visual automation tool readers will graduate to from Pabbly.</li>
+</ul>
+<h3>FreshBooks — invoicing &amp; accounting ✅</h3>
+<ul>
+<li><strong>Commission:</strong> up to $200 per paying customer, up to $10 per free trial (starts ~$55
+  per sale, scales with volume)</li>
+<li><strong>Cookie:</strong> 120 days · <strong>Network:</strong> PartnerStack · <strong>Approval:</strong> manual review (they want
+  original content aimed at freelancers/service businesses — this book qualifies)</li>
+<li><strong>Apply:</strong> freshbooks.com/affiliate-program</li>
+<li><strong>Why:</strong> The book's "Get paid" role. One-time but high-value; 120-day cookie is the
+  longest in finance software.</li>
+</ul>
+<h3>ClickUp — projects &amp; delivery ✅</h3>
+<ul>
+<li><strong>Commission:</strong> up to $25 per free workspace signup (tiered perks at 100/200 signups/mo)</li>
+<li><strong>Cookie:</strong> 30 days · <strong>Network:</strong> in-house (clickup.com/affiliates) · <strong>Approval:</strong> easy</li>
+<li><strong>Why:</strong> The book's "Deliver" role. Free-signup bounty converts well from tutorial content.</li>
+</ul>
+<h3>Dubsado — client management ✅</h3>
+<ul>
+<li><strong>Commission:</strong> $35 cash per referral who subscribes and stays 60 days; invite tiers
+  reach $50/$75 · referral gets 20% off first month/year</li>
+<li><strong>Network:</strong> Dub (their new partner platform, launched Oct 2026)</li>
+<li><strong>Apply:</strong> app.dubsado.com/affiliate (needs a free Dubsado account)</li>
+<li><strong>Why:</strong> The "Capture → Deliver → Get paid" pipeline for service solopreneurs.</li>
+</ul>
+<h3>Canva — design ✅</h3>
+<ul>
+<li><strong>Commission:</strong> up to $36 per new paid-plan signup</li>
+<li><strong>Network:</strong> in-house (Canva Partners / "Canvassador") · confirm current terms at
+  canva.com before relying on the figure</li>
+<li><strong>Why:</strong> Readers will build their brand assets, lead magnets, and templates here.</li>
+</ul>
+<h3>Buffer — social media scheduling ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 25% recurring for 12 months per referred customer</li>
+<li><strong>Cookie:</strong> 90 days · <strong>Network:</strong> Dub (partners.dub.co/buffer/apply) · free to join,
+  manual review (3–5 business days) · <strong>Payout:</strong> monthly via Dub</li>
+<li><strong>Why:</strong> Buffer is already named in the book's social media workflow — this turns
+  that mention into income. Entry plans are $5/mo/channel, so it converts easily on
+  creator-focused content.</li>
+</ul>
+<hr />
+<h2>Tier 2 — Strong fits, apply after Tier 1</h2>
+<h3>beehiiv — newsletters ✅</h3>
+<ul>
+<li><strong>Commission:</strong> up to 60% of a referral's first year</li>
+<li><strong>Why:</strong> For readers whose soft life is a newsletter business.</li>
+</ul>
+<h3>Flodesk — email design ⚠️</h3>
+<ul>
+<li><strong>Commission:</strong> 50% of first year (verify current terms at flodesk.com/partners)</li>
+</ul>
+<h3>SavvyCal — scheduling ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 25% ongoing · <strong>Apply:</strong> via savvycal.com</li>
+<li><strong>Why:</strong> The scheduling pick for the resource page.</li>
+</ul>
+<h3>Cal.com — scheduling ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 20% recurring for 12 months (+ referred customer gets 20% off 12 months)</li>
+<li><strong>Network:</strong> in-house · <strong>Approval:</strong> required · <strong>Why:</strong> Developer-friendly Calendly
+  alternative; good for technical readers.</li>
+</ul>
+<h3>Squarespace — websites &amp; Acuity Scheduling ⚠️</h3>
+<ul>
+<li><strong>Commission:</strong> ~10% per new subscription (Acuity pays a flat bounty per subscriber);
+  runs on Impact. Verify exact terms after applying — they're visible post-approval.</li>
+<li><strong>Why:</strong> The book assumes a simple web presence; Acuity is the booking tool inside it.</li>
+</ul>
+<h3>HoneyBook — client management ✅</h3>
+<ul>
+<li><strong>Commission:</strong> $50 per subscriber (one-time), 30-day cookie, paid after the member
+  stays 100 days · referral gets 25% off</li>
+<li><strong>Caveat:</strong> Only available in US/CA/UK/AU — recommend only to readers in those
+  markets; use Dubsado for the rest.</li>
+</ul>
+<h3>Wise — international payments ✅</h3>
+<ul>
+<li><strong>Commission:</strong> ~£10–15 per qualifying personal referral (must complete a real
+  transfer, not just sign up); ~£50 for business referrals; <strong>1-year cookie</strong></li>
+<li><strong>Network:</strong> Partnerize (wise.com/gb/affiliate-program)</li>
+<li><strong>Why:</strong> Highly relevant for African/Global South readers getting paid by international
+  clients. A Wise account also saves YOU payout-conversion fees on other programs.</li>
+</ul>
+<h3>QuickBooks — accounting ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 10% per sale · <strong>Cookie:</strong> 45 days · <strong>Network:</strong> CJ</li>
+<li><strong>Why:</strong> For readers who outgrow invoicing-only tools.</li>
+</ul>
+<h3>Semrush — SEO/marketing ✅</h3>
+<ul>
+<li><strong>Commission:</strong> $100–$300 per sale + $10 per trial · <strong>Cookie:</strong> 120 days · <strong>Network:</strong> Impact</li>
+<li><strong>Why:</strong> Chapter 10's "Quiet Growth Engine" — organic search content.</li>
+</ul>
+<h3>n8n — automation ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 30% recurring for 12 months</li>
+<li><strong>Network:</strong> in-house · <strong>Why:</strong> For technical readers who want self-hosted automation.</li>
+</ul>
+<hr />
+<h2>Africa / Ghana stack — verified programs</h2>
+<p>These are the picks to feature for readers in Ghana and across Africa. Several also pay
+through methods that work without PayPal (a real constraint for African affiliates).</p>
+<h3>Selar — sell digital products (Africa's creator commerce platform) ✅</h3>
+<ul>
+<li><strong>Refer &amp; Earn:</strong> 10% commission on every subscription payment a referred creator makes
+  (recurring, no cap) + 20% annual commission if they join Selar's affiliate network;
+  referred user gets 5% off. Requires your own active paid Selar/Affiliate plan.</li>
+<li><strong>Affiliate Network:</strong> a separate earner — promote 30,000+ African digital products for
+  up to 70% per sale (NGN 3,000/year membership)</li>
+<li><strong>Network:</strong> in-house · <strong>Payouts:</strong> instant to Selar wallet, no minimum; supports
+  Ghana cedis, NGN, USD, and mobile-money/bank payouts</li>
+<li><strong>Apply:</strong> selar.com (Refer &amp; Earn is in your dashboard) · affiliates.selar.com (network)</li>
+<li><strong>Why:</strong> The African Gumroad. Readers use it to sell ebooks/courses/services with cards,
+  bank transfer, and mobile money. <strong>Double opportunity for you:</strong> list The Soft Life
+  System course/templates on Selar AND recruit affiliates to sell them — you earn from
+  your own product sales while your referral links earn from their subscriptions.</li>
+</ul>
+<h3>Payoneer — get paid by international clients ✅</h3>
+<ul>
+<li><strong>Commission:</strong> ~$25 per new customer who becomes active (directory-cited figure;
+  Payoneer does not publish the rate — confirm at onboarding)</li>
+<li><strong>Cookie:</strong> 30 days · <strong>Network:</strong> PartnerStack / in-house · <strong>Payouts:</strong> monthly to
+  your Payoneer balance or bank</li>
+<li><strong>Apply:</strong> payoneer.com/affiliate-program</li>
+<li><strong>Why:</strong> The standard for African freelancers receiving USD/GBP/EUR from global
+  platforms and clients; withdraws to Ghanaian banks in GHS. A Wise alternative for
+  readers without the documents Wise needs.</li>
+</ul>
+<h3>Fiverr — get clients / get work ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 25% of a new buyer's first order + 10% revenue share for 12 months;
+  Fiverr Pro 70% of first order; Logo Maker $30 fixed</li>
+<li><strong>Network:</strong> in-house (fiverr.com/partnerships/affiliates) · <strong>Min. payout:</strong> $100,
+  net-30 to bank (no PayPal required)</li>
+<li><strong>Why:</strong> Two-sided relevance: readers who need their first clients AND readers who sell
+  services. Strong conversions from "how to start freelancing" content aimed at Africa.</li>
+</ul>
+<h3>Grey — virtual USD/GBP/EUR accounts ✅</h3>
+<ul>
+<li><strong>Commission:</strong> $5 per referred user (both sides) after the referral deposits $500</li>
+<li><strong>Network:</strong> in-app "Affiliate &amp; Referrals" — instant, no application</li>
+<li><strong>Why:</strong> Works in Ghana: GHS withdrawals, virtual dollar cards for paying for SaaS
+  subscriptions (the single biggest blocker for African readers buying tools). Small
+  bounty, but zero friction — every Ghanaian reader can promote it from day one.</li>
+</ul>
+<h3>Raenest (formerly Geegpay) — virtual dollar accounts ⚠️</h3>
+<ul>
+<li><strong>Commission:</strong> $5 per successful referral (friend gets $2), capped at $152 total</li>
+<li><strong>Network:</strong> in-app referral · <strong>Verify</strong> current terms before featuring</li>
+<li><strong>Why:</strong> Nigeria/Kenya-focused alternative to Grey — feature for Nigerian readers.</li>
+</ul>
+<h3>Zoho — business suite (CRM, Books, Invoice, Forms) ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 15% of first-12-months revenue per qualified sale (18%/20% at
+  Super/Elite tiers) · <strong>Cookie:</strong> 90 days · <strong>Min. payout:</strong> $100 (PayPal or wire)</li>
+<li><strong>Caveat:</strong> the referral must sign up in the same data center region you registered in
+  — register in the DC matching your audience; commission is on the first product only</li>
+<li><strong>Apply:</strong> zoho.com/affiliate · referred customers get $100 wallet credit</li>
+<li><strong>Why:</strong> The affordable alternative to the whole Western stack: Zoho Invoice is free,
+  Books handles accounting, Campaigns is email — all accepted across African markets.</li>
+</ul>
+<h3>Hostinger — websites &amp; hosting ✅</h3>
+<ul>
+<li><strong>Commission:</strong> up to 40% on qualifying 12-month+ initial purchases (AI Builder up to
+  60% via special offers) · <strong>Cookie:</strong> 30 days · <strong>Cap:</strong> $300/sale</li>
+<li><strong>Network:</strong> in-house + CJ · <strong>Apply:</strong> hostinger.com/affiliates or via CJ</li>
+<li><strong>Why:</strong> Cheapest credible hosting + domain for a Ghanaian solopreneur's first website;
+  pays out internationally without PayPal problems.</li>
+</ul>
+<h3>Global tools that also serve Africa (already verified above)</h3>
+<ul>
+<li><strong>systeme.io</strong> — popular with African solopreneurs; all-in-one at ~$10/mo</li>
+<li><strong>Pabbly Connect</strong> — India-based; INR payouts; lifetime deals suit low-budget readers</li>
+<li><strong>Canva</strong> — free tier is the design tool of record across Africa</li>
+<li><strong>Wise</strong> — works in Ghana for receiving/sending USD-GBP-EUR (complement to Grey/Payoneer)</li>
+<li><strong>Kit / beehiiv / ClickUp / Cal.com</strong> — free tiers work anywhere; PayPal payouts fine</li>
+<li><strong>FreshBooks / Dubsado / HoneyBook</strong> — Western-market readers only (HoneyBook:
+  US/CA/UK/AU); keep out of the Africa/Ghana section</li>
+</ul>
+<p>Note: Paystack, Flutterwave, and MTN MoMo have <strong>no affiliate programs</strong>, so under the
+affiliate-only rule they stay off the resource page — Selar and Zoho Invoice cover the
+"get paid locally" role instead.</p>
+<hr />
+<h2>Tier 3 — Unverified terms; confirm before featuring</h2>
+<table>
+<thead>
+<tr>
+<th>Program</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Kajabi</strong></td>
+<td>⚠️ ~30% recurring (verify) — premium all-in-one; for readers going bigger</td>
+</tr>
+<tr>
+<td><strong>Podia</strong></td>
+<td>⚠️ ~30% recurring (verify) — creator storefronts</td>
+</tr>
+<tr>
+<td><strong>Gumroad</strong></td>
+<td>⚠️ (verify) — template/digital-product sales; also sell YOUR templates there</td>
+</tr>
+<tr>
+<td><strong>MailerLite</strong></td>
+<td>⚠️ bounty via PartnerStack (verify) — budget email alternative</td>
+</tr>
+<tr>
+<td><strong>1Password</strong></td>
+<td>⚠️ via Impact (verify) — password security for solopreneurs</td>
+</tr>
+<tr>
+<td><strong>Flodesk</strong></td>
+<td>⚠️ 50% of first year (verify at flodesk.com/partners) — email design</td>
+</tr>
+</tbody>
+</table>
+<p>Rule: <strong>a tool may only appear on the resource page after (a) its affiliate program is
+confirmed active and (b) you have registered and been approved.</strong> If a program closes
+or rejects you, the tool comes off the page too — swap in the backup column instead.</p>
+<hr />
+<h2>The books (Further Reading section) — Amazon + Bookshop.org</h2>
+<p>The "Resources &amp; Further Reading" list in the back matter names 12 books. Monetize it:</p>
+<h3>Amazon Associates</h3>
+<ul>
+<li><strong>Apply:</strong> affiliate-program.amazon.com · Books pay ~4.5% (varies by category)</li>
+<li><strong>Rules:</strong> 24-hour cookie, strict disclosure + no link-spamming, must make 3 sales in
+  180 days to keep the account</li>
+<li><strong>Use:</strong> a single "See the full reading list" link on studio.gabochie.com (a storefront
+  list of all 12 books) rather than links inside the book</li>
+</ul>
+<h3>Bookshop.org ✅</h3>
+<ul>
+<li><strong>Commission:</strong> 10% per book (up to 15% enhanced program) · <strong>Attribution:</strong> 48 hours</li>
+<li><strong>Apply:</strong> bookshop.org/affiliates/profile</li>
+<li><strong>Why:</strong> Ethical angle fits the brand ("support independent bookstores"), and you can
+  build a public storefront list of the 12 recommended books — link it from your site
+  and your author email signature.</li>
+</ul>
+<hr />
+<h2>Map: book chapter → affiliate link</h2>
+<table>
+<thead>
+<tr>
+<th>Book concept (role in the stack)</th>
+<th>Primary affiliate pick</th>
+<th>Backup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capture (CRM/leads)</td>
+<td>systeme.io</td>
+<td>Kit (forms)</td>
+</tr>
+<tr>
+<td>Communicate (email)</td>
+<td><strong>Kit</strong></td>
+<td>beehiiv, MailerLite</td>
+</tr>
+<tr>
+<td>Schedule (booking)</td>
+<td><strong>SavvyCal / Cal.com</strong></td>
+<td>Acuity via Squarespace</td>
+</tr>
+<tr>
+<td>Deliver (projects/files)</td>
+<td><strong>ClickUp</strong></td>
+<td>Dubsado</td>
+</tr>
+<tr>
+<td>Get paid (invoicing)</td>
+<td><strong>FreshBooks</strong></td>
+<td>QuickBooks</td>
+</tr>
+<tr>
+<td>Automate (the engine)</td>
+<td><strong>Pabbly</strong> (budget) / <strong>Make</strong> (power)</td>
+<td>n8n</td>
+</tr>
+<tr>
+<td>Analyze (metrics)</td>
+<td><strong>Semrush</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Client pipeline</td>
+<td><strong>Dubsado</strong></td>
+<td>HoneyBook (US/CA/UK/AU only)</td>
+</tr>
+<tr>
+<td>Getting paid internationally</td>
+<td><strong>Wise</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Brand &amp; content design</td>
+<td><strong>Canva</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Growth engine</td>
+<td><strong>Semrush</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Websites</td>
+<td><strong>Squarespace</strong></td>
+<td>systeme.io free site</td>
+</tr>
+</tbody>
+</table>
+<p>Every recommendation on the resource page must have an affiliate link attached. Where
+the book mentions a tool with no affiliate program, the resource page presents its
+monetizable equivalent as the featured option (e.g. Pabbly/Make as the automation
+engine, SavvyCal/Cal.com as the scheduler, systeme.io as the CRM) — same role, same
+workflow, and every click can earn you money.</p>
+<h3>Map: reader location → featured picks</h3>
+<table>
+<thead>
+<tr>
+<th>Role in the stack</th>
+<th>🇺🇸🇬🇧🇨🇦 US / UK / Canada</th>
+<th>🌍 Africa / Ghana</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capture + CRM</td>
+<td>systeme.io, Dubsado</td>
+<td><strong>systeme.io</strong>, Zoho Forms/CRM</td>
+</tr>
+<tr>
+<td>Communicate (email)</td>
+<td><strong>Kit</strong>, beehiiv</td>
+<td>systeme.io, beehiiv, Zoho Campaigns</td>
+</tr>
+<tr>
+<td>Schedule (booking)</td>
+<td><strong>SavvyCal / Cal.com</strong>, Acuity</td>
+<td>Cal.com (free tier)</td>
+</tr>
+<tr>
+<td>Deliver (projects)</td>
+<td><strong>ClickUp</strong></td>
+<td>ClickUp (free), Zoho Projects</td>
+</tr>
+<tr>
+<td>Get paid — local invoicing</td>
+<td><strong>FreshBooks</strong></td>
+<td><strong>Zoho Invoice/Books</strong>, Selar (product sales)</td>
+</tr>
+<tr>
+<td>Get paid — international</td>
+<td><strong>Wise</strong></td>
+<td><strong>Payoneer</strong>, Wise, Grey</td>
+</tr>
+<tr>
+<td>Sell digital products</td>
+<td>Podia/Gumroad (⚠️ verify)</td>
+<td><strong>Selar</strong></td>
+</tr>
+<tr>
+<td>Get clients</td>
+<td>— (agencies)</td>
+<td><strong>Fiverr</strong> (both sides of the marketplace)</td>
+</tr>
+<tr>
+<td>Automate (the engine)</td>
+<td><strong>Pabbly / Make</strong></td>
+<td>Pabbly, Make (same tools, low cost)</td>
+</tr>
+<tr>
+<td>Websites</td>
+<td><strong>Squarespace</strong></td>
+<td><strong>Hostinger</strong> + Canva</td>
+</tr>
+<tr>
+<td>Analyze / growth</td>
+<td><strong>Semrush</strong></td>
+<td>Semrush (free tier)</td>
+</tr>
+<tr>
+<td>Brand &amp; social</td>
+<td><strong>Canva</strong>, Buffer</td>
+<td>Canva (free), Buffer (free tier)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ghana minimum viable stack (affiliate versions):</strong> Selar (free) → Cal.com (free) →
+systeme.io (free) → Pabbly → pay out via Grey + Wise. Every step earns you commission,
+and nothing requires a credit card the reader can't get.</p>
+<hr />
+<h2>Payout methods note (Ghana)</h2>
+<ul>
+<li>PartnerStack, Impact, Partnerize all pay PayPal or bank transfer; <strong>open a Wise Business
+  account</strong> to receive USD/EUR/GBP cheaply in Ghana.</li>
+<li>systeme.io and Pabbly support PayPal; Pabbly also pays INR bank.</li>
+<li>Some programs (Kit, FreshBooks) restrict by country — if a program declines your
+  application, note it in this file and substitute the backup column above.</li>
+</ul>
+<h2>Disclosure templates</h2>
+<p>Website resource page (required by FTC; add at top of studio.gabochie.com/stack):</p>
+<blockquote>
+<p>Some links on this page are affiliate links. If you sign up through them, I earn a
+commission at no extra cost to you. I only recommend tools I believe are worth your
+money — several are here even though they pay me nothing.</p>
+</blockquote>
+<p>Email/social footer:</p>
+<blockquote>
+<p>Disclaimer: links to tools may be affiliate links. Your price never changes.</p>
+</blockquote>
+<p>KDP note: do <strong>not</strong> add these links or disclosures inside the ebook/print book —
+Amazon's Associates policy and KDP terms prohibit affiliate links in Kindle content.
+Keep the book pointing to studio.gabochie.com only.</p>
+<hr />
+<h2>Action checklist</h2>
+<ul>
+<li>[ ] Create PartnerStack account → apply to Kit, FreshBooks, Payoneer</li>
+<li>[ ] Apply to systeme.io, Pabbly, Make, ClickUp, Fiverr (in-house, fast approval)</li>
+<li>[ ] Apply to Zoho (zoho.com/affiliate — register in the data center matching your audience)</li>
+<li>[ ] Apply to Hostinger (in-house or CJ)</li>
+<li>[ ] Create Dub account (free Dubsado trial) → join Dubsado + Buffer partner programs</li>
+<li>[ ] Create Impact account → apply to Squarespace, Semrush, Canva</li>
+<li>[ ] Create Partnerize account → apply to Wise</li>
+<li>[ ] Get active Selar plan → turn on Refer &amp; Earn; join Selar Affiliate Network (NGN 3,000/yr)</li>
+<li>[ ] Activate Grey in-app affiliate/referrals (instant, no application)</li>
+<li>[ ] Apply to Amazon Associates + Bookshop.org</li>
+<li>[ ] Build studio.gabochie.com/stack page with the regional table above + disclosure</li>
+<li>[ ] Add "Tools" link to your email signature and TikTok bio (@gideonabochie)</li>
+<li>[ ] After 90 days: check EPC per program, drop losers, promote winners harder</li>
+</ul>
+  </div>
+
+  <h2 style="margin:28px 0 10px;font-size:17px;">Inline preview</h2>
+  <iframe src="01-soft-life-system/the-soft-life-system-print.pdf#view=FitH" title="Print interior preview"></iframe>
+  <p class="note">If the inline preview does not render on your device, use “Open print PDF” above.</p>
+</main>
+</body>
+</html>

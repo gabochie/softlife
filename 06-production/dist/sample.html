@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2a0f4a">
+<title>The Soft Life System — Listen Free</title>
+<style>
+:root{
+  --plum:#2a0f4a; --plum-2:#3d1a63; --gold:#d9b46a; --gold-2:#c9a24f;
+  --cream:#f5ead9; --ink:#241b2f; --soft:#8a7a9c;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--cream);color:var(--ink);line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Georgia,serif;color:var(--plum);line-height:1.2}
+.small{font-size:.85em;color:var(--soft)}
+a{color:var(--plum-2)}
+
+/* HERO */
+.hero{background:linear-gradient(160deg,var(--plum) 0%,var(--plum-2) 100%);color:var(--cream);padding:56px 0 48px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-120px;top:-80px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(217,180,106,.25),transparent 70%)}
+.hero .wrap{display:grid;grid-template-columns:1fr 340px;gap:40px;align-items:center;position:relative;z-index:1}
+.kicker{font-family:'Segoe UI',sans-serif;font-size:.75rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+.hero h1{color:var(--cream);font-size:2.3rem;margin-bottom:14px}
+.hero h1 em{color:var(--gold);font-style:normal}
+.hero p.lede{font-size:1.05rem;color:#e8ddca;margin-bottom:26px;max-width:520px}
+.cover{width:100%;max-width:340px;border-radius:6px;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(217,180,106,.4);transform:rotate(1.5deg)}
+
+/* PLAYER */
+.player-card{background:var(--cream);color:var(--ink);border-radius:14px;padding:22px 24px;box-shadow:0 16px 40px rgba(0,0,0,.35)}
+.player-card h3{font-size:1.05rem;margin-bottom:4px}
+.track{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #e3d7c3;border-radius:10px;padding:10px 14px;margin-top:12px}
+.track .dot{width:34px;height:34px;border-radius:50%;background:var(--plum);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex:none}
+.track.gated{opacity:.55;cursor:pointer;position:relative}
+.track.locked .dot{background:#cfc4b2}
+.track small{display:block;font-family:'Segoe UI',sans-serif;color:var(--soft);font-size:.72rem}
+.track .t-title{font-family:Georgia,serif;font-size:.95rem}
+audio{width:100%;margin-top:8px;display:none}
+.free-audio audio{display:block}
+.btn{display:inline-block;background:var(--gold);color:var(--plum);font-family:'Segoe UI',sans-serif;font-weight:700;letter-spacing:.04em;padding:14px 30px;border-radius:8px;text-decoration:none;font-size:.95rem;border:none;cursor:pointer}
+.btn:hover{background:var(--gold-2)}
+.btn.dark{background:var(--plum);color:var(--gold)}
+.btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+.note{font-family:'Segoe UI',sans-serif;font-size:.78rem;color:var(--soft)}
+
+/* GATE */
+.gate{display:none;background:#fff;border:1px solid var(--gold);border-radius:14px;padding:26px;margin-top:18px}
+.gate.open{display:block}
+.gate input{width:100%;padding:13px;border:1px solid #d8cbb4;border-radius:8px;font-size:1rem;margin:10px 0 14px;background:var(--cream)}
+
+/* SECTIONS */
+section{padding:56px 0}
+.pale{background:#fff}
+h2{font-size:1.7rem;margin-bottom:10px}
+.sub{max-width:640px;margin-bottom:30px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--cream);border:1px solid #e3d7c3;border-radius:12px;padding:22px}
+.card h3{font-size:1.05rem;margin-bottom:8px}
+.card .tag{font-family:'Segoe UI',sans-serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-2)}
+.price{font-family:'Segoe UI',sans-serif;font-weight:700;color:var(--plum);font-size:1.15rem;margin:10px 0 2px}
+.offer-box{background:var(--plum);color:var(--cream);border-radius:16px;padding:34px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
+.offer-box h2{color:var(--cream)}
+.fmt{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+.fmt span{font-family:'Segoe UI',sans-serif;font-size:.8rem;background:rgba(217,180,106,.18);border:1px solid rgba(217,180,106,.5);color:var(--gold);padding:6px 12px;border-radius:99px}
+.pricing{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+.pricing .p{background:rgba(255,255,255,.06);border:1px solid rgba(217,180,106,.35);border-radius:10px;padding:14px;text-align:center}
+.pricing .p b{color:var(--gold);font-size:1.25rem;display:block}
+.pricing .p small{color:#cbbfae}
+footer{background:var(--plum);color:#b9a9d0;padding:34px 0;font-family:'Segoe UI',sans-serif;font-size:.8rem}
+footer a{color:var(--gold)}
+.banner{background:var(--gold);color:var(--plum);text-align:center;font-family:'Segoe UI',sans-serif;font-size:.8rem;padding:8px;letter-spacing:.06em}
+@media(max-width:820px){
+  .hero .wrap{grid-template-columns:1fr;text-align:center}
+  .cover{margin:0 auto}
+  .grid,.pricing{grid-template-columns:1fr}
+  .offer-box{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="banner">🎧 FREE TRIAL — LISTEN TO THE INTRODUCTION &amp; CHAPTER 1, RIGHT HERE</div>
+
+<!-- HERO + SAMPLE PLAYER -->
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="kicker">The Soft Life Series · Book 1</div>
+      <h1>Build a business that works <em>15 hours a week</em> — so you can live the soft life.</h1>
+      <p class="lede">The system for automating your solopreneur business: stop trading every hour for money, and let the machine carry the weight. Start listening free — no signup for the first 30 minutes.</p>
+      <div class="player-card">
+        <h3>Your Free Read-Aloud Trial</h3>
+        <span class="small">Narrated by Ava · female mentor voice · 30 min free</span>
+        <div class="track free-audio">
+          <div class="dot">▶</div>
+          <div><span class="t-title">Introduction: The 15-Hour Promise</span><small>15 min · plays instantly</small></div>
+        </div>
+        <audio controls preload="none" src="audio-sample/intro.mp3"></audio>
+        <div class="track gated locked" id="ch1track">
+          <div class="dot">🔒</div>
+          <div><span class="t-title">Chapter 1: The Hustle Hangover</span><small id="ch1hint">15 min · enter your email to unlock</small></div>
+        </div>
+        <audio controls preload="none" id="ch1audio" src="audio-sample/ch01.mp3"></audio>
+        <div class="gate" id="gate">
+          <p style="font-family:'Segoe UI',sans-serif;font-size:.9rem"><b>Where should we send Chapter 1?</b> Unlock the full chapter (and the rest of your free trial) — plus weekly soft-life tactics. Unsubscribe anytime.</p>
+          <input type="email" id="email" placeholder="you@example.com">
+          <button class="btn dark" id="unlock">Unlock Chapter 1 →</button>
+          <p class="note" style="margin-top:10px">Prototype note: this demo unlocks instantly; the live page will verify the email via the mailing-list API.</p>
+        </div>
+      </div>
+    </div>
+    <img class="cover" src="01-soft-life-system/the-soft-life-system-cover.png" alt="The Soft Life System — book cover" >
+  </div>
+</header>
+
+<!-- WHY -->
+<section class="pale">
+  <div class="wrap">
+    <h2>Sound familiar?</h2>
+    <p class="sub">You left the 9–5 for freedom. Instead you built a job that never closes — messages at 9:47 p.m., invoices on Sundays, a business that owns you. <b>The Soft Life System</b> is the counter-move: simplify the offer, build the machine, and hand the routine work to systems and people.</p>
+    <div class="grid">
+      <div class="card"><span class="tag">The S.O.F.T. Method</span><h3>Simplify · Offer · Fulfill · Transfer</h3><p style="font-size:.92rem">Four moves that turn a hustle into a machine that runs without your constant hands.</p></div>
+      <div class="card"><span class="tag">The Automation Stack</span><h3>Tools that do the grunt work</h3><p style="font-size:.92rem">A curated, budget-aware stack — no tool bloat. What to automate first, and what never to touch.</p></div>
+      <div class="card"><span class="tag">The 90-Day Launch</span><h3>A plan, not a vibe</h3><p style="font-size:.92rem">Day-by-day launch plan plus the weekly review ritual that keeps the soft life soft.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- OFFER -->
+<section>
+  <div class="wrap">
+    <div class="offer-box">
+      <div>
+        <h2>Take the whole book home</h2>
+        <p style="color:#e8ddca;margin-top:8px">If the free trial hooked you, the full system goes deeper: all five parts, the complete audits, the worksheets, and the 90-day launch plan.</p>
+        <div class="fmt"><span>📘 eBook</span><span>🎧 Audiobook</span><span>📄 Worksheets</span><span>🖨️ Print (KDP)</span></div>
+        <a class="btn" href="#" onclick="alert('PROTOTYPE: link to Selar checkout here');return false;">Get the Book →</a>
+        <p class="note" style="color:#b9a9d0;margin-top:12px">Secure checkout · instant delivery · works in every country</p>
+      </div>
+      <div class="pricing">
+        <div class="p"><small>eBook</small><b>$9.99</b><small>PDF + EPUB</small></div>
+        <div class="p"><small>Audiobook</small><b>$14.99</b><small>3.8 h · read-aloud</small></div>
+        <div class="p"><small>Complete</small><b>$19.99</b><small>eBook + audio + worksheets</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LADDER TEASER -->
+<section class="pale">
+  <div class="wrap">
+    <h2>Bought the book? Then the real question: <em>how</em>?</h2>
+    <p class="sub">Reading is step one. Implementing is where the soft life actually starts. Three ways to go — pick the help level you need.</p>
+    <div class="grid">
+      <div class="card"><span class="tag">DIY</span><h3>I'll build it myself</h3><p style="font-size:.92rem">The book + templates + the tool stack, and you execute. For self-starters.</p><div class="price">$10–50</div><span class="small">start with the book ↑</span></div>
+      <div class="card" style="border-color:var(--gold);border-width:2px"><span class="tag">DWY · Most popular</span><h3>Build it with me</h3><p style="font-size:.92rem">The 90-Day Soft Life Launch: guided implementation, templates installed with you, weekly accountability.</p><div class="price">$297–497</div><span class="small"><a href="#" onclick="alert('PROTOTYPE: DWY waitlist signup');return false;">Join the waitlist →</a></span></div>
+      <div class="card"><span class="tag">DFY</span><h3>Build it for me</h3><p style="font-size:.92rem">We wire the whole machine for you — offer, tools, SOPs, welcome sequences. You keep the keys.</p><div class="price">from $1,500</div><span class="small"><a href="#" onclick="alert('PROTOTYPE: DFY application form');return false;">Apply →</a></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- AFFILIATE -->
+<section>
+  <div class="wrap" style="text-align:center">
+    <h2>Know someone stuck in the hustle?</h2>
+    <p class="sub" style="margin:10px auto 24px">Earn <b>50% commission</b> on every book and program you refer. Free to join, promo kit included.</p>
+    <a class="btn ghost" style="background:var(--plum);border-color:var(--plum);color:var(--gold)" href="#" onclick="alert('PROTOTYPE: affiliate signup (Selar network + systeme.io)');return false;">Become an Affiliate →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <b style="color:var(--cream)">Gabochie Books</b> · studio dot gabochie dot com<br>
+    This page contains promotional offers; commission-bearing links are marked. © 2026 Deon ChristoLove. All rights reserved.<br>
+    Prototype — production build will add: real checkout links, email API, PWA manifest, analytics.
+  </div>
+</footer>
+
+<script>
+// email gate (prototype: unlock instantly; live version validates via API)
+const ch1track = document.getElementById('ch1track');
+const gate = document.getElementById('gate');
+ch1track.addEventListener('click', () => {
+  if (document.getElementById('ch1audio').style.display === 'block') return;
+  gate.classList.add('open');
+  gate.scrollIntoView({behavior:'smooth', block:'center'});
+});
+document.getElementById('unlock').addEventListener('click', () => {
+  const em = document.getElementById('email').value.trim();
+  if (!em || !em.includes('@')) { document.getElementById('email').style.borderColor = '#c0392b'; return; }
+  const a = document.getElementById('ch1audio');
+  a.style.display = 'block';
+  ch1track.classList.remove('gated','locked');
+  ch1track.querySelector('.dot').textContent = '▶';
+  document.getElementById('ch1hint').textContent = '15 min · unlocked';
+  gate.classList.remove('open');
+  document.querySelector('.player-card').scrollIntoView({behavior:'smooth', block:'center'});
+});
+// clicking the free track toggles its player
+document.querySelector('.track.free-audio').addEventListener('click', function(){
+  const a = this.nextElementSibling;
+  a.style.display = a.style.display === 'block' ? 'none' : 'block';
+});
+</script>
+</body>
+</html>
