@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Soft Life Career Compass</title>
+<meta name="author" content="Soft Life by Gabochie">
+<meta name="description" content="A data-backed career design kit with 24 verified careers, five decision signals, and a 90-day transition plan.">
+<style>
+@page {
+  size: A4;
+  margin: 19mm 17mm 18mm 17mm;
+  @bottom-left {
+    content: "The Soft Life Career Compass";
+    font-family: "Open Sans", sans-serif;
+    font-size: 7.2pt;
+    color: #8b7d95;
+  }
+  @bottom-right {
+    content: counter(page);
+    font-family: "Open Sans", sans-serif;
+    font-size: 8pt;
+    color: #8b7d95;
+  }
+}
+@page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+@page title { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+@page toc { @bottom-right { content: none; } }
+
+html { font-family: "Open Sans", sans-serif; color: #241536; }
+body { margin: 0; font-size: 10.3pt; line-height: 1.55; }
+p { margin: 0 0 8pt; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: #2a0f4a; text-decoration: none; }
+h1, h2, h3 { color: #2a0f4a; page-break-after: avoid; }
+h1 { font-size: 25pt; line-height: 1.1; margin: 0 0 16pt; page-break-before: always; }
+h1::after { content: ""; display: block; width: 42pt; height: 2.5pt; background: #d9b46a; margin-top: 12pt; }
+h2 { font-size: 15pt; line-height: 1.2; margin: 0 0 6pt; }
+h3 { font-size: 10.5pt; letter-spacing: 0.02em; text-transform: uppercase; margin: 13pt 0 5pt; }
+ul, ol { margin: 0 0 9pt 16pt; padding: 0; }
+li { margin-bottom: 4pt; }
+blockquote {
+  margin: 14pt 0;
+  padding: 11pt 14pt;
+  background: #f4ede2;
+  border-left: 3pt solid #d9b46a;
+  font-size: 9.7pt;
+}
+blockquote p { margin: 0; }
+table { border-collapse: collapse; width: 100%; }
+.num { text-align: right; white-space: nowrap; }
+pre { background: #f4ede2; padding: 10pt 12pt; margin: 10pt 0; border-left: 3pt solid #d9b46a; white-space: pre-wrap; font-size: 8.2pt; line-height: 1.5; }
+pre code { font-family: "Open Sans", sans-serif; }
+.chapter table:not(.claims-table):not(.key-table):not(.stat-grid) { border-collapse: collapse; page-break-inside: avoid; }
+.chapter table:not(.claims-table):not(.key-table):not(.stat-grid) th,
+.chapter table:not(.claims-table):not(.key-table):not(.stat-grid) td { border: 0.4pt solid #e3d9ca; padding: 4pt 5pt; vertical-align: top; }
+.chapter table:not(.claims-table):not(.key-table):not(.stat-grid) th { background: #f4ede2; text-align: left; font-size: 8.5pt; }
+.chapter table tr { page-break-inside: avoid; }
+
+.cover-image { page: cover; width: 210mm; height: 297mm; overflow: hidden; }
+.cover-image img { width: 210mm; height: 297mm; object-fit: cover; }
+.cover {
+  page: cover;
+  height: 297mm;
+  background: #2a0f4a;
+  color: #fbf8f2;
+  position: relative;
+  overflow: hidden;
+}
+.cover .rule { position: absolute; left: 20mm; right: 20mm; top: 20mm; height: 0.7pt; background: #d9b46a; opacity: 0.7; }
+.cover .brand { position: absolute; left: 20mm; top: 27mm; font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase; color: #d9b46a; }
+.cover .main { position: absolute; left: 20mm; right: 20mm; top: 98mm; }
+.cover .kicker { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; color: #d9b46a; margin-bottom: 12mm; }
+.cover h1 { font-size: 47pt; line-height: 1.02; color: #fbf8f2; margin: 0; page-break-before: avoid; bookmark-level: none; }
+.cover h1::after { display: none; }
+.cover .subtitle { font-size: 14pt; line-height: 1.4; color: #e9dfef; margin-top: 12mm; max-width: 130mm; }
+.cover .bottom { position: absolute; left: 20mm; right: 20mm; bottom: 20mm; border-top: 0.7pt solid rgba(217,180,106,0.55); padding-top: 6mm; font-size: 7.7pt; letter-spacing: 0.04em; color: #d8cbe0; }
+.cover .bottom span { margin-right: 8mm; }
+.cover .mark { position: absolute; right: 20mm; top: 95mm; width: 36mm; height: 36mm; opacity: 0.9; }
+
+.title-page { page: title; height: 297mm; background: #fbf8f2; position: relative; }
+.title-page .inner { position: absolute; left: 24mm; right: 24mm; top: 38mm; }
+.title-page .eyebrow { font-size: 8pt; letter-spacing: 0.16em; text-transform: uppercase; color: #b85c72; }
+.title-page h1 { font-size: 34pt; line-height: 1.06; color: #2a0f4a; margin: 8mm 0 6mm; page-break-before: avoid; bookmark-level: none; }
+.title-page h1::after { display: none; }
+.title-page .subtitle { font-size: 14pt; line-height: 1.35; color: #4d3b5f; max-width: 125mm; }
+.title-page .edition { margin-top: 16mm; font-size: 9pt; color: #7a6c86; }
+.title-page .data-note { margin-top: 3mm; font-size: 8pt; color: #7a6c86; }
+.title-page .legal { position: absolute; left: 24mm; right: 24mm; bottom: 24mm; border-top: 0.7pt solid #e3d9ca; padding-top: 6mm; font-size: 7.6pt; line-height: 1.45; color: #7a6c86; }
+
+.toc-page { page: toc; page-break-before: always; }
+.toc-page h1 { page-break-before: avoid; font-size: 23pt; }
+.toc { margin-top: 10pt; }
+.toc a { display: block; color: #241536; font-size: 10.5pt; padding: 5.2pt 0; border-bottom: 0.4pt solid #e8dfd2; }
+.toc a::after { content: target-counter(attr(href), page); float: right; color: #2a0f4a; font-weight: 700; }
+.toc-note { margin-top: 16pt; font-size: 8.5pt; color: #7a6c86; }
+
+.chapter { page-break-before: always; }
+.page-break { page-break-before: always; }
+.chapter h1 { page-break-before: avoid; }
+.chapter h2 { margin-top: 15pt; }
+.chapter h3 { margin-top: 13pt; }
+.chart { margin: 14pt 0 16pt; page-break-inside: avoid; }
+.chart img { width: 100%; height: auto; display: block; border: 0.5pt solid #e8dfd2; }
+.chart figcaption { font-size: 7.8pt; line-height: 1.4; color: #7a6c86; margin-top: 4pt; }
+.key-table { font-size: 7.3pt; line-height: 1.35; margin: -8pt 0 15pt; }
+.key-table th { text-align: left; color: #7a6c86; font-size: 6.5pt; letter-spacing: 0.06em; text-transform: uppercase; padding: 0 3pt 2pt 0; border-bottom: 0.5pt solid #d9b46a; }
+.key-table td { padding: 1.2pt 3pt 1.2pt 0; border-bottom: 0.3pt solid #eee6db; }
+.key-table .key-num { color: #b85c72; font-weight: 700; width: 10pt; }
+.key-table td:nth-child(2), .key-table th:nth-child(2) { width: 30%; }
+.key-table td:nth-child(4), .key-table th:nth-child(4) { width: 8%; }
+.key-table td:nth-child(4) { border-right: 0.6pt solid #e3d9ca; padding-right: 8pt; }
+.key-table th:nth-child(4) { border-right: 0.6pt solid #e3d9ca; padding-right: 8pt; }
+.key-table td:nth-child(5), .key-table th:nth-child(5) { padding-left: 8pt; }
+
+.profile { page-break-before: always; }
+.profile h2 { border-bottom: 0.8pt solid var(--track); padding-bottom: 5pt; margin-bottom: 6pt; }
+.profile-band { font-size: 7.4pt; letter-spacing: 0.13em; text-transform: uppercase; color: var(--track); font-weight: 700; margin-bottom: 8pt; }
+.track-dot { display: inline-block; width: 6pt; height: 6pt; background: var(--track); border-radius: 50%; margin-right: 5pt; }
+.role-meta { font-size: 8.2pt; color: #7a6c86; margin-bottom: 10pt; }
+.profile-lede { font-size: 11.2pt; line-height: 1.5; color: #3b294f; }
+.stat-grid { margin: 10pt 0 8pt; table-layout: fixed; }
+.stat-grid td { background: #f4ede2; padding: 6pt 7pt; vertical-align: top; border: 3pt solid #fbf8f2; }
+.stat-label { display: block; font-size: 6.8pt; letter-spacing: 0.08em; text-transform: uppercase; color: #7a6c86; margin-bottom: 2pt; }
+.stat-value { display: block; font-size: 9.4pt; font-weight: 700; color: #2a0f4a; line-height: 1.25; }
+.two-col { display: table; width: 100%; table-layout: fixed; margin-top: 8pt; }
+.two-col > div { display: table-cell; vertical-align: top; }
+.signal-panel { width: 45%; padding-right: 12pt; }
+.copy-panel { width: 55%; padding-left: 12pt; border-left: 0.5pt solid #e3d9ca; }
+.copy-panel p { font-size: 9.6pt; }
+.bar-row { display: table; width: 100%; margin-bottom: 4.5pt; font-size: 7.6pt; }
+.bar-label { display: table-cell; width: 45pt; color: #5f4f70; }
+.bar-track { display: table-cell; background: #e8dfd2; height: 6pt; border-radius: 3pt; overflow: hidden; }
+.bar-fill { display: block; height: 6pt; background: var(--track); border-radius: 3pt; }
+.bar-value { display: table-cell; width: 20pt; text-align: right; font-weight: 700; color: #2a0f4a; }
+.bar-note { font-size: 7.4pt; color: #7a6c86; margin-top: 4pt; }
+.profile-note { background: #f4ede2; padding: 7pt 9pt; margin-top: 7pt; font-size: 8.6pt; line-height: 1.45; }
+.profile-note.action { background: #eef3ed; }
+.profile-foot { font-size: 6.7pt; line-height: 1.4; color: #8b7d95; margin-top: 7pt; border-top: 0.4pt solid #e3d9ca; padding-top: 4pt; }
+
+.claims-table { font-size: 7.5pt; line-height: 1.35; margin: 12pt 0 16pt; }
+.claims-table th { background: #2a0f4a; color: #fbf8f2; text-align: left; padding: 5pt 4pt; font-size: 7pt; letter-spacing: 0.03em; }
+.claims-table td { padding: 5pt 4pt; border-bottom: 0.4pt solid #e3d9ca; vertical-align: top; }
+.claims-table tr.good td:last-child { color: #466b51; }
+.claims-table tr.warn td:last-child { color: #8a6220; }
+.claims-table tr.bad td:last-child { color: #9a3e52; }
+
+.worksheet { background: #f4ede2; padding: 9pt 11pt; margin: 10pt 0; }
+.worksheet h3 { margin-top: 0; }
+.blank { display: inline-block; border-bottom: 0.6pt solid #8b7d95; min-width: 190pt; height: 12pt; }
+</style>
+</head>
+<body>
+<section class="cover-image"><img src="../assets/cover.png" alt="The Soft Life Career Compass cover"></section>
+
+    <section class="title-page">
+      <div class="inner">
+        <div class="eyebrow">Soft Life by Gabochie</div>
+        <h1>The Soft Life<br>Career Compass</h1>
+        <p class="subtitle">A data-backed guide to choosing calmer, better-paid work.</p>
+        <p class="edition">Edition 1 · 2026</p>
+        <p class="data-note">Data current to BLS OEWS May 2025 and BLS Employment Projections 2025–35.</p>
+      </div>
+      <div class="legal">
+        <strong>Copyright © 2026 Soft Life by Gabochie.</strong> All rights reserved. This guide is for
+        general information and career planning. It is not financial, legal, immigration, tax, or
+        professional advice. Pay figures are national medians, not promises of a specific salary.
+        Projections can be wrong. The Soft Life Score is an editorial composite, not a government
+        statistic. No part of this guide may be reproduced or resold without permission.
+        <br><br>Support: admin@gabochie.com · soft.gabochie.com
+      </div>
+    </section>
+    
+
+    <section class="toc-page">
+      <h1>Contents</h1>
+      <div class="toc"><a href="#how-to-use-this-guide">How to use this guide</a><a href="#the-career-list-problem">The career list problem</a><a href="#the-five-signals">The five signals</a><a href="#the-2025-career-map">The 2025 career map</a><a href="#the-24-careers">The 24 careers</a><a href="#what-the-research-got-wrong">What the research got wrong</a><a href="#build-your-three-career-shortlist">Build your three-career shortlist</a><a href="#the-90-day-career-pivot">The 90-day career pivot</a><a href="#negotiate-the-conditions-not-just-the-number">Negotiate the conditions, not just the number</a><a href="#if-you-want-to-own-the-business">If you want to own the business</a><a href="#sources-method-and-next-step">Sources, method, and next step</a></div>
+      <p class="toc-note">Page numbers are linked in the PDF. The profile key on the pay–schedule chart
+      follows the ranking shown in Chapter 3.</p>
+    </section>
+    
+<section class="chapter"><h1 id="how-to-use-this-guide">How to use this guide</h1>
+<p>Most career advice asks you to choose a job title and then hope the life around
+it works out. This guide starts from the life you want and works backward.</p>
+<p>You will not find a list of “best careers for women” here. You will find a way
+to compare work using five signals that actually shape your week: pay, schedule
+control, energy cost, entry barrier, and demand. Then you will use those signals
+to build a shortlist you can test before you quit anything.</p>
+<h2 id="what-this-guide-is">What this guide is</h2>
+<ul>
+<li>A decision tool for women with some work experience who want calmer,
+  better-paid work.</li>
+<li>A verified snapshot of 24 roles using BLS OEWS May 2025 pay data and BLS
+  Employment Projections 2025–35.</li>
+<li>A comparison system, not a personality quiz.</li>
+<li>A 90-day plan for testing a direction without betting your rent on it.</li>
+</ul>
+<h2 id="what-it-is-not">What it is not</h2>
+<ul>
+<li>A guarantee of a job, salary, visa, remote arrangement, or business income.</li>
+<li>A complete list of every good career. Twenty-four roles are enough to show
+  the pattern; they are not the whole labour market.</li>
+<li>A substitute for local licensing, immigration, tax, or legal advice.</li>
+<li>A judgement of the work you do now. The point is to add options, not to
+  shame the option you already chose.</li>
+</ul>
+<h2 id="a-note-on-the-data">A note on the data</h2>
+<p>Pay figures are median annual wages for full-time wage and salary workers unless
+otherwise stated. They are national figures for the United States. They do not
+include bonuses, equity, commission, or the value of benefits. They are not
+starting salaries.</p>
+<p>The 10th percentile is not a beginner wage. It means 10 percent of workers in
+that occupation earn less than that figure. The 90th percentile is not a
+promise either. It means 10 percent earn more.</p>
+<p>Demand figures are projected annual openings from 2025 to 2035. They include
+replacements as people leave the occupation, not only new jobs. A high opening
+count can still mean intense competition in your city.</p>
+<p>The Soft Life Score is an editorial composite. It is not a government statistic.
+The formula is published in Chapter 2 so you can disagree with it and change the
+weights for your own life.</p>
+<blockquote>
+<p><strong>Data note:</strong> Sources were retrieved in November 2026 from CareerFacts.org,
+which reproduces BLS OEWS May 2025 and BLS Employment Projections 2025–35.
+Direct BLS pages blocked automated requests. Every role page names its SOC
+code and source so you can verify the figure yourself.</p>
+</blockquote>
+<h2 id="how-to-read-a-role-profile">How to read a role profile</h2>
+<p>Each profile gives you:</p>
+<ul>
+<li>The BLS occupation and SOC code.</li>
+<li>Median pay, the 10th–90th percentile range, projected growth, and annual
+  openings.</li>
+<li>Five editorial scores out of 100.</li>
+<li>What makes the work soft, and what makes it hard.</li>
+<li>The first practical move to test the role.</li>
+</ul>
+<p>Read the data block first. Then read the two paragraphs. If the numbers and the
+reality do not match your life, trust your life.</p>
+<h2 id="before-you-begin">Before you begin</h2>
+<p>Set aside 45 minutes. Have three things ready:</p>
+<ol>
+<li>Your current annual income, before tax.</li>
+<li>Your real weekly schedule, including commute, care work, and recovery.</li>
+<li>A list of the last five workdays that felt sustainable, and the last five
+   that did not.</li>
+</ol>
+<p>The goal is not to find the perfect career. It is to find three directions
+worth testing, then to test them cheaply.</p></section><section class="chapter"><h1 id="the-career-list-problem">The career list problem</h1>
+<p>The internet is full of career lists. “Ten soft-life jobs that pay six
+figures.” “The careers that let you travel.” “This one certificate changed her
+life.” The lists are seductive because they compress a complicated decision into
+a single move.</p>
+<p>They also tend to make the same mistake: they treat salary as the whole story.</p>
+<p>A $120,000 job with a 60-hour week, a hostile manager, and no control over your
+calendar is not automatically a better life than a $78,000 job with predictable
+hours and work you can leave at the office. A $45,000 job with flexible hours
+can be a bridge, but it is not a finish line if it cannot cover your bills. The
+soft life is not a number. It is a work design.</p>
+<h2 id="the-three-failures-of-viral-career-advice">The three failures of viral career advice</h2>
+<p><strong>1. It confuses a job title with a job.</strong> “UX designer” can mean a senior
+researcher at a tech company, a freelance web designer with five clients, or a
+junior production designer doing repetitive edits. The title is not the life.
+The employer, seniority, contract, and team are the life.</p>
+<p><strong>2. It confuses the top of the market with the middle.</strong> A salary range built
+from Reddit screenshots, course testimonials, and LinkedIn highlights is a
+survivorship sample. The median worker is not the person posting. The 10th
+percentile exists too.</p>
+<p><strong>3. It ignores the entry cost.</strong> A career that requires a doctorate, unpaid
+internships, or two years of portfolio-building is not equally available to
+everyone. Entry cost is not a detail. It is part of the price.</p>
+<h2 id="what-the-research-got-right">What the research got right</h2>
+<p>The original research behind this guide identified real patterns: women are
+tired of work that consumes their whole life; remote and hybrid work changes
+the equation; healthcare and technology still offer strong pay; and many
+“faceless” online business models are less stable than they look.</p>
+<p>Those patterns are useful. The salary claims attached to them are where the
+research becomes unreliable. A career list can be directionally right and still
+be numerically wrong. For example, the research repeated a $60,000–$100,000
+range for yoga and Pilates instructors. The BLS median for exercise trainers and
+group fitness instructors is $47,160. The top 10 percent earn more than
+$83,100, but that is not the typical outcome.</p>
+<p>We are not correcting the research to be negative. We are correcting it so the
+decision is based on the life you are likely to get, not the life in the
+highlight reel.</p>
+<h2 id="the-better-question">The better question</h2>
+<p>Instead of “Which career pays the most?” ask:</p>
+<ul>
+<li>Which work can pay me enough without consuming the life I am trying to build?</li>
+<li>Which work fits the schedule I actually need, not the schedule I wish I had?</li>
+<li>Which work uses energy I can recover, not energy I have already spent?</li>
+<li>Which work can I enter in 6–24 months without taking on unreasonable risk?</li>
+<li>Which work has enough demand that I am not betting everything on one narrow
+  market?</li>
+</ul>
+<p>Those five questions are the spine of this guide. They become five scores.
+They do not make the decision for you. They make the trade-offs visible.</p>
+<h2 id="the-soft-life-defined">The soft life defined</h2>
+<p>For this guide, a soft life career has three characteristics:</p>
+<ol>
+<li><strong>Enough money.</strong> It covers your needs, your savings goal, and the life you
+   actually want. “Enough” is a number you define, not a status symbol.</li>
+<li><strong>Recoverable work.</strong> The schedule and energy cost leave room for rest,
+   relationships, health, and the parts of life that are not work.</li>
+<li><strong>A real exit.</strong> You can move to another employer, client, or role without
+   starting over. Control is part of compensation.</li>
+</ol>
+<p>That definition rules out some high-paying jobs and includes some modest-paying
+ones. It also rules out the fantasy that one career decision will fix
+everything. A career is a system you keep adjusting.</p>
+<h2 id="the-promise-of-this-guide">The promise of this guide</h2>
+<p>By the end, you will have:</p>
+<ul>
+<li>A ranked view of 24 roles using verified pay, demand, and editorial
+  work-design scores.</li>
+<li>A shortlist of three roles worth testing.</li>
+<li>A 90-day plan that does not require quitting your current job.</li>
+<li>Language for negotiating schedule, location, and workload, not just salary.</li>
+<li>A clear next step if you decide you want to build a business instead.</li>
+</ul>
+<p>That is a lot less exciting than “this one career changed her life.” It is also
+a lot more useful.</p>
+<blockquote>
+<p><strong>Action:</strong> Write down the number that means “enough” for you. Include housing,
+food, transport, debt payments, savings, and the things that make life feel
+like yours. Keep it somewhere visible. Every career decision in this guide
+gets tested against that number.</p>
+</blockquote></section><section class="chapter"><h1 id="the-five-signals">The five signals</h1>
+<p>A useful career comparison has to survive contact with a real week. These five
+signals are not a personality framework. They are a way to compare the
+conditions of work.</p>
+<h2 id="1-income">1. Income</h2>
+<p>We use the median annual wage for the occupation. Median is more honest than
+average because a small number of very high earners can pull an average upward.
+The 10th and 90th percentiles show the spread.</p>
+<p>Income is scored against $150,000:</p>
+<pre><code>income score = min(100, median pay ÷ 150,000 × 100)
+</code></pre>
+<p>The cap is deliberate. More money matters, especially below a living wage, but
+the relationship between extra income and a softer life flattens. A $220,000
+job that consumes your evenings is not automatically twice as good as a
+$110,000 job that does not. You can change the cap if your “enough” number is
+higher.</p>
+<h2 id="2-schedule-control">2. Schedule control</h2>
+<p>Schedule control is the ability to shape when, where, and how much you work.
+It includes remote and hybrid options, predictable hours, shift control, client
+booking, and the ability to protect deep work.</p>
+<p>This is an editorial score from 1 to 5:</p>
+<ul>
+<li><strong>1:</strong> little control; the schedule is set by someone else or by the market.</li>
+<li><strong>2:</strong> some flexibility, but frequent last-minute changes.</li>
+<li><strong>3:</strong> a reliable core schedule with limited flexibility.</li>
+<li><strong>4:</strong> strong control over location or hours in most weeks.</li>
+<li><strong>5:</strong> you can design the week around your life most of the time.</li>
+</ul>
+<pre><code>schedule score = schedule control × 20
+</code></pre>
+<h2 id="3-energy-cost">3. Energy cost</h2>
+<p>Energy cost is the recovery cost of the work. A role can be cognitively hard
+and still be sustainable if it has boundaries. A role can be physically light
+and still be draining if it requires constant emotional performance.</p>
+<p>This is an editorial score from 1 to 5, inverted so that higher is softer:</p>
+<ul>
+<li><strong>1:</strong> high exposure to conflict, crisis, or physical strain.</li>
+<li><strong>2:</strong> frequent high-intensity contact or unpredictable pressure.</li>
+<li><strong>3:</strong> a normal mix of focus and people work.</li>
+<li><strong>4:</strong> mostly sustainable pace with recoverable peaks.</li>
+<li><strong>5:</strong> work that leaves energy for the rest of your life.</li>
+</ul>
+<pre><code>energy score = energy × 20
+</code></pre>
+<h2 id="4-entry-barrier">4. Entry barrier</h2>
+<p>Entry barrier is the cost of becoming credible: education, licensing, exams,
+portfolio, unpaid time, and the risk of starting over. Lower barrier is better
+for a first move, but a higher barrier can protect a market.</p>
+<p>This is an editorial score from 1 to 5, inverted so that higher is easier:</p>
+<ul>
+<li><strong>1:</strong> long or expensive credential, residency, or licensing path.</li>
+<li><strong>2:</strong> substantial study or portfolio plus a long job search.</li>
+<li><strong>3:</strong> a certificate or portfolio plus 6–18 months of preparation.</li>
+<li><strong>4:</strong> skills you can demonstrate with a short course or prior experience.</li>
+<li><strong>5:</strong> can be tested quickly with existing skills.</li>
+</ul>
+<pre><code>entry score = entry ease × 20
+</code></pre>
+<h2 id="5-demand">5. Demand</h2>
+<p>Demand combines projected growth and annual openings:</p>
+<pre><code>growth score  = clamp(50 + growth % × 2.5, 0, 100)
+openings score = min(100, annual openings ÷ 50,000 × 100)
+demand score   = 0.6 × growth score + 0.4 × openings score
+</code></pre>
+<p>A 0 percent growth role scores 50 on growth: stable, not collapsing. A role
+shrinking by 10 percent scores 25. A role growing by 20 percent scores 100.
+Openings are capped at 50,000 so that very large occupations do not dominate
+the ranking.</p>
+<h2 id="the-soft-life-score">The Soft Life Score</h2>
+<p>The composite is:</p>
+<pre><code>Soft Life Score =
+  0.30 × income
++ 0.25 × schedule
++ 0.20 × energy
++ 0.10 × entry
++ 0.15 × demand
+</code></pre>
+<p>The weights reflect the promise of this guide. Money is necessary, so it gets
+the largest single weight. Schedule and energy are what make work survivable,
+so together they get 45 percent. Entry barrier matters, but it is something you
+can change with time, so it gets 10 percent. Demand matters, but a national
+projection is not a guarantee for your city or your network, so it gets 15
+percent.</p>
+<h2 id="what-the-score-cannot-do">What the score cannot do</h2>
+<ul>
+<li>It cannot price your specific offer, city, visa status, or care
+  responsibilities.</li>
+<li>It cannot tell you whether you will like the work.</li>
+<li>It cannot capture a bad manager, a toxic team, or a great one.</li>
+<li>It cannot compare a full-time employee with a solo business owner fairly.</li>
+<li>It cannot replace a conversation with someone doing the job.</li>
+</ul>
+<p>The score is a filter, not a verdict. Use it to narrow 24 roles to 8, then use
+interviews, shadowing, and small tests to narrow 8 to 3.</p>
+<h2 id="make-it-yours">Make it yours</h2>
+<p>If your priority is cash flow this year, raise income and demand. If your
+priority is care work or health, raise schedule and energy. If you are
+rebuilding after burnout, lower the entry barrier and protect schedule before
+chasing the highest median.</p>
+<blockquote>
+<p><strong>Action:</strong> Copy the formula into your notes and change the weights for your
+situation. Write one sentence explaining each change. That explanation is
+your decision criteria.</p>
+</blockquote></section><section class="chapter"><h1 id="the-2025-career-map">The 2025 career map</h1>
+<p>This is the part where the fantasy meets the spreadsheet. All pay figures below
+are BLS OEWS May 2025 national medians. Growth and openings are BLS Employment
+Projections 2025–35. The Soft Life Score uses the formula from Chapter 2.</p>
+<p>Start with the group view, then the ranking, then the full pay range, then the trade-off map.</p>
+<h2 id="the-four-tracks">The four tracks</h2>
+<p>The 24 roles fall into four broad tracks. The averages below are simple
+unweighted means, not market averages. They are a quick way to see the shape of
+each track before you read individual profiles.</p>
+<p><figure class="chart"><img src="charts/track-summary.svg" alt="Bar chart comparing average pay and average Soft Life Score across four career tracks."><figcaption>Average median pay and average Soft Life Score by track. Averages are simple means across the roles in this guide, not market averages.</figcaption></figure></p>
+<p><strong>Data &amp; Tech</strong> has the highest average median pay ($106,320) and the highest
+average Soft Life Score (69.1). It also has the widest entry range: a data
+scientist and a technical writer sit in the same track but require very
+different preparation.</p>
+<p><strong>Corporate &amp; Operations</strong> is the most portable track. Median pay averages $92,665
+and the average score is 67.3. It contains some of the most portable roles in
+the guide: management analyst, project management specialist, HR specialist,
+and executive assistant.</p>
+<p><strong>Wellness &amp; Care</strong> is not a monolith. The average median is $79,684, but it
+ranges from $45,330 for skincare specialists to $136,570 for optometrists. The
+average score is 63.7. This is the track where viral salary claims are most
+likely to be wrong.</p>
+<p><strong>Creative &amp; Client</strong> has the lowest average median ($66,195) and the lowest
+average score (58.3). It also has the most variable income and the highest
+share of self-employment. It can be a good life, but it is a weaker first move
+if you need stable cash flow quickly.</p>
+<h2 id="the-full-ranking">The full ranking</h2>
+<p><figure class="chart"><img src="charts/score-ranking.svg" alt="Horizontal bar chart ranking 24 careers by Soft Life Score."><figcaption>The 24 roles ranked by the Soft Life Score. Colour indicates track; the dollar figure on the right is the BLS median.</figcaption></figure></p>
+<p>The ranking is not a list of “best jobs.” It is a list of roles that balance
+pay, schedule, energy, entry, and demand under one set of weights. A role near
+the bottom can still be the right choice if you already have the skills, the
+network, or a specific life constraint that the score does not capture.</p>
+<p>Notice what is near the top. Data scientist, management analyst, optometrist,
+web and digital interface designer, computer systems analyst, actuary,
+statistician, training and development specialist, information security
+analyst, and technical writer.</p>
+<p>Notice what is near the bottom. Public relations specialist, skincare
+specialist, travel agent, graphic designer, and massage therapist. These are not
+bad jobs. They are jobs where the median pay, the demand picture, or the entry
+economics make the soft-life case harder to prove.</p>
+<h2 id="the-full-range-not-just-the-median">The full range, not just the median</h2>
+<p><figure class="chart"><img src="charts/salary-ranges.svg" alt="Range chart showing median pay and 10th–90th percentile pay for all 24 careers."><figcaption>Median pay and the 10th–90th percentile range for all 24 roles, sorted by median. A wide line means the occupation has a wide spread; it does not mean any individual can move from one end to the other.</figcaption></figure></p>
+<p>The median is a useful anchor, but the spread is where the real decision lives.
+Data scientists range from $67,240 at the 10th percentile to $199,130 at the
+90th. Optometrists range from $74,870 to $202,180. Technical writers range from
+$57,440 to $145,270.</p>
+<p>That spread is not a ladder you can climb automatically. It reflects seniority,
+location, employer, specialism, and contract. A role with a high median can
+still start below your enough number. A role with a modest median can have a
+strong top end for people who build a specialism or a client base.</p>
+<p>The spread also exposes the weakness in a single salary claim. “Technical
+writers earn $90,000–$105,000” describes a slice near the median. It does not
+describe the 10th percentile or the 90th. It does not tell you which end is
+available to you this year.</p>
+<h2 id="the-payschedule-trade-off">The pay–schedule trade-off</h2>
+<p><figure class="chart"><img src="charts/pay-schedule.svg" alt="Scatter plot of median pay versus schedule control, with numbered role markers."><figcaption>Median pay against editorial schedule control. Numbers match the key below. The quadrants are a reading aid, not a rule.</figcaption></figure><table class="key-table"><thead><tr><th>#</th><th>Role</th><th>Pay</th><th>Score</th><th>#</th><th>Role</th><th>Pay</th><th>Score</th></tr></thead><tbody><tr><td class="key-num">1</td><td>Data Scientist</td><td class="num">$120k</td><td class="num">75</td><td class="key-num">13</td><td>Project Management Specialist</td><td class="num">$102k</td><td class="num">65</td></tr><tr><td class="key-num">2</td><td>Management Analyst</td><td class="num">$102k</td><td class="num">71</td><td class="key-num">14</td><td>Dental Hygienist</td><td class="num">$98k</td><td class="num">65</td></tr><tr><td class="key-num">3</td><td>Optometrist</td><td class="num">$137k</td><td class="num">70</td><td class="key-num">15</td><td>Human Resources Specialist</td><td class="num">$76k</td><td class="num">65</td></tr><tr><td class="key-num">4</td><td>Web &amp; Digital Interface Designer</td><td class="num">$104k</td><td class="num">70</td><td class="key-num">16</td><td>Exercise Trainer / Group Fitness Instructor</td><td class="num">$47k</td><td class="num">65</td></tr><tr><td class="key-num">5</td><td>Computer Systems Analyst</td><td class="num">$106k</td><td class="num">69</td><td class="key-num">17</td><td>Executive Assistant</td><td class="num">$77k</td><td class="num">65</td></tr><tr><td class="key-num">6</td><td>Actuary</td><td class="num">$130k</td><td class="num">69</td><td class="key-num">18</td><td>Writer / Author</td><td class="num">$77k</td><td class="num">64</td></tr><tr><td class="key-num">7</td><td>Statistician</td><td class="num">$106k</td><td class="num">68</td><td class="key-num">19</td><td>Audiologist</td><td class="num">$96k</td><td class="num">62</td></tr><tr><td class="key-num">8</td><td>Training &amp; Development Specialist</td><td class="num">$69k</td><td class="num">68</td><td class="key-num">20</td><td>Massage Therapist</td><td class="num">$58k</td><td class="num">60</td></tr><tr><td class="key-num">9</td><td>Information Security Analyst</td><td class="num">$129k</td><td class="num">68</td><td class="key-num">21</td><td>Graphic Designer</td><td class="num">$63k</td><td class="num">59</td></tr><tr><td class="key-num">10</td><td>Technical Writer</td><td class="num">$90k</td><td class="num">68</td><td class="key-num">22</td><td>Travel Agent</td><td class="num">$50k</td><td class="num">57</td></tr><tr><td class="key-num">11</td><td>Operations Research Analyst</td><td class="num">$89k</td><td class="num">66</td><td class="key-num">23</td><td>Skincare Specialist</td><td class="num">$45k</td><td class="num">57</td></tr><tr><td class="key-num">12</td><td>Dietitian / Nutritionist</td><td class="num">$76k</td><td class="num">66</td><td class="key-num">24</td><td>Public Relations Specialist</td><td class="num">$75k</td><td class="num">54</td></tr></tbody></table></p>
+<p>The horizontal axis is median pay. The vertical axis is schedule control. The
+top-right quadrant is the dream: high pay and high control. The top-left
+quadrant is the “soft but not rich” zone. The bottom-right is the “golden
+handcuffs” zone: good pay, little control. The bottom-left is the “rebuild”
+zone.</p>
+<p>Most roles sit in the middle. That is the honest finding. There are few
+six-figure, fully flexible, low-entry jobs. The careers that look like that on
+social media usually depend on seniority, a rare employer, or a business that
+is already working.</p>
+<h2 id="what-the-data-changes">What the data changes</h2>
+<p>Three findings are worth sitting with.</p>
+<p><strong>1. The wellness premium is smaller than the research suggested.</strong> Exercise
+trainers and group fitness instructors have a median of $47,160, not
+$60,000–$100,000. Skincare specialists have a median of $45,330, not
+$60,000–$125,000. The top of those markets exists. It is not the median.</p>
+<p><strong>2. The healthcare ceiling is higher than the research suggested.</strong>
+Optometrists have a median of $136,570, above the research range of
+$90,000–$130,000. Dental hygienists have a median of $98,100, inside the
+research range, with a 90th percentile above $126,000.</p>
+<p><strong>3. Remote work is uneven.</strong> Computer and mathematical roles have a much
+higher telework rate than healthcare or personal care. A role can be
+“remote-friendly” in theory and still require local licensing, in-person
+training, or a client base. The role profile tells you which constraint applies.</p>
+<h2 id="the-honest-conclusion">The honest conclusion</h2>
+<p>There is no single career that solves the soft life. There are better and worse
+bets. The better bets tend to have:</p>
+<ul>
+<li>a median above your “enough” number;</li>
+<li>a schedule you can protect;</li>
+<li>an entry path you can afford;</li>
+<li>demand that is not collapsing;</li>
+<li>and work you can recover from.</li>
+</ul>
+<p>The rest of this guide helps you find the three bets worth testing.</p></section><section class="chapter"><h1 id="the-24-careers">The 24 careers</h1>
+<p>Each profile follows the same structure so you can compare without being swayed
+by a good story. The numbers are national. Your city, seniority, and contract
+will change the outcome. The editorial scores tell you how the role tends to
+feel; they do not tell you how your specific employer will behave.</p>
+<p>Read the data block first. Then read “The soft version” and “The catch.” If the
+catch is a dealbreaker, move on. If the soft version describes the life you
+want, put the role on your shortlist and test it.</p>
+<p>All pay figures are annual medians from BLS OEWS May 2025. The percentile range
+is the 10th to 90th percentile. Growth and openings are BLS Employment
+Projections 2025–35. The Soft Life Score uses the formula in Chapter 2.</p>
+<p><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-data-scientists">Data Scientist</h2><p class="role-meta">BLS occupation: Data Scientists · SOC 15-2051</p><p class="profile-lede">Median pay of <strong>$120,230</strong>, projected growth of <strong>+34.6%</strong>, and about <strong>24,800</strong> openings a year. Soft Life Score: <strong>75/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$120,230</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$67,240–$199,130</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+34.6%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">24,800</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:80.2%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:40.0%"></span></span><span class="bar-value">40</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:79.8%"></span></span><span class="bar-value">80</span></div><p class="bar-note">Strong fit · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>High pay, deep-focus work, and strong remote leverage.</p><h3>The catch</h3><p>AI is changing the work; keep proving business impact, not just model skill.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like ambiguity, data and building tools more than meetings.</div><div class="profile-note action"><strong>First move:</strong> Build one small public analysis project and write a one-page business impact summary.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-2051 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-web-and-digital-interface-designers">Web &amp; Digital Interface Designer</h2><p class="role-meta">BLS occupation: Web and Digital Interface Designers · SOC 15-1255</p><p class="profile-lede">Median pay of <strong>$104,000</strong>, projected growth of <strong>+6%</strong>, and about <strong>8,300</strong> openings a year. Soft Life Score: <strong>70/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$104,000</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$53,750–$201,550</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+6%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">8,300</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:69.3%"></span></span><span class="bar-value">69</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:45.6%"></span></span><span class="bar-value">46</span></div><p class="bar-note">Strong fit · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Project-based creative work with strong remote and freelance options.</p><h3>The catch</h3><p>Portfolio quality matters more than the degree; client management is real work.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want creative work with clear project boundaries and remote clients.</div><div class="profile-note action"><strong>First move:</strong> Redesign one real product flow and publish a short case study with before/after screenshots.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-1255 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-computer-systems-analysts">Computer Systems Analyst</h2><p class="role-meta">BLS occupation: Computer Systems Analysts · SOC 15-1211</p><p class="profile-lede">Median pay of <strong>$105,850</strong>, projected growth of <strong>+7.9%</strong>, and about <strong>32,900</strong> openings a year. Soft Life Score: <strong>69/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$105,850</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$67,340–$167,710</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+7.9%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">32,900</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:70.6%"></span></span><span class="bar-value">71</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:68.2%"></span></span><span class="bar-value">68</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Translating business needs into systems is calm, structured and remote-friendly.</p><h3>The catch</h3><p>You can be the buffer between users and engineers; boundaries matter.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like translating between business needs and technical teams.</div><div class="profile-note action"><strong>First move:</strong> Map one workflow, identify its data inputs and outputs, and propose a simple improvement.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-1211 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-statisticians">Statistician</h2><p class="role-meta">BLS occupation: Statisticians · SOC 15-2041</p><p class="profile-lede">Median pay of <strong>$105,650</strong>, projected growth of <strong>+11%</strong>, and about <strong>1,900</strong> openings a year. Soft Life Score: <strong>68/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$105,650</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$64,000–$174,050</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+11%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">1,900</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Master&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:70.4%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:40.0%"></span></span><span class="bar-value">40</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:48.0%"></span></span><span class="bar-value">48</span></div><p class="bar-note">Good fit with trade-offs · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Deep analytical work with lower urgency and strong remote potential.</p><h3>The catch</h3><p>Fewer roles than general analytics; advanced education is often expected.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want deep analytical work and are willing to invest in quantitative training.</div><div class="profile-note action"><strong>First move:</strong> Complete one statistics project with a clear method, result and limitation.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-2041 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-information-security-analysts">Information Security Analyst</h2><p class="role-meta">BLS occupation: Information Security Analysts · SOC 15-1212</p><p class="profile-lede">Median pay of <strong>$129,180</strong>, projected growth of <strong>+21%</strong>, and about <strong>14,100</strong> openings a year. Soft Life Score: <strong>68/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$129,180</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$75,090–$199,850</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+21%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">14,100</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:86.1%"></span></span><span class="bar-value">86</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:50.0%"></span></span><span class="bar-value">50</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:40.0%"></span></span><span class="bar-value">40</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:71.3%"></span></span><span class="bar-value">71</span></div><p class="bar-note">Good fit with trade-offs · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>GRC, audit and security engineering can be calm, structured and remote.</p><h3>The catch</h3><p>Incident response can include on-call; aim for governance, risk or compliance.</p></div></div><div class="profile-note"><strong>Best for:</strong> You are methodical, risk-aware and prefer policy and controls to firefighting.</div><div class="profile-note action"><strong>First move:</strong> Target GRC, audit or compliance roles rather than incident response; list three relevant certifications.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-1212 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-technical-writers">Technical Writer</h2><p class="role-meta">BLS occupation: Technical Writers · SOC 27-3042</p><p class="profile-lede">Median pay of <strong>$90,390</strong>, projected growth of <strong>+0.8%</strong>, and about <strong>3,200</strong> openings a year. Soft Life Score: <strong>68/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$90,390</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$57,440–$145,270</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+0.8%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">3,200</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">65.4%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:60.3%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:33.8%"></span></span><span class="bar-value">34</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Quiet, deep-focus work with predictable deadlines and remote flexibility.</p><h3>The catch</h3><p>BLS projects slow growth; AI tools are changing documentation work.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like explaining complex things clearly and protecting long stretches of focus.</div><div class="profile-note action"><strong>First move:</strong> Rewrite one confusing help page for a real product and add it to a small portfolio.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 27-3042 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#2a0f4a"><div class="profile-band"><span class="track-dot"></span>Data &amp; Tech</div><h2 id="role-operations-research-analysts">Operations Research Analyst</h2><p class="role-meta">BLS occupation: Operations Research Analysts · SOC 15-2031</p><p class="profile-lede">Median pay of <strong>$88,940</strong>, projected growth of <strong>+11.9%</strong>, and about <strong>7,500</strong> openings a year. Soft Life Score: <strong>66/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$88,940</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$57,060–$159,910</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+11.9%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">7,500</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:59.3%"></span></span><span class="bar-value">59</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:53.9%"></span></span><span class="bar-value">54</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Structured problem-solving with less urgency than many tech roles.</p><h3>The catch</h3><p>The work can be abstract; you need to explain models to non-technical people.</p></div></div><div class="profile-note"><strong>Best for:</strong> You enjoy models, spreadsheets and making messy systems measurable.</div><div class="profile-note action"><strong>First move:</strong> Solve one optimisation or scheduling problem and explain the trade-offs in plain English.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-2031 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-management-analysts">Management Analyst</h2><p class="role-meta">BLS occupation: Management Analysts · SOC 13-1111</p><p class="profile-lede">Median pay of <strong>$101,860</strong>, projected growth of <strong>+10.1%</strong>, and about <strong>94,100</strong> openings a year. Soft Life Score: <strong>71/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$101,860</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$60,640–$171,640</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+10.1%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">94,100</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:67.9%"></span></span><span class="bar-value">68</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:85.2%"></span></span><span class="bar-value">85</span></div><p class="bar-note">Strong fit · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Advisory work with transferable skills and remote-friendly employers.</p><h3>The catch</h3><p>Client deadlines and travel vary; junior roles can be execution-heavy.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like diagnosing problems and advising without owning the whole operation.</div><div class="profile-note action"><strong>First move:</strong> Pick one industry, interview two analysts and map the three most common entry routes.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 13-1111 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-actuaries">Actuary</h2><p class="role-meta">BLS occupation: Actuaries · SOC 15-2011</p><p class="profile-lede">Median pay of <strong>$130,000</strong>, projected growth of <strong>+9.2%</strong>, and about <strong>1,500</strong> openings a year. Soft Life Score: <strong>69/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$130,000</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$78,570–$215,100</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+9.2%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">1,500</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:86.7%"></span></span><span class="bar-value">87</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:40.0%"></span></span><span class="bar-value">40</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:45.0%"></span></span><span class="bar-value">45</span></div><p class="bar-note">Good fit with trade-offs · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Quiet, analytical work with a famously steady 40-hour norm.</p><h3>The catch</h3><p>Exam progression is demanding and can take years.</p></div></div><div class="profile-note"><strong>Best for:</strong> You enjoy mathematics, long-term thinking and a steady professional rhythm.</div><div class="profile-note action"><strong>First move:</strong> Check the exam sequence and cost, then speak to one actuary before committing.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 15-2011 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-training-and-development-specialists">Training &amp; Development Specialist</h2><p class="role-meta">BLS occupation: Training and Development Specialists · SOC 13-1151</p><p class="profile-lede">Median pay of <strong>$69,280</strong>, projected growth of <strong>+10.8%</strong>, and about <strong>46,000</strong> openings a year. Soft Life Score: <strong>68/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$69,280</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$38,760–$123,250</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+10.8%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">46,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:46.2%"></span></span><span class="bar-value">46</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:83.0%"></span></span><span class="bar-value">83</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Calm, people-facing work designing learning without constant emergencies.</p><h3>The catch</h3><p>Program launches create deadline clusters; corporate restructuring can affect roles.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like teaching adults without the unpredictability of a classroom.</div><div class="profile-note action"><strong>First move:</strong> Turn one skill you know into a 30-minute lesson with a worksheet and feedback form.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 13-1151 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-project-management-specialists">Project Management Specialist</h2><p class="role-meta">BLS occupation: Project Management Specialists · SOC 13-1082</p><p class="profile-lede">Median pay of <strong>$102,320</strong>, projected growth of <strong>+6.7%</strong>, and about <strong>76,500</strong> openings a year. Soft Life Score: <strong>65/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$102,320</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$61,580–$167,970</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+6.7%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">76,500</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:68.2%"></span></span><span class="bar-value">68</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Once workflows are set, the role can be check-ins rather than constant production.</p><h3>The catch</h3><p>Meetings, dependencies and escalations can fill the calendar.</p></div></div><div class="profile-note"><strong>Best for:</strong> You are organised, calm under pressure and like turning chaos into a sequence.</div><div class="profile-note action"><strong>First move:</strong> Document one real project end to end and practise a 15-minute status update.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 13-1082 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-human-resources-specialists">Human Resources Specialist</h2><p class="role-meta">BLS occupation: Human Resources Specialists · SOC 13-1071</p><p class="profile-lede">Median pay of <strong>$75,940</strong>, projected growth of <strong>+6.4%</strong>, and about <strong>73,700</strong> openings a year. Soft Life Score: <strong>65/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$75,940</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$47,180–$128,720</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+6.4%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">73,700</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">55.9%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:50.6%"></span></span><span class="bar-value">51</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:79.6%"></span></span><span class="bar-value">80</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Structured corporate work with predictable hours in many organizations.</p><h3>The catch</h3><p>Employee relations can be emotionally heavy; avoid crisis-heavy HR teams.</p></div></div><div class="profile-note"><strong>Best for:</strong> You are fair, organised and interested in how people experience work.</div><div class="profile-note action"><strong>First move:</strong> Choose one HR specialism, then list the certification and experience it requires.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 13-1071 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#6f8f7a"><div class="profile-band"><span class="track-dot"></span>Corporate &amp; Operations</div><h2 id="role-executive-secretaries-and-executive-administrative-assistants">Executive Assistant</h2><p class="role-meta">BLS occupation: Executive Secretaries and Executive Administrative Assistants · SOC 43-6011</p><p class="profile-lede">Median pay of <strong>$76,590</strong>, projected growth of <strong>+0%</strong>, and about <strong>43,300</strong> openings a year. Soft Life Score: <strong>65/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$76,590</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$50,560–$109,850</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+0%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">43,300</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">High school diploma or equivalent</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">25.1%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:51.1%"></span></span><span class="bar-value">51</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:64.6%"></span></span><span class="bar-value">65</span></div><p class="bar-note">Good fit with trade-offs · Lower barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Senior assistants can set the rhythm of a leader&#x27;s week and work remotely.</p><h3>The catch</h3><p>You absorb other people&#x27;s urgency unless you negotiate clear boundaries.</p></div></div><div class="profile-note"><strong>Best for:</strong> You are highly organised and want a trusted role close to decision-making.</div><div class="profile-note action"><strong>First move:</strong> Update your CV around calendar, inbox, travel and stakeholder management outcomes.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 43-6011 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-optometrists">Optometrist</h2><p class="role-meta">BLS occupation: Optometrists · SOC 29-1041</p><p class="profile-lede">Median pay of <strong>$136,570</strong>, projected growth of <strong>+9.5%</strong>, and about <strong>2,000</strong> openings a year. Soft Life Score: <strong>70/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$136,570</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$74,870–$202,180</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+9.5%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">2,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Doctoral or professional degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">13.1%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:91.0%"></span></span><span class="bar-value">91</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:20.0%"></span></span><span class="bar-value">20</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:45.9%"></span></span><span class="bar-value">46</span></div><p class="bar-note">Strong fit · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Appointment-based clinical work with no on-call emergencies for most roles.</p><h3>The catch</h3><p>Long, expensive education; retail targets can create pressure.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want clinical work with predictable appointments and strong income.</div><div class="profile-note action"><strong>First move:</strong> Compare three doctoral programmes on total cost, licensing and residency requirements.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 29-1041 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-dietitians-and-nutritionists">Dietitian / Nutritionist</h2><p class="role-meta">BLS occupation: Dietitians and Nutritionists · SOC 29-1031</p><p class="profile-lede">Median pay of <strong>$76,400</strong>, projected growth of <strong>+7.7%</strong>, and about <strong>5,700</strong> openings a year. Soft Life Score: <strong>66/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$76,400</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$49,090–$103,720</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+7.7%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">5,700</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">13.1%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:50.9%"></span></span><span class="bar-value">51</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:50.0%"></span></span><span class="bar-value">50</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:46.1%"></span></span><span class="bar-value">46</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Virtual consultations and calm, education-led client work are possible.</p><h3>The catch</h3><p>Insurance and client acquisition can complicate a private practice.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want to teach people practical health changes in a calm setting.</div><div class="profile-note action"><strong>First move:</strong> Check your country&#x27;s licensure route, then design one virtual consultation package.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 29-1031 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-dental-hygienists">Dental Hygienist</h2><p class="role-meta">BLS occupation: Dental Hygienists · SOC 29-1292</p><p class="profile-lede">Median pay of <strong>$98,100</strong>, projected growth of <strong>+8%</strong>, and about <strong>15,000</strong> openings a year. Soft Life Score: <strong>65/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$98,100</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$74,880–$126,050</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+8%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">15,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Associate&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">13.1%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:65.4%"></span></span><span class="bar-value">65</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:54.0%"></span></span><span class="bar-value">54</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>High hourly pay, appointment-based days and almost no take-home work.</p><h3>The catch</h3><p>Most roles are in-person and many are part-time; benefits vary.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want high hourly pay, patient contact and a clean end to the working day.</div><div class="profile-note action"><strong>First move:</strong> Shadow a hygienist and check local programme costs, licensing and part-time demand.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 29-1292 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-exercise-trainers-and-group-fitness-instructors">Exercise Trainer / Group Fitness Instructor</h2><p class="role-meta">BLS occupation: Exercise Trainers and Group Fitness Instructors · SOC 39-9031</p><p class="profile-lede">Median pay of <strong>$47,160</strong>, projected growth of <strong>+7.3%</strong>, and about <strong>68,000</strong> openings a year. Soft Life Score: <strong>65/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$47,160</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$28,800–$83,100</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+7.3%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">68,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">High school diploma or equivalent</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">10.7%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:31.4%"></span></span><span class="bar-value">31</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:80.9%"></span></span><span class="bar-value">81</span></div><p class="bar-note">Good fit with trade-offs · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>You choose your hours and can build a calm, appointment-based client base.</p><h3>The catch</h3><p>Entry pay is low and income is often part-time or variable.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want flexible hours and enjoy movement, coaching and client relationships.</div><div class="profile-note action"><strong>First move:</strong> Build a six-week small-group programme and test it with three paying clients.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 39-9031 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-audiologists">Audiologist</h2><p class="role-meta">BLS occupation: Audiologists · SOC 29-1181</p><p class="profile-lede">Median pay of <strong>$95,780</strong>, projected growth of <strong>+11%</strong>, and about <strong>600</strong> openings a year. Soft Life Score: <strong>62/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$95,780</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$64,610–$133,120</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+11%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">600</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Doctoral or professional degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">13.1%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:63.9%"></span></span><span class="bar-value">64</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:20.0%"></span></span><span class="bar-value">20</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:47.0%"></span></span><span class="bar-value">47</span></div><p class="bar-note">Conditional fit · High barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Calm, appointment-based care with a clear clinical rhythm.</p><h3>The catch</h3><p>Doctoral education is expensive; demand and pay vary by location.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want calm, appointment-based healthcare with a clear clinical purpose.</div><div class="profile-note action"><strong>First move:</strong> Speak to an audiologist about doctoral study, licensure and the day-to-day patient mix.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 29-1181 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-massage-therapists">Massage Therapist</h2><p class="role-meta">BLS occupation: Massage Therapists · SOC 31-9011</p><p class="profile-lede">Median pay of <strong>$58,450</strong>, projected growth of <strong>+15.3%</strong>, and about <strong>20,400</strong> openings a year. Soft Life Score: <strong>60/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$58,450</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$33,640–$100,200</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+15.3%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">20,400</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Postsecondary nondegree award</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">10.7%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:39.0%"></span></span><span class="bar-value">39</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:69.3%"></span></span><span class="bar-value">69</span></div><p class="bar-note">Conditional fit · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Appointment-based work with strong control over your weekly schedule.</p><h3>The catch</h3><p>The work is physically demanding and income depends on client volume.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want appointment-based bodywork and control over your weekly load.</div><div class="profile-note action"><strong>First move:</strong> Calculate a sustainable weekly client limit before you price your sessions.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 31-9011 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#b85c72"><div class="profile-band"><span class="track-dot"></span>Wellness &amp; Care</div><h2 id="role-skincare-specialists">Skincare Specialist</h2><p class="role-meta">BLS occupation: Skincare Specialists · SOC 39-5094</p><p class="profile-lede">Median pay of <strong>$45,330</strong>, projected growth of <strong>+8.8%</strong>, and about <strong>14,200</strong> openings a year. Soft Life Score: <strong>57/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$45,330</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$29,580–$82,050</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+8.8%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">14,200</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Postsecondary nondegree award</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">10.7%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:30.2%"></span></span><span class="bar-value">30</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:54.6%"></span></span><span class="bar-value">55</span></div><p class="bar-note">Hard to make soft · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Client-booked days with a premium service and low take-home admin.</p><h3>The catch</h3><p>Income depends on bookings and tips; retail targets are common.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want hands-on client work with a bookable calendar and low admin.</div><div class="profile-note action"><strong>First move:</strong> Price a three-treatment package and calculate your break-even number of clients.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 39-5094 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#a8792f"><div class="profile-band"><span class="track-dot"></span>Creative &amp; Client</div><h2 id="role-writers-and-authors">Writer / Author</h2><p class="role-meta">BLS occupation: Writers and Authors · SOC 27-3043</p><p class="profile-lede">Median pay of <strong>$76,910</strong>, projected growth of <strong>-0.3%</strong>, and about <strong>11,900</strong> openings a year. Soft Life Score: <strong>64/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$76,910</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$44,310–$139,870</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">-0.3%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">11,900</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">46.8%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:51.3%"></span></span><span class="bar-value">51</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:90.0%"></span></span><span class="bar-value">90</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:39.1%"></span></span><span class="bar-value">39</span></div><p class="bar-note">Conditional fit · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Deep-focus work with location freedom and a wide range of business models.</p><h3>The catch</h3><p>Income is uneven; you must sell, publish and manage clients.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want deep-focus work and the freedom to choose your publishing model.</div><div class="profile-note action"><strong>First move:</strong> Publish one useful article or short guide and track how readers respond.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 27-3043 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#a8792f"><div class="profile-band"><span class="track-dot"></span>Creative &amp; Client</div><h2 id="role-graphic-designers">Graphic Designer</h2><p class="role-meta">BLS occupation: Graphic Designers · SOC 27-1024</p><p class="profile-lede">Median pay of <strong>$62,960</strong>, projected growth of <strong>-1.7%</strong>, and about <strong>16,000</strong> openings a year. Soft Life Score: <strong>59/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$62,960</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$39,520–$104,910</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">-1.7%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">16,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">46.8%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:42.0%"></span></span><span class="bar-value">42</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:40.2%"></span></span><span class="bar-value">40</span></div><p class="bar-note">Hard to make soft · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Creative, project-based work with remote and freelance options.</p><h3>The catch</h3><p>BLS projects slow decline; generalists face price pressure from AI and templates.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want visual, project-based work with the option to freelance.</div><div class="profile-note action"><strong>First move:</strong> Create three portfolio pieces for one niche instead of ten unrelated samples.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 27-1024 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#a8792f"><div class="profile-band"><span class="track-dot"></span>Creative &amp; Client</div><h2 id="role-travel-agents">Travel Agent</h2><p class="role-meta">BLS occupation: Travel Agents · SOC 41-3041</p><p class="profile-lede">Median pay of <strong>$50,160</strong>, projected growth of <strong>+0.2%</strong>, and about <strong>5,900</strong> openings a year. Soft Life Score: <strong>57/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$50,160</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$34,610–$76,660</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+0.2%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">5,900</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">High school diploma or equivalent</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">23.8%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:33.4%"></span></span><span class="bar-value">33</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:70.0%"></span></span><span class="bar-value">70</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:80.0%"></span></span><span class="bar-value">80</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:35.0%"></span></span><span class="bar-value">35</span></div><p class="bar-note">Hard to make soft · Lower barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Client-scheduled work that can be done remotely with low entry cost.</p><h3>The catch</h3><p>Median pay is low; commissions and client service drive the real income.</p></div></div><div class="profile-note"><strong>Best for:</strong> You want client-scheduled work, low entry cost and a travel-linked business.</div><div class="profile-note action"><strong>First move:</strong> Plan one complex itinerary, price your service fee and test it with a real client.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 41-3041 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section><section class="profile" style="--track:#a8792f"><div class="profile-band"><span class="track-dot"></span>Creative &amp; Client</div><h2 id="role-public-relations-specialists">Public Relations Specialist</h2><p class="role-meta">BLS occupation: Public Relations Specialists · SOC 27-3031</p><p class="profile-lede">Median pay of <strong>$74,750</strong>, projected growth of <strong>+1.8%</strong>, and about <strong>23,000</strong> openings a year. Soft Life Score: <strong>54/100</strong>.</p><table class="stat-grid"><tr><td><span class="stat-label">Median pay</span><span class="stat-value">$74,750</span></td><td><span class="stat-label">10th–90th percentile</span><span class="stat-value">$44,110–$135,150</span></td><td><span class="stat-label">Projected growth</span><span class="stat-value">+1.8%</span></td></tr><tr><td><span class="stat-label">Openings per year</span><span class="stat-value">23,000</span></td><td><span class="stat-label">Typical education</span><span class="stat-value">Bachelor&#x27;s degree</span></td><td><span class="stat-label">Telework group rate</span><span class="stat-value">46.8%</span></td></tr></table><div class="two-col"><div class="signal-panel"><h3>The soft-life signals</h3><div class="bar-row"><span class="bar-label">Income</span><span class="bar-track"><span class="bar-fill" style="width:49.8%"></span></span><span class="bar-value">50</span></div><div class="bar-row"><span class="bar-label">Schedule</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Energy</span><span class="bar-track"><span class="bar-fill" style="width:50.0%"></span></span><span class="bar-value">50</span></div><div class="bar-row"><span class="bar-label">Entry ease</span><span class="bar-track"><span class="bar-fill" style="width:60.0%"></span></span><span class="bar-value">60</span></div><div class="bar-row"><span class="bar-label">Demand</span><span class="bar-track"><span class="bar-fill" style="width:51.1%"></span></span><span class="bar-value">51</span></div><p class="bar-note">Hard to make soft · Moderate barrier</p></div><div class="copy-panel"><h3>The soft version</h3><p>Relationship-led work with flexible hours outside a strict desk.</p><h3>The catch</h3><p>Crises and news cycles create real urgency; on-call is common.</p></div></div><div class="profile-note"><strong>Best for:</strong> You like writing, relationships and shaping how organisations are understood.</div><div class="profile-note action"><strong>First move:</strong> Write one media pitch and one crisis-holding statement for a fictional brand.</div><p class="profile-foot">BLS OEWS May 2025 · SOC 27-3031 · Projections 2025–35 · Telework is an occupational-group proxy, not a role guarantee.</p></section></p></section><section class="chapter"><h1 id="what-the-research-got-wrong">What the research got wrong</h1>
+<p>The original career research was not useless. It identified the right tension:
+women are looking for work that pays enough without taking the whole day, and
+the most attractive paths are often the least stable. The problem is the salary
+math.</p>
+<p>Viral career lists mix three different numbers:</p>
+<ol>
+<li>What a top performer reports.</li>
+<li>What a course creator needs you to believe is possible.</li>
+<li>What a median worker actually earns.</li>
+</ol>
+<p>When those numbers are collapsed into one range, the range sounds authoritative
+and becomes impossible to check. This chapter checks it.</p>
+<p><figure class="chart"><img src="charts/claims.svg" alt="Range chart comparing viral salary claims with BLS percentiles."><figcaption>Source-research salary ranges against BLS 10th–90th percentile ranges. The source range is not always for the exact BLS occupation; see the audit table.</figcaption></figure></p>
+<p>The chart compares the ranges in the source research with the BLS 10th–90th
+percentile range and median for the closest matching occupation. Where the
+source used a title that BLS does not track, the closest occupational match is
+named. The comparison is directional, not exact.</p>
+<h2 id="the-audit">The audit</h2>
+<p><table class="claims-table"><thead><tr><th>Claim in source</th><th>BLS match</th><th>Median</th><th>10th–90th</th><th>Audit</th></tr></thead><tbody><tr class="good"><td><strong>$110k–$180k</strong></td><td>Data scientists</td><td class="num">$120,230</td><td class="num">$67,240–$199,130</td><td>Supported, but the top end is understated</td></tr><tr class="good"><td><strong>$90k–$160k</strong></td><td>Information security analysts</td><td class="num">$129,180</td><td class="num">$75,090–$199,850</td><td>Supported; the 10th percentile sits below the claimed floor</td></tr><tr class="warn"><td><strong>$90k–$105k</strong></td><td>Technical writers</td><td class="num">$90,390</td><td class="num">$57,440–$145,270</td><td>Median supported; the range hides junior pay and a higher ceiling</td></tr><tr class="good"><td><strong>$75k–$150k</strong></td><td>Web and digital interface designers</td><td class="num">$104,000</td><td class="num">$53,750–$201,550</td><td>Plausible for mid-level; the top end is understated</td></tr><tr class="warn"><td><strong>$100k–$130k</strong></td><td>Project management specialists</td><td class="num">$102,320</td><td class="num">$61,580–$167,970</td><td>Median supported; $100k is not an entry wage</td></tr><tr class="good"><td><strong>$105k–$145k</strong></td><td>Actuaries</td><td class="num">$130,000</td><td class="num">$78,570–$215,100</td><td>Supported, but ignores a multi-year exam path</td></tr><tr class="good"><td><strong>$85k–$115k</strong></td><td>Dental hygienists</td><td class="num">$98,100</td><td class="num">$74,880–$126,050</td><td>Supported; licensing and in-person work are required</td></tr><tr class="good"><td><strong>$90k–$130k</strong></td><td>Optometrists</td><td class="num">$136,570</td><td class="num">$74,870–$202,180</td><td>Understated; a doctoral degree is required</td></tr><tr class="good"><td><strong>$90k–$130k</strong></td><td>Audiologists</td><td class="num">$95,780</td><td class="num">$64,610–$133,120</td><td>Broadly supported; a doctorate is now standard</td></tr><tr class="good"><td><strong>$70k–$100k</strong></td><td>Dietitians and nutritionists</td><td class="num">$76,400</td><td class="num">$49,090–$103,720</td><td>Supported; licensure varies by state</td></tr><tr class="bad"><td><strong>$60k–$100k</strong></td><td>Exercise trainers and group fitness instructors</td><td class="num">$47,160</td><td class="num">$28,800–$83,100</td><td>Overstated at the median; the top decile clears the claim</td></tr><tr class="bad"><td><strong>$60k–$125k</strong></td><td>Skincare specialists</td><td class="num">$45,330</td><td class="num">$29,580–$82,050</td><td>Overstated; the median is less than half the claimed floor</td></tr><tr class="bad"><td><strong>$60k–$150k</strong></td><td>Travel agents</td><td class="num">$50,160</td><td class="num">$34,610–$76,660</td><td>Overstated; commission outliers drive the top end</td></tr><tr class="warn"><td><strong>$75k–$110k</strong></td><td>Executive assistants</td><td class="num">$76,590</td><td class="num">$50,560–$109,850</td><td>Supported at the top of the range, not at entry</td></tr><tr class="warn"><td><strong>$65k–$130k</strong></td><td>Writers and authors</td><td class="num">$76,910</td><td class="num">$44,310–$139,870</td><td>Plausible for experienced specialists; highly variable</td></tr><tr class="bad"><td><strong>$90k–$100k</strong></td><td>Medical records specialists</td><td class="num">$51,140</td><td class="num">$37,000–$81,150</td><td>Overstated; the BLS median is about half the claimed floor</td></tr></tbody></table></p>
+<h2 id="the-three-patterns">The three patterns</h2>
+<p><strong>Pattern 1: Tech claims usually survive; wellness and beauty claims usually
+do not.</strong> Data scientist, cybersecurity, technical writer, UX/UI, project
+management, and actuary are broadly supported. Exercise trainer, skincare
+specialist, travel agent, and medical coder are not. The difference is not
+that wellness work is bad. It is that the market pays a median wage, and the
+content economy sells the top decile.</p>
+<p><strong>Pattern 2: The lower bound is often a mid-career number.</strong> A $90,000 floor for
+technical writing is above the BLS 10th percentile ($57,440). A $100,000 floor
+for project management is essentially the median ($102,320). These numbers can
+be real for someone with experience. They are not entry numbers.</p>
+<p><strong>Pattern 3: The highest-ceiling roles are missing from the fantasy.</strong> Actuary,
+optometrist, and information security analyst have high medians and high top-end
+pay, but they require exams, doctoral study, or years of specialist experience.
+The soft-life version of these roles is real. It is just not fast.</p>
+<h2 id="what-we-removed">What we removed</h2>
+<p>We removed medical coding from the 24-role list because the source claimed
+$90,000–$100,000, while the BLS median for medical records specialists is
+$51,140. The occupation is projected to grow 7.8 percent and has 14,000 annual
+openings, so it may still be a reasonable local choice. It is not a six-figure
+soft-life shortcut.</p>
+<p>We also did not include “customer success manager,” “revenue cycle analyst,” or
+“brand strategist” as standalone roles because BLS does not track those titles
+cleanly. That does not mean they are bad jobs. It means a national salary claim
+would be invented.</p>
+<h2 id="how-to-use-a-salary-claim">How to use a salary claim</h2>
+<p>When you see a career salary range, ask:</p>
+<ul>
+<li>What is the exact occupation, not the job title?</li>
+<li>Is this mean, median, or a selected sample?</li>
+<li>Is it national, state, or city?</li>
+<li>Does it include commission, equity, or bonuses?</li>
+<li>Is it full-time, part-time, or freelance?</li>
+<li>What is the 10th percentile?</li>
+<li>What is the entry path and who pays for it?</li>
+</ul>
+<p>If the source cannot answer those questions, treat the number as marketing, not
+data.</p>
+<blockquote>
+<p><strong>Action:</strong> Find one salary claim that made you consider a career change. Look
+up the matching BLS occupation. Write down the median, the 10th percentile,
+and the entry education. Does the claim still hold?</p>
+</blockquote></section><section class="chapter"><h1 id="build-your-three-career-shortlist">Build your three-career shortlist</h1>
+<p>The goal of this chapter is not to choose a career. It is to choose three
+directions worth testing. Testing is cheaper than regret.</p>
+<p>Set a timer for 30 minutes. Answer in order. Do not edit yourself while you
+write.</p>
+<h2 id="step-1-define-enough">Step 1: Define enough</h2>
+<p>Write the annual income you need, before tax, to cover:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th style="text-align: right;">Annual amount</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Housing</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Food and household</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Transport</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Debt payments</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Health and insurance</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Care responsibilities</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Savings and emergency fund</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Rest, travel, and life</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td><strong>Your enough number</strong></td>
+<td style="text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<p>Your enough number is not your dream salary. It is the floor that lets you say
+no to work that costs too much.</p>
+<h2 id="step-2-name-your-non-negotiables">Step 2: Name your non-negotiables</h2>
+<p>Circle the three that matter most for the next 12 months:</p>
+<ul>
+<li>Predictable hours</li>
+<li>Remote or hybrid work</li>
+<li>High income</li>
+<li>Low physical strain</li>
+<li>Low emotional labour</li>
+<li>Fast entry</li>
+<li>Part-time option</li>
+<li>Autonomy</li>
+<li>Creative work</li>
+<li>Helping people</li>
+<li>Job security</li>
+<li>A path to self-employment</li>
+</ul>
+<p>Write one sentence for each:</p>
+<ol>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+<li>
+<hr />
+</li>
+</ol>
+<h2 id="step-3-filter-the-24-roles">Step 3: Filter the 24 roles</h2>
+<p>Go back to the profiles. Mark every role:</p>
+<ul>
+<li><strong>GREEN</strong> if the median is above your enough number and the catch is
+  survivable.</li>
+<li><strong>AMBER</strong> if the work fits but the pay, entry path, or schedule needs a
+  compromise.</li>
+<li><strong>RED</strong> if the catch is a dealbreaker.</li>
+</ul>
+<p>You should have no more than eight greens and ambers. If you have more, raise
+your enough number or tighten your non-negotiables.</p>
+<h2 id="step-4-rescore-your-shortlist">Step 4: Rescore your shortlist</h2>
+<p>Use the formula from Chapter 2, but change the weights to match your life. The
+five weights must add up to 100 percent.</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th style="text-align: right;">Income %</th>
+<th style="text-align: right;">Schedule %</th>
+<th style="text-align: right;">Energy %</th>
+<th style="text-align: right;">Entry %</th>
+<th style="text-align: right;">Demand %</th>
+<th style="text-align: right;">Your score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<p>Keep the three highest scores. Then apply one override: if a role fails a
+non-negotiable, remove it even if it scores well.</p>
+<h2 id="step-5-design-three-tests">Step 5: Design three tests</h2>
+<p>A test is a small, time-boxed action that produces evidence. It is not “do more
+research.” Use one of each:</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Question it answers</th>
+<th>Timebox</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Conversation</td>
+<td>Do people doing this job describe a life I want?</td>
+<td>2 weeks, 3 conversations</td>
+</tr>
+<tr>
+<td>Artifact</td>
+<td>Can I produce the core output at a basic standard?</td>
+<td>2–4 weeks</td>
+</tr>
+<tr>
+<td>Real-world test</td>
+<td>Will someone pay for this, hire me for it, or let me shadow?</td>
+<td>4–6 weeks</td>
+</tr>
+</tbody>
+</table>
+<h3 id="my-three-tests">My three tests</h3>
+<p><strong>Direction 1:</strong> ______________________________________________</p>
+<ul>
+<li>Conversation with: ________________________________________</li>
+<li>Artifact: __________________________________________________</li>
+<li>Real-world test: ___________________________________________</li>
+<li>Decision date: _____________________________________________</li>
+</ul>
+<p><strong>Direction 2:</strong> ______________________________________________</p>
+<ul>
+<li>Conversation with: ________________________________________</li>
+<li>Artifact: __________________________________________________</li>
+<li>Real-world test: ___________________________________________</li>
+<li>Decision date: _____________________________________________</li>
+</ul>
+<p><strong>Direction 3:</strong> ______________________________________________</p>
+<ul>
+<li>Conversation with: ________________________________________</li>
+<li>Artifact: __________________________________________________</li>
+<li>Real-world test: ___________________________________________</li>
+<li>Decision date: _____________________________________________</li>
+</ul>
+<h2 id="step-6-set-the-decision-rules">Step 6: Set the decision rules</h2>
+<p>Before you start testing, decide how you will decide. Write your rules here:</p>
+<ul>
+<li>I will continue a direction if ___________________________________</li>
+<li>I will pause a direction if _____________________________________</li>
+<li>I will stop a direction if ______________________________________</li>
+<li>The maximum I will spend testing all three directions is ____________</li>
+<li>The latest date I will make a direction decision is ________________</li>
+</ul>
+<h2 id="the-three-test-rule">The three-test rule</h2>
+<p>Do not quit your job after one good conversation. Do not abandon a direction
+after one awkward informational interview. Run all three tests. Then decide
+with evidence.</p>
+<p>The point is not certainty. The point is to stop guessing.</p></section><section class="chapter"><h1 id="the-90-day-career-pivot">The 90-day career pivot</h1>
+<p>Most career changes fail for a boring reason: they are designed as a leap
+instead of a sequence. This plan assumes you are still working. It asks for
+about five hours a week, not a heroic life overhaul.</p>
+<p>The output after 90 days is not a new job. It is a decision you can defend, a
+small piece of proof, and a network that knows what you are moving toward.</p>
+<h2 id="the-weekly-rhythm">The weekly rhythm</h2>
+<ul>
+<li><strong>Monday:</strong> 30 minutes planning.</li>
+<li><strong>Tuesday and Thursday:</strong> 90 minutes of focused work.</li>
+<li><strong>Saturday:</strong> 2 hours for conversations, practice, or applications.</li>
+<li><strong>Sunday:</strong> 30 minutes review.</li>
+</ul>
+<p>Protect the time. If a week collapses, do the smallest version, not nothing.</p>
+<h2 id="days-114-audit-the-current-life">Days 1–14: Audit the current life</h2>
+<p><strong>Goal:</strong> understand what is actually costing you energy.</p>
+<ul>
+<li>Track your time for five working days. Include commute, care work, and
+  recovery.</li>
+<li>Rate each workday from 1 to 5 on energy at 6 p.m.</li>
+<li>List the three tasks that drain you most and the three that make time pass
+  well.</li>
+<li>Calculate your enough number from Chapter 6.</li>
+<li>Write your non-negotiables.</li>
+</ul>
+<p><strong>Output:</strong> a one-page current-life audit.</p>
+<p><strong>Do not:</strong> use this as a reason to quit. Use it as a specification.</p>
+<h2 id="days-1530-validate-the-shortlist">Days 15–30: Validate the shortlist</h2>
+<p><strong>Goal:</strong> replace assumptions with conversations.</p>
+<ul>
+<li>Book three conversations per shortlisted direction. Use the scripts in
+  Chapter 8 and the questions in the back matter.</li>
+<li>Ask about the ordinary week, not the highlight reel: schedule, energy,
+  management, entry path, and what they wish they had known.</li>
+<li>Ask for one introduction to someone with a different employer or contract.</li>
+<li>Record the answers in the same format for every role.</li>
+</ul>
+<p><strong>Output:</strong> nine conversation notes and one updated shortlist.</p>
+<p><strong>Kill criterion:</strong> if three people in a direction describe a life you do not
+want, remove it.</p>
+<h2 id="days-3160-build-one-proof-artifact">Days 31–60: Build one proof artifact</h2>
+<p><strong>Goal:</strong> produce evidence that you can do the core work.</p>
+<p>Choose one artifact per direction, not a certification collection:</p>
+<ul>
+<li><strong>Data &amp; tech:</strong> a small analysis, dashboard, or documented automation.</li>
+<li><strong>Corporate &amp; operations:</strong> a process map, project plan, or policy rewrite.</li>
+<li><strong>Wellness &amp; care:</strong> a service menu, client intake, or supervised practice
+  session.</li>
+<li><strong>Creative &amp; client:</strong> a niche portfolio piece, pitch, or sample campaign.</li>
+</ul>
+<p>Spend no more than 20 hours per artifact. The point is evidence, not perfection.</p>
+<p><strong>Output:</strong> one artifact you can show, plus a one-page explanation of the
+problem, the decision, and the result.</p>
+<h2 id="days-6175-test-the-market">Days 61–75: Test the market</h2>
+<p><strong>Goal:</strong> find out whether the market agrees with you.</p>
+<p>Use one of these tests:</p>
+<ul>
+<li>Apply to three real roles and track responses.</li>
+<li>Offer a small paid pilot to three people.</li>
+<li>Ask for a shadowing day or a freelance trial.</li>
+<li>Run a 30-minute informational workshop and collect feedback.</li>
+</ul>
+<p>Do not rely on friends saying “you would be good at this.” Look for a stranger
+who will pay, hire, or refer.</p>
+<p><strong>Output:</strong> three market signals, positive or negative.</p>
+<h2 id="days-7690-decide-and-package">Days 76–90: Decide and package</h2>
+<p><strong>Goal:</strong> choose a direction and make the next step obvious.</p>
+<ul>
+<li>Review the evidence from all three tests.</li>
+<li>Score the directions again with your own weights.</li>
+<li>Choose one primary direction and one backup.</li>
+<li>Rewrite your CV or profile around the primary direction.</li>
+<li>Write a 30-second explanation of the transition.</li>
+<li>Ask three people for one specific introduction.</li>
+<li>Set the next 90-day goal.</li>
+</ul>
+<p><strong>Output:</strong> a one-page career decision brief.</p>
+<h2 id="the-decision-brief">The decision brief</h2>
+<p>Write no more than one page:</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direction I am choosing</td>
+<td></td>
+</tr>
+<tr>
+<td>Why this direction, in one sentence</td>
+<td></td>
+</tr>
+<tr>
+<td>Evidence that supports it</td>
+<td></td>
+</tr>
+<tr>
+<td>Biggest risk</td>
+<td></td>
+</tr>
+<tr>
+<td>How I will test the risk in 30 days</td>
+<td></td>
+</tr>
+<tr>
+<td>Income target for year one</td>
+<td></td>
+</tr>
+<tr>
+<td>Schedule non-negotiable</td>
+<td></td>
+</tr>
+<tr>
+<td>Next three actions</td>
+<td></td>
+</tr>
+<tr>
+<td>Decision review date</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="if-you-need-income-now">If you need income now</h2>
+<p>Run the plan in parallel with a cash-flow job. The cash-flow job is not a
+failure. It buys you the time to test. Choose work that protects your energy
+and schedule, even if it is not the final direction.</p>
+<h2 id="if-you-are-already-burned-out">If you are already burned out</h2>
+<p>Reduce the plan to three actions:</p>
+<ol>
+<li>One conversation.</li>
+<li>One artifact.</li>
+<li>One application or paid test.</li>
+</ol>
+<p>Do not use a career change as the only recovery plan. Rest is not a reward for
+finishing the pivot. It is part of the specification.</p></section><section class="chapter"><h1 id="negotiate-the-conditions-not-just-the-number">Negotiate the conditions, not just the number</h1>
+<p>A higher salary cannot fix a schedule that has no room for your life. The
+strongest negotiation asks for the conditions that make the work sustainable
+and frames them as a business case, not a personal favour.</p>
+<p>Use the BLS median as context, not as your anchor. Your anchor is the value you
+bring, the market for your specific skills, and your enough number.</p>
+<h2 id="before-the-conversation">Before the conversation</h2>
+<p>Write four numbers:</p>
+<ol>
+<li>Your <strong>walk-away number</strong>: the minimum you can accept without resentment.</li>
+<li>Your <strong>target number</strong>: the number that makes the move worth it.</li>
+<li>Your <strong>market range</strong>: the BLS 10th–90th percentile for the matching role,
+   adjusted for your city, seniority, and industry.</li>
+<li>Your <strong>conditions budget</strong>: the schedule, location, or support you would
+   trade a small amount of salary for.</li>
+</ol>
+<p>Then write one sentence:</p>
+<blockquote>
+<p>“I am looking for [target] with [condition], because [specific value I bring].”</p>
+</blockquote>
+<h2 id="script-1-remote-or-hybrid">Script 1: Remote or hybrid</h2>
+<blockquote>
+<p>“I want to make sure I can do this role at the level you need. The work is
+[deliverable-heavy / collaborative / independent], and my best output happens
+when I have [two uninterrupted days / a predictable remote block]. Can we
+agree on a 90-day trial with [two remote days] and a review against
+[specific outcomes]?”</p>
+</blockquote>
+<p>Why it works: it offers a trial and a metric instead of an identity debate.</p>
+<h2 id="script-2-flexible-hours">Script 2: Flexible hours</h2>
+<blockquote>
+<p>“My schedule needs to flex around [care / health / commute]. I can commit to
+being available for [core hours] and delivering [specific outcome] by
+[deadline]. Would a core-hours arrangement work?”</p>
+</blockquote>
+<p>Do not say “I need flexibility” without a boundary. Say what you will protect
+and what the team gets in return.</p>
+<h2 id="script-3-part-time-or-reduced-load">Script 3: Part-time or reduced load</h2>
+<blockquote>
+<p>“I want to stay and do this work well. I am proposing a [0.8 FTE / four-day]
+schedule for the next six months, with [scope change] and [success measure].
+If the outcomes hold, can we review the arrangement?”</p>
+</blockquote>
+<p>Part-time is easier to approve when it comes with a scoped reduction, not the
+same workload at a lower salary.</p>
+<h2 id="script-4-workload">Script 4: Workload</h2>
+<blockquote>
+<p>“I can do A and B well, or A, B, and C at a lower standard. Which matters most
+this quarter?”</p>
+</blockquote>
+<p>This is not a refusal. It is a prioritisation request. Put it in writing after
+the meeting.</p>
+<h2 id="script-5-salary">Script 5: Salary</h2>
+<blockquote>
+<p>“Based on the scope of this role and the market range for [occupation] in
+[location], I am targeting [number]. I have [specific evidence]. Is there
+flexibility in the base?”</p>
+</blockquote>
+<p>If the answer is no, ask about:</p>
+<ul>
+<li>a signing bonus;</li>
+<li>an early review at six months;</li>
+<li>additional paid leave;</li>
+<li>professional development budget;</li>
+<li>remote or flexible days;</li>
+<li>a title change that supports the next move.</li>
+</ul>
+<h2 id="script-6-promotion">Script 6: Promotion</h2>
+<blockquote>
+<p>“I want to be considered for [role] in the next cycle. The difference between
+my current scope and that role is [gap]. I propose [specific project] to close
+it. Can we agree on the evidence you would need to see by [date]?”</p>
+</blockquote>
+<p>Promotion conversations fail when they are about time served. Make them about
+scope and evidence.</p>
+<h2 id="script-7-the-trial">Script 7: The trial</h2>
+<blockquote>
+<p>“Before we make a permanent change, can we run a 60-day trial with [specific
+arrangement] and review [specific metrics]? If it is not working, we revert
+without drama.”</p>
+</blockquote>
+<p>The trial lowers the risk for both sides. Use it for remote work, reduced
+hours, a new role, or a return after leave.</p>
+<h2 id="when-they-say-no">When they say no</h2>
+<p>A no is information. Ask:</p>
+<ul>
+<li>“What would need to be true for this to be possible?”</li>
+<li>“Is this a no for now, or a no for this role?”</li>
+<li>“What trade-off would make it work?”</li>
+</ul>
+<p>If the answer is still no, you have learned something about the employer. That
+is useful. It may be the evidence you need to move.</p>
+<h2 id="the-negotiation-checklist">The negotiation checklist</h2>
+<ul>
+<li>[ ] I know my enough number.</li>
+<li>[ ] I know my walk-away number.</li>
+<li>[ ] I have the BLS range for the matching occupation.</li>
+<li>[ ] I have one page of evidence.</li>
+<li>[ ] I am asking for a condition, not just a feeling.</li>
+<li>[ ] I have a trial or review date.</li>
+<li>[ ] I have the offer in writing.</li>
+<li>[ ] I have checked the benefits and the total package.</li>
+<li>[ ] I have a decision date and a backup plan.</li>
+</ul>
+<blockquote>
+<p><strong>Action:</strong> Write your next negotiation as one sentence: “I am asking for
+[condition] because [business reason], and I will measure it by [metric].”</p>
+</blockquote></section><section class="chapter"><h1 id="if-you-want-to-own-the-business">If you want to own the business</h1>
+<p>Some readers will finish this guide and realise the problem is not the job. It
+is the employment model. If you want to own the business, the career data in
+this guide is still useful, but it answers a different question.</p>
+<p>BLS data tells you what employees earn in an occupation. It does not tell you
+what a solo consultant, coach, designer, or therapist earns after expenses.
+Those numbers depend on pricing, utilisation, marketing, and how much of the
+work you can sell before you deliver it.</p>
+<h2 id="the-honest-test">The honest test</h2>
+<p>A business is a better fit than a job if:</p>
+<ul>
+<li>You have a skill people already pay for.</li>
+<li>You can describe the outcome in one sentence.</li>
+<li>You can reach buyers without a large ad budget.</li>
+<li>You can deliver the work without burning out.</li>
+<li>You have enough savings to cover a slow start.</li>
+</ul>
+<p>A business is a worse fit if:</p>
+<ul>
+<li>You need predictable income immediately.</li>
+<li>You are using the business to escape a boundary you have not set as an
+  employee.</li>
+<li>You are relying on one platform, one client, or one viral moment.</li>
+<li>You cannot yet price the work without discounting.</li>
+</ul>
+<h2 id="the-math-that-matters">The math that matters</h2>
+<p>For a service business, the number that matters is not the median salary. It is:</p>
+<pre><code>take-home = (hourly rate × billable hours) − expenses − tax
+</code></pre>
+<p>A $100/hour rate with 10 billable hours a week is not a $100,000 business. It
+is roughly $1,000 a week before expenses, tax, and unpaid admin. That is why
+the “high-ticket” fantasy so often collapses.</p>
+<div class="page-break"></div>
+
+<p>Before you leave employment, build a simple model:</p>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th style="text-align: right;">Monthly estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Billable hours</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Effective hourly rate</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Revenue</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Software and tools</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Contractors</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Marketing</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>Tax set-aside</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td><strong>Take-home</strong></td>
+<td style="text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<p>Then compare it with your enough number. If the business does not clear enough
+at a realistic utilisation rate, it is not a business yet. It is an expensive
+hobby.</p>
+<h2 id="the-bridge-from-career-to-business">The bridge from career to business</h2>
+<p>The safest transition is not a leap. It is a bridge:</p>
+<ol>
+<li>Keep the job or reduce hours.</li>
+<li>Sell one offer to three paying clients.</li>
+<li>Document the delivery process.</li>
+<li>Raise the price before adding more clients.</li>
+<li>Leave when the business covers your enough number for three consecutive
+   months.</li>
+</ol>
+<p>This is slower than the internet version. It is also less likely to force you
+back into a worse job.</p>
+<h2 id="the-next-step">The next step</h2>
+<p>If you want the business path, the next step is <strong>The Soft Life System Complete
+bundle</strong>. It covers the offer, pricing, client acquisition, delivery, and the
+weekly operating rhythm. The Career Compass tells you which direction fits your
+life. The Complete bundle shows you how to build the vehicle.</p>
+<p>If you want help applying it to your specific situation, the <strong>Business Audit</strong>
+is a paid review of your offer, pricing, and next 90 days. The Career Compass is
+included with the audit.</p>
+<p>You do not need both if you only want a job. Choose the tool that matches the
+decision in front of you.</p>
+<blockquote>
+<p><strong>Action:</strong> Write down whether you are solving for a better job, a business,
+or both. If the answer is “both,” choose the job first unless the business
+already has paying clients. Stability is an asset, not a lack of ambition.</p>
+</blockquote></section><section class="chapter"><h1 id="sources-method-and-next-step">Sources, method, and next step</h1>
+<h2 id="source-notes">Source notes</h2>
+<p><strong>Pay.</strong> U.S. Bureau of Labor Statistics, Occupational Employment and Wage
+Statistics, May 2025. Figures are annual medians for full-time wage and salary
+workers unless otherwise stated. The 10th and 90th percentiles are from the
+same occupation and reference period.</p>
+<p><strong>Growth and openings.</strong> U.S. Bureau of Labor Statistics, Employment
+Projections, 2025–35. Annual openings include growth and replacements.</p>
+<p><strong>Occupation matching.</strong> Each role is matched to a BLS Standard Occupational
+Classification (SOC) code. Where the source research used a job title that BLS
+does not track, the closest occupational match is named and the mismatch is
+noted.</p>
+<p><strong>Telework.</strong> U.S. Bureau of Labor Statistics, Current Population Survey, 2025
+annual averages, table 60. The 2025 figures are 11-month averages that exclude
+October 2025 because of the federal government shutdown. Role-level telework
+is a group proxy, not a role-specific measurement.</p>
+<p><strong>Access.</strong> Direct BLS pages blocked automated requests during retrieval.
+CareerFacts.org was used to retrieve the BLS OEWS and projection figures.
+Every role profile includes the SOC code so the figure can be checked against
+the original BLS tables.</p>
+<h2 id="the-soft-life-score">The Soft Life Score</h2>
+<pre><code>income score   = min(100, median pay ÷ 150,000 × 100)
+schedule score = schedule control (1–5) × 20
+energy score   = energy (1–5) × 20
+entry score    = entry ease (1–5) × 20
+growth score   = clamp(50 + growth % × 2.5, 0, 100)
+openings score = min(100, annual openings ÷ 50,000 × 100)
+demand score   = 0.6 × growth score + 0.4 × openings score
+
+Soft Life Score =
+  0.30 × income
++ 0.25 × schedule
++ 0.20 × energy
++ 0.10 × entry
++ 0.15 × demand
+</code></pre>
+<p>Schedule, energy, and entry are editorial scores. They are not BLS data. The
+weights are a judgement about what makes work sustainable, not a scientific
+claim.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>National figures cannot tell you what a role pays in your city.</li>
+<li>Medians hide the difference between junior, senior, freelance, and
+  part-time work.</li>
+<li>Projections are not guarantees. They can be wrong.</li>
+<li>The 24 roles are a curated set, not a representative sample of the labour
+  market.</li>
+<li>The editorial scores reflect one team's judgement. Change them for your life.</li>
+<li>The guide does not provide legal, immigration, tax, or financial advice.</li>
+</ul>
+<h2 id="ten-questions-for-an-informational-interview">Ten questions for an informational interview</h2>
+<ol>
+<li>What does an ordinary Tuesday look like in this role?</li>
+<li>Which parts of the work are predictable, and which are reactive?</li>
+<li>How much control do you have over your schedule and location?</li>
+<li>What does the entry path look like for someone without a traditional
+   background?</li>
+<li>What did you spend on training, licensing, or portfolio building?</li>
+<li>What is the realistic income in year one, not year five?</li>
+<li>What is the biggest hidden cost of this work?</li>
+<li>What makes people leave this role?</li>
+<li>What would you do differently if you started again?</li>
+<li>Who else should I speak to, and may I use your name?</li>
+</ol>
+<h2 id="the-30-day-check-in">The 30-day check-in</h2>
+<p>At the end of your first test month, answer these five questions:</p>
+<ul>
+<li>Did the work give me energy or take it?</li>
+<li>Did the pay math hold up against my enough number?</li>
+<li>Did the entry path fit my real constraints?</li>
+<li>Did the people doing the work describe a life I want?</li>
+<li>What evidence do I have that this is more than a fantasy?</li>
+</ul>
+<p>If you cannot answer with evidence, do another test. Do not confuse more
+research with progress.</p>
+<h2 id="if-you-only-do-one-thing">If you only do one thing</h2>
+<p>Book one conversation with someone doing the work. Ask about the ordinary week,
+not the highlight reel. Then write down what surprised you.</p>
+<p>That single conversation is worth more than another ten career lists.</p>
+<h2 id="next-step">Next step</h2>
+<p>If you want a job that fits your life, use the shortlist and the 90-day plan in
+this guide.</p>
+<p>If you want to build a business around the work, read <strong>The Soft Life System
+Complete bundle</strong>. It covers the offer, pricing, client acquisition, delivery,
+and weekly operating rhythm.</p>
+<p>If you want a review of your specific offer, pricing, and next 90 days, apply
+for the <strong>Business Audit</strong>. The Career Compass is included with the audit.</p>
+<p>You do not need to buy anything else to use this guide. The next step is a
+choice, not an obligation.</p>
+<h2 id="references">References</h2>
+<ul>
+<li>U.S. Bureau of Labor Statistics, Occupational Employment and Wage
+  Statistics, May 2025: https://www.bls.gov/oes/</li>
+<li>U.S. Bureau of Labor Statistics, Employment Projections, 2025–35:
+  https://www.bls.gov/emp/</li>
+<li>U.S. Bureau of Labor Statistics, Current Population Survey, telework tables,
+  2025 annual averages: https://www.bls.gov/cps/cpsaat60.htm</li>
+<li>CareerFacts.org, BLS-based occupation pages:
+  https://careerfacts.org/</li>
+<li>O*NET OnLine: https://www.onetonline.org/</li>
+</ul>
+<h2 id="about-this-guide">About this guide</h2>
+<p><strong>The Soft Life Career Compass</strong> is published by Soft Life by Gabochie. It is
+part of a library of practical tools for women who want work that funds their
+life without consuming it.</p>
+<p>Edition 1 · 2026</p>
+<p>Data current to BLS OEWS May 2025 and BLS Employment Projections 2025–35.</p>
+<p>For support, contact admin@gabochie.com.</p></section>
+</body>
+</html>

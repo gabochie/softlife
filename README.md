@@ -21,7 +21,7 @@ A working repository for developing a best-selling book on the **Soft Life**.
 | `05-assets/covers/` | Book cover art (one folder per book; `_template/` spec, `_source/` raw masters) |
 | `06-production/` | Series build engine: `build.py <book-id>` + `books/<book-id>.toml` configs; outputs in `06-production/dist/<book-id>/`; review site at `dist/index.html` |
 | `07-audiobook/` | AI audiobook pipeline: narration scripts (`build_narration_script.py <book-id>`), voice spec, audio generation (`generate_audio.py`), mastering (`master.py`); **Book 1 produced — 3.81 h, all ACX PASS** |
-| `08-app/` | **Soft Life PWA** (`soft.gabochie.com`): local dev API (`server/api.py` → localhost:8100) + installable web app — onboarding funnel, member dashboard, 90-day task engine, read-aloud library, affiliate system. MVP built & locally verified; production backend = Supabase |
+| `08-app/` | **Soft Life PWA** (`soft.gabochie.com`): local dev API (`server/api.py` → localhost:8100) + installable web app — onboarding funnel, member dashboard, 90-day task engine, read-aloud library, affiliate system. MVP live at https://soft.gabochie.com (Cloudflare Worker + D1/KV); Supabase remains the scale path |
 
 ## The 5 Books
 

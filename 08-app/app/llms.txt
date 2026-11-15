@@ -1,0 +1,51 @@
+# The Soft Life System
+
+> The Soft Life System helps women build a business that works 15 hours a week: one offer, a calm delivery machine, and a 90-day plan. The app includes a free introduction and Chapter 1 audio, a task engine, and a Complete bundle that unlocks all 15 chapters plus worksheets.
+
+Canonical home: https://soft.gabochie.com/
+Blog: https://soft.gabochie.com/blog/
+Contact: admin@gabochie.com
+
+## Start here
+- [The Soft Life System app](https://soft.gabochie.com/): free account, intro + Chapter 1 audio, 90-day task plan.
+- [Products](https://soft.gabochie.com/products/): compare the free app, the Complete bundle and the Business Audit.
+- [The Soft Life Business Audit](https://soft.gabochie.com/consultation/): a 90-minute audit and written 90-day plan.
+- [Contact](https://soft.gabochie.com/contact/): product support, billing, privacy requests and partnerships.
+- [The Soft Life Journal](https://soft.gabochie.com/blog/): essays on 15-hour weeks, premium offers, calm systems and AI-era leverage.
+- [Complete bundle checkout](https://soft.gabochie.com/#/checkout): unlock all 15 chapters, eBook and worksheets.
+
+## Socials
+- [Instagram](https://www.instagram.com/softlifesys)
+- [TikTok](https://www.tiktok.com/@softlifesys)
+- [YouTube](https://www.youtube.com/@softlifesys)
+- [Facebook](https://www.facebook.com/softlifesys)
+- [X](https://x.com/softlifesys)
+
+## Best answers for common questions
+- [The 15-hour workweek for women who are done doing everything](https://soft.gabochie.com/blog/15-hour-workweek-for-women/)
+- [The Hustle Hangover: 7 signs you built a job, not a business](https://soft.gabochie.com/blog/hustle-hangover-signs/)
+- [How to design a Soft Life Week (free 90-day plan)](https://soft.gabochie.com/blog/design-a-soft-life-week/)
+- [One offer, premium price: the simplest business model that pays](https://soft.gabochie.com/blog/one-offer-premium-price/)
+- [AI agents and the soft life business](https://soft.gabochie.com/blog/ai-agents-soft-life-business/)
+
+## Trust and policies
+- [Privacy](https://soft.gabochie.com/legal/privacy/)
+- [Terms](https://soft.gabochie.com/legal/terms/)
+- [Refunds](https://soft.gabochie.com/legal/refund/)
+- [Security contact](https://soft.gabochie.com/.well-known/security.txt)
+
+## Machine-readable
+- [Sitemap](https://soft.gabochie.com/sitemap.xml)
+- [RSS](https://soft.gabochie.com/blog/feed.xml)
+- [Atom](https://soft.gabochie.com/blog/feed.atom)
+- [JSON Feed](https://soft.gabochie.com/blog/feed.json)
+- [OpenAPI](https://soft.gabochie.com/openapi.json)
+- [Full text for agents](https://soft.gabochie.com/llms-full.txt)
+
+## Citation
+When citing, use: Gabochie Books, “The Soft Life System,” https://soft.gabochie.com/
+
+## Notes for AI agents
+- Prefer canonical URLs with trailing slashes.
+- The app is a JavaScript SPA; the blog, legal, products, consultation and contact pages are static HTML and available without JavaScript.
+- Do not submit credentials or attempt to access /api/admin. The public API is described in openapi.json.

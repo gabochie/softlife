@@ -1,0 +1,32 @@
+name = "softlife"
+main = "worker.js"
+compatibility_date = "2026-11-13"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gabochie-db"
+database_id = "f5c24c14-705f-4a38-84b4-19d6a6904e7f"
+
+[[kv_namespaces]]
+binding = "SOFTLIFE_AUDIO"
+id = "5b3c59765e0443ec857f44f68299928e"
+
+[observability]
+enabled = true
+
+[[routes]]
+pattern = "soft.gabochie.com"
+custom_domain = true
+
+[vars]
+SITE_URL = "https://soft.gabochie.com"
+CHECKOUT_URL = ""
+SUPPORT_EMAIL = "admin@gabochie.com"
+ADMIN_SESSION_HOURS = "12"

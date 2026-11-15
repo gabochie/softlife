@@ -5,6 +5,8 @@ __pycache__/
 # Local dev database (auto-seeded on first run)
 08-app/server/softlife.db
 *.db
+# Gated member audio (copied from 07-audiobook; not shipped in the repo)
+08-app/server/audio/
 
 # Regenerable build artifacts
 # - audiobook audio: rebuilt with 07-audiobook/generate_audio.py + master.py
@@ -17,3 +19,8 @@ __pycache__/
 # OS / editor noise
 .DS_Store
 Thumbs.db
+
+# Wrangler local state and generated deploy assets
+08-app/.wrangler/
+08-app/deploy/cloudflare/.wrangler/
+08-app/deploy/cloudflare/public/

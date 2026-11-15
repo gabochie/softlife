@@ -16,6 +16,12 @@ const Store = {
     else localStorage.setItem('softlife_user', JSON.stringify(value));
   },
 
+  adminToken(value) {
+    if (value === undefined) return localStorage.getItem('softlife_admin_token');
+    if (value === null) localStorage.removeItem('softlife_admin_token');
+    else localStorage.setItem('softlife_admin_token', value);
+  },
+
   session() {
     return { token: this.token(), user: this.user() };
   },
@@ -23,5 +29,9 @@ const Store = {
   clear() {
     this.token(null);
     this.user(null);
+  },
+
+  clearAdmin() {
+    this.adminToken(null);
   }
 };

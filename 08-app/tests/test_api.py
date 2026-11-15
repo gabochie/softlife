@@ -42,6 +42,11 @@ class AppTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.mkdtemp(prefix="softlife-test-")
         api.DB = Path(cls.tmp) / "test.db"
+        # tiny stand-in audio files so the gated-audio routes can be tested
+        api.AUDIO_DIR = Path(cls.tmp) / "audio"
+        api.AUDIO_DIR.mkdir()
+        for slug in ("intro", "ch01", "ch02"):
+            (api.AUDIO_DIR / f"{slug}.mp3").write_bytes(b"ID3fakeaudio" * 20)
         api.init_db()
         api.Handler.log_message = lambda *a, **k: None  # silence request logs
         cls.httpd = api.HTTPServer(("127.0.0.1", 0), api.Handler)
@@ -62,6 +67,20 @@ class AppTests(unittest.TestCase):
             html = resp.read().decode()
         self.assertIn("Soft Life", html)
         self.assertIn("app.js", html)
+
+    def test_extra_pages_are_static_and_discoverable(self):
+        for path, marker in (
+            ("/products/", "PDF implementation toolkits"),
+            ("/consultation/", "The Soft Life Business Audit"),
+        ):
+            with urllib.request.urlopen(self.client.base + path, timeout=10) as resp:
+                html = resp.read().decode()
+            self.assertIn(marker, html)
+            self.assertNotIn("app.js", html)
+        with urllib.request.urlopen(self.client.base + "/sitemap.xml", timeout=10) as resp:
+            sitemap = resp.read().decode()
+        self.assertIn("https://soft.gabochie.com/products/", sitemap)
+        self.assertIn("https://soft.gabochie.com/consultation/", sitemap)
 
     # ---------- auth ----------
 
@@ -102,7 +121,7 @@ class AppTests(unittest.TestCase):
         self.assertEqual(stats["ref_code"], code)
         self.assertEqual(stats["clicks"], 1)
         self.assertEqual(stats["signups"], 1)
-        self.assertEqual(stats["commission_rate"], "50%")
+        self.assertEqual(stats["commission_rate"], "30%")
 
     def test_signin_success_and_failure(self):
         self.req("POST", "/api/signup", {"email": "sign@test.com", "password": "softlife1"})
@@ -126,12 +145,119 @@ class AppTests(unittest.TestCase):
         self.assertEqual(me["email"], "demo@softlife.app")
         self.assertEqual(me["ref_code"], "DEMO01")
 
+    def test_sessions_are_hashed_and_expire(self):
+        import hashlib
+        import sqlite3
+        _, data = self.req("POST", "/api/signup", {"email": "hash@test.com", "password": "softlife1"})
+        conn = sqlite3.connect(api.DB)
+        row = conn.execute(
+            "SELECT s.token_hash, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id "
+            "WHERE u.email = 'hash@test.com'"
+        ).fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row[0], hashlib.sha256(data["token"].encode()).hexdigest())
+        self.assertNotEqual(row[0], data["token"])
+        conn.execute(
+            "UPDATE sessions SET expires_at = datetime('now', '-1 minute') "
+            "WHERE user_id = (SELECT id FROM users WHERE email = 'hash@test.com')"
+        )
+        conn.commit()
+        conn.close()
+        self.assertEqual(self.req("GET", "/api/me", token=data["token"])[0], 401)
+
+    def test_audio_tokens_are_hashed_and_expire(self):
+        import hashlib
+        import sqlite3
+        token = self._signup("aud-expire@test.com")
+        audio_token = self._audio_token(token)
+        conn = sqlite3.connect(api.DB)
+        row = conn.execute(
+            "SELECT t.token_hash FROM audio_tokens t JOIN users u ON u.id = t.user_id "
+            "WHERE u.email = 'aud-expire@test.com'"
+        ).fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row[0], hashlib.sha256(audio_token.encode()).hexdigest())
+        conn.execute(
+            "UPDATE audio_tokens SET expires_at = datetime('now', '-1 minute') "
+            "WHERE user_id = (SELECT id FROM users WHERE email = 'aud-expire@test.com')"
+        )
+        conn.commit()
+        conn.close()
+        self.assertEqual(self.req("GET", f"/api/audio/intro.mp3?token={audio_token}")[0], 401)
+
     def test_signout_invalidates_token(self):
         _, data = self.req("POST", "/api/signup",
                            {"email": "out@test.com", "password": "softlife1"})
         token = data["token"]
         self.assertEqual(self.req("POST", "/api/signout", token=token)[0], 200)
         self.assertEqual(self.req("GET", "/api/me", token=token)[0], 401)
+
+    # ---------- onboarding + events ----------
+
+    def test_signup_captures_first_touch_acquisition(self):
+        status, data = self.req("POST", "/api/signup", {
+            "email": "source@test.com", "password": "softlife1",
+            "acquisition": {
+                "source": "utm", "utm_source": "newsletter",
+                "utm_medium": "email", "utm_campaign": "launch",
+                "referrer": "https://example.com/welcome",
+            },
+        })
+        self.assertEqual(status, 201)
+        status, ob = self.req("GET", "/api/onboarding", token=data["token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(ob["onboarding"]["source"], "utm")
+        self.assertEqual(ob["onboarding"]["utm_source"], "newsletter")
+        self.assertEqual(ob["onboarding"]["utm_campaign"], "launch")
+
+    def test_onboarding_requires_auth(self):
+        self.assertEqual(self.req("GET", "/api/onboarding")[0], 401)
+        self.assertEqual(self.req("POST", "/api/onboarding", {"main_goal": "offer"})[0], 401)
+
+    def test_onboarding_completion_and_whatsapp_consent(self):
+        _, data = self.req("POST", "/api/signup", {"email": "profile@test.com", "password": "softlife1"})
+        token = data["token"]
+        status, saved = self.req("POST", "/api/onboarding", {
+            "business_name": "Soft Studio", "country": "Ghana",
+            "business_stage": "early", "main_goal": "systems",
+            "biggest_challenge": "time", "revenue_range": "1k_3k",
+            "team_size": "solo", "timezone": "Africa/Accra",
+            "whatsapp_consent": True, "whatsapp_number": "+233 24 123 4567",
+            "marketing_consent": True,
+        }, token=token)
+        self.assertEqual(status, 200)
+        ob = saved["onboarding"]
+        self.assertEqual(ob["business_stage"], "early")
+        self.assertEqual(ob["whatsapp_number"], "+233241234567")
+        self.assertEqual(ob["whatsapp_consent"], 1)
+        self.assertEqual(ob["marketing_consent"], 1)
+        self.assertEqual(ob["consent_version"], "2026-11-14")
+        self.assertTrue(ob["completed_at"])
+        self.assertTrue(ob["whatsapp_consent_at"])
+
+        status, saved = self.req("POST", "/api/onboarding", {
+            "whatsapp_consent": False,
+        }, token=token)
+        self.assertEqual(status, 200)
+        self.assertEqual(saved["onboarding"]["whatsapp_consent"], 0)
+        self.assertEqual(saved["onboarding"]["whatsapp_number"], "")
+
+    def test_whatsapp_consent_requires_a_valid_number(self):
+        _, data = self.req("POST", "/api/signup", {"email": "consent@test.com", "password": "softlife1"})
+        status, _ = self.req("POST", "/api/onboarding", {
+            "whatsapp_consent": True, "whatsapp_number": "123",
+        }, token=data["token"])
+        self.assertEqual(status, 400)
+
+    def test_event_logging_is_allowlisted(self):
+        _, data = self.req("POST", "/api/signup", {"email": "events@test.com", "password": "softlife1"})
+        token = data["token"]
+        self.assertEqual(self.req("POST", "/api/events", {"event": "password_guess"}, token=token)[0], 400)
+        status, resp = self.req("POST", "/api/events", {
+            "event": "audio_play", "path": "/listen", "meta": {"slug": "intro"},
+        }, token=token)
+        self.assertEqual(status, 200)
+        self.assertTrue(resp["ok"])
 
     # ---------- tasks ----------
 
@@ -180,6 +306,71 @@ class AppTests(unittest.TestCase):
         tid = tasks["tasks"][0]["id"]
         status, _ = self.req("POST", "/api/tasks/toggle", {"id": tid}, token=b["token"])
         self.assertEqual(status, 404)
+
+    # ---------- gated audio ----------
+
+    def _signup(self, email):
+        _, data = self.req("POST", "/api/signup", {"email": email, "password": "softlife1"})
+        return data["token"]
+
+    def _audio_token(self, session_token):
+        status, data = self.req("POST", "/api/audio-token", {}, token=session_token)
+        self.assertEqual(status, 200)
+        self.assertIn("expires_in", data)
+        return data["token"]
+
+    def _audio(self, path, session_token):
+        """Raw fetch for binary audio responses: returns (status, body)."""
+        import urllib.request
+        token = self._audio_token(session_token)
+        r = urllib.request.Request(f"http://127.0.0.1:{self.httpd.server_address[1]}{path}?token={token}")
+        try:
+            with urllib.request.urlopen(r) as resp:
+                return resp.status, resp.read()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read()
+
+    def test_audio_requires_auth(self):
+        self.assertEqual(self.req("GET", "/api/audio/intro.mp3")[0], 401)
+        self.assertEqual(self.req("GET", "/api/audio/intro.mp3?token=bogus")[0], 401)
+        self.assertEqual(self.req("POST", "/api/audio-token", {})[0], 401)
+
+    def test_audio_rejects_session_token_in_url(self):
+        token = self._signup("aud-query@test.com")
+        self.assertEqual(self.req("GET", f"/api/audio/intro.mp3?t={token}")[0], 401)
+        self.assertEqual(self.req("GET", f"/api/audio/intro.mp3?token={token}")[0], 401)
+
+    def test_free_tier_hears_trial_only(self):
+        token = self._signup("aud-free@test.com")
+        self.assertEqual(self._audio("/api/audio/intro.mp3", token)[0], 200)
+        self.assertEqual(self._audio("/api/audio/ch01.mp3", token)[0], 200)
+        self.assertEqual(self._audio("/api/audio/ch02.mp3", token)[0], 403)
+
+    def test_paid_tier_unlocks_all_chapters(self):
+        token = self._signup("aud-paid@test.com")
+        import sqlite3
+        conn = sqlite3.connect(api.DB)
+        conn.execute("UPDATE users SET tier = 'paid' WHERE email = 'aud-paid@test.com'")
+        conn.commit()
+        conn.close()
+        self.assertEqual(self._audio("/api/audio/ch02.mp3", token)[0], 200)
+        self.assertEqual(self._audio("/api/audio/ch15.mp3", token)[0], 404)  # no file seeded
+
+    def test_audio_range_requests(self):
+        token = self._signup("aud-range@test.com")
+        import urllib.request
+        audio_token = self._audio_token(token)
+        r = urllib.request.Request(f"http://127.0.0.1:{self.httpd.server_address[1]}/api/audio/intro.mp3?token={audio_token}",
+                                   headers={"Range": "bytes=0-9"})
+        with urllib.request.urlopen(r) as resp:
+            self.assertEqual(resp.status, 206)
+            self.assertEqual(resp.headers["Content-Range"], "bytes 0-9/240")
+            self.assertEqual(resp.read(), b"ID3fakeaud")  # 10 bytes: 0..9
+
+    def test_audio_rejects_bad_slugs(self):
+        token = self._signup("aud-bad@test.com")
+        self.assertEqual(self._audio("/api/audio/..%2Fschema.mp3", token)[0], 404)
+        self.assertEqual(self._audio("/api/audio/nope.mp3", token)[0], 404)
 
     # ---------- misc ----------
 
