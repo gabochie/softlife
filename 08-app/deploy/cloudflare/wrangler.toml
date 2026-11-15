@@ -28,5 +28,7 @@ custom_domain = true
 [vars]
 SITE_URL = "https://soft.gabochie.com"
 CHECKOUT_URL = ""
+SELAR_CHECKOUT_URL = ""
+PAYHIP_CHECKOUT_URL = ""
 SUPPORT_EMAIL = "admin@gabochie.com"
 ADMIN_SESSION_HOURS = "12"

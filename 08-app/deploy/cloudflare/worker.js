@@ -90,6 +90,9 @@ async function handleApi(request, env, url) {
     return json({
       siteUrl: env.SITE_URL || SITE_URL,
       checkoutUrl: env.CHECKOUT_URL || "",
+      selarUrl: env.SELAR_CHECKOUT_URL || env.CHECKOUT_URL || "",
+      payhipUrl: env.PAYHIP_CHECKOUT_URL || "",
+      country: (request.cf && request.cf.country) || "",
       supportEmail: env.SUPPORT_EMAIL || "admin@gabochie.com",
       freeAudio: [...FREE_AUDIO],
       allAudio: AUDIO_SLUGS,

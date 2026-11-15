@@ -127,7 +127,7 @@ buyer-facing claims are safe, and the draft note is gone.
 **File:** `03-cloudflare-secrets-and-admin.md`  
 **Outstanding:** move secrets and backups off-machine, enable Cloudflare Access,
 complete the remaining CSP/rate-limit/email-verification hardening and decide
-WAF. Migration `003` and the `v9`/`v10` releases are live as of 2026-11-14.  
+WAF. Migration `003` and the `v9`/`v10`/`v16`/`v17` releases are live; `v17` was deployed on 2026-11-15.  
 **Need from you:** confirmation that secrets/backups are stored securely, the
 Cloudflare Access setup or decision, the 2FA/account-member/token audit result,
 and approval for CSP/rate limits/email verification.
@@ -156,8 +156,8 @@ and approval for CSP/rate limits/email verification.
 
 **Done when:** secrets and backups live only in secure storage, `/tmp` copies are
 deleted, admin API access is behind Access or a documented risk acceptance, and
-the remaining hardening work is scheduled. **`softlife-v10` is already live;
-Worker version `dbb7ecd0-55ec-4043-bbe2-94289370ac8c`.**
+the remaining hardening work is scheduled. **`softlife-v17` is already live;
+Worker version `49387315-e2ec-4ae3-95ab-12ec35782c93`.**
 
 ## EMAIL-01 — Email and support
 

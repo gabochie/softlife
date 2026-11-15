@@ -94,11 +94,12 @@ After rotating `PURCHASE_WEBHOOK_SECRET`, update Selar before testing again.
   `https://softlife.gideonabochie.workers.dev` both serve the current app.
 - [x] Confirm `not_found_handling = "404-page"` still returns the branded 404.
 - [x] Confirm the service worker version is current after the final deploy.
-  Production is `softlife-v10`, deployed 2026-11-14 (Worker version
-  `dbb7ecd0-55ec-4043-bbe2-94289370ac8c`). `v9` was the prior session/audio
-  hardening release. Bump again after each cached asset change.
+  Production is `softlife-v17`, deployed 2026-11-15 (Worker version
+  `49387315-e2ec-4ae3-95ab-12ec35782c93`). `v16` added the cookie policy and
+  public tab bar; `v17` adds the social/share UI and accessibility fixes. Bump
+  again after each cached asset change.
 - [x] Run the deploy from the correct directory. The current release was
-  deployed on 2026-11-14:
+  deployed on 2026-11-15:
   ```bash
   cd /public/softlife/08-app/deploy/cloudflare
   sh build.sh

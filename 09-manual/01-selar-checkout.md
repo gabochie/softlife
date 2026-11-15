@@ -1,4 +1,4 @@
-# 01 — Selar Checkout and Webhook
+# 01 — Selar and Payhip Checkout
 
 **Priority:** P0 — test buyers cannot complete a purchase until this is done.
 
@@ -6,7 +6,7 @@
 
 - **Pick ID:** `SELAR-01`
 - **Status:** Waiting on Selar
-- **Outstanding:** product, checkout URL, webhook, live purchase and refund test.
+- **Outstanding:** Selar and Payhip product URLs, webhook tests, live purchase and refund test.
 - **Need from you:** account/payout confirmation, product URL, webhook secret reference, test-purchase approval.
 - **Secure input:** `/data/user/0/com.foxdebug.acodefree/cache/opencode/softlife-inputs/SELAR-01.md` (copy `_TEMPLATE.md`; mode 600)
 - **Resume:** say `Pick up SELAR-01`; full steps in `00-execution-board.md`.
@@ -42,17 +42,24 @@ see an email fallback instead of a payment page.
 
 - [ ] Edit `deploy/cloudflare/wrangler.toml`:
   ```toml
-  CHECKOUT_URL = "https://selar.co/your-product"
+  SELAR_CHECKOUT_URL = "https://selar.co/your-product"
+  PAYHIP_CHECKOUT_URL = "https://payhip.com/b/your-product"
   ```
+  `CHECKOUT_URL` is kept as a legacy fallback for Selar, but new installs should
+  use the two provider-specific values.
+- [ ] Confirm the Payhip product URL is for the same Complete bundle. Payhip
+  delivers the PDF; automatic app-tier unlock still needs a Payhip webhook test.
 - [ ] Deploy:
   ```bash
   cd /public/softlife/08-app/deploy/cloudflare
   sh build.sh
   npx wrangler@4.158.0 deploy --config wrangler.toml
   ```
-- [ ] Confirm `https://soft.gabochie.com/api/config` returns the new `checkoutUrl`.
-- [ ] Open `https://soft.gabochie.com/#/checkout` and confirm the button goes to Selar.
-- [ ] Confirm a signed-in member's referral code is appended as `?ref=...` or `&ref=...`.
+- [ ] Confirm `https://soft.gabochie.com/api/config` returns `selarUrl`, `payhipUrl` and `country`.
+- [ ] Open `https://soft.gabochie.com/#/checkout` with an African country and confirm Selar is recommended.
+- [ ] Open it with a US/Canadian country and confirm Payhip is recommended; both buttons must remain available.
+- [ ] Confirm a signed-in member's referral code is appended to either provider URL as `?ref=...` or `&ref=...`.
+- [ ] Add a Payhip webhook section or test manual unlock before promising automatic app access to Payhip buyers.
 
 ## C. Configure the webhook
 

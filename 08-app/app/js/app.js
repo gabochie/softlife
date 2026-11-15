@@ -1,6 +1,6 @@
 const App = {
   view: null,
-  conf: { checkoutUrl: '', supportEmail: 'admin@gabochie.com', siteUrl: 'https://soft.gabochie.com' },
+  conf: { checkoutUrl: '', selarUrl: '', payhipUrl: '', country: '', supportEmail: 'admin@gabochie.com', siteUrl: 'https://soft.gabochie.com' },
 
   async boot() {
     this.captureAcquisition();
@@ -123,9 +123,7 @@ const App = {
               <div class="footer-social" aria-label="Follow Soft Life">
                 <a href="https://www.instagram.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Instagram">Instagram</a>
                 <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
-                <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
                 <a href="https://www.facebook.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Facebook">Facebook</a>
-                <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
               </div>
             </div>
             <nav aria-label="Explore">
@@ -141,18 +139,35 @@ const App = {
               <a href="#/affiliate">Affiliates</a>
               <a href="#/signin">Sign in</a>
               <a href="/contact/">Contact</a>
-              <a href="/legal/refund/">Refund policy</a>
             </nav>
             <nav aria-label="Legal">
               <b>Legal</b>
               <a href="/legal/privacy/">Privacy</a>
               <a href="/legal/terms/">Terms</a>
               <a href="/legal/refund/">Refunds</a>
+              <a href="/legal/cookies/">Cookies</a>
             </nav>
           </div>
           <div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div>
         </div>
       </footer>`;
+  },
+
+  publicTabbar() {
+    const view = this.view || '/';
+    const links = [
+      ['/', 'Home', view === '/' || view === '/home'],
+      ['/products/', 'Products', view === '/products'],
+      ['/blog/', 'Blog', view === '/blog'],
+      ['/contact/', 'Contact', view === '/contact'],
+      ['/#/signup', 'Start', ['/signup', '/signin', '/checkout', '/onboarding'].includes(view)]
+    ];
+    return `<nav class="tabbar public-tabbar" aria-label="Quick navigation">
+      <div class="wrap tabs">
+        ${links.map(([href, label, active]) =>
+          `<a href="${href}"${active ? ' class="active" aria-current="page"' : ''}>${label}</a>`).join('')}
+      </div>
+    </nav>`;
   },
 
   chrome(content, opts = {}) {
@@ -170,6 +185,7 @@ const App = {
           <div class="bar-actions"><nav>${nav}</nav>${cta}</div>
         </div>
       </header>
+      ${opts.member ? '' : this.publicTabbar()}
       ${content}
       ${this.siteFooter(s)}`;
   },
@@ -287,7 +303,7 @@ const App = {
     $app.innerHTML = this.chrome(`
       <main class="page">
         <div class="auth-card">
-          <h2>${isSignup ? 'Start your free account' : 'Welcome back'}</h2>
+          <h1>${isSignup ? 'Start your free account' : 'Welcome back'}</h1>
           <p class="note">${isSignup
             ? 'The introduction plays instantly. Your 90-day task plan is preloaded. No credit card.'
             : 'Sign in to your tasks, your read-aloud library, and your progress.'}</p>
@@ -336,20 +352,27 @@ const App = {
     const me = Store.user();
     const complete = me && me.tier === 'complete';
     const support = this.conf.supportEmail || 'admin@gabochie.com';
-    const checkout = this.conf.checkoutUrl || '';
+    const selar = this.conf.selarUrl || this.conf.checkoutUrl || '';
+    const payhip = this.conf.payhipUrl || '';
     const ref = me && me.ref_code ? me.ref_code : '';
-    const refQuery = ref ? (checkout.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref) : '';
-    const checkoutHref = checkout
-      ? checkout + refQuery
-      : 'mailto:' + support + '?subject=' + encodeURIComponent('Complete bundle — The Soft Life System');
-    const external = checkout ? 'target="_blank" rel="noopener"' : '';
+    const withRef = (url) => url + (ref ? (url.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref) : '');
+    const providers = [
+      { id: 'selar', label: 'Selar', region: 'Africa', url: selar, note: 'Mobile money, bank transfer and cards where supported.' },
+      { id: 'payhip', label: 'Payhip', region: 'North America & rest of world', url: payhip, note: 'Cards and PayPal.' }
+    ].filter((p) => p.url);
+    const africa = new Set(['DZ','AO','BJ','BW','BF','BI','CM','CV','CF','TD','KM','CG','CD','CI','DJ','EG','GQ','ER','SZ','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR','MU','MA','MZ','NA','NE','NG','RW','ST','SN','SC','SL','SO','ZA','SS','SD','TZ','TG','TN','UG','ZM','ZW']);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const country = (this.conf.country || '').toUpperCase();
+    const recommended = africa.has(country) || (!country && tz.startsWith('Africa/')) ? 'selar' : 'payhip';
+    const primary = providers.find((p) => p.id === recommended) || providers[0];
+    const secondary = providers.find((p) => p.id !== (primary && primary.id));
     const back = me ? '#/dashboard' : '#/signup';
     $app.innerHTML = this.chrome(`
       <main class="page">
         <div class="wrap checkout-grid">
           <div class="card">
             <span class="tag">Complete bundle</span>
-            <h2>Everything you need to run the system</h2>
+            <h1>Everything you need to run the system</h1>
             <p class="lede"><b>$19.99</b> founding price · <s>$29.99</s> regular</p>
             <p class="note">One payment. Access to your app library while we operate the service, including updates we release.</p>
             <ul class="check-list">
@@ -367,21 +390,27 @@ const App = {
             ` : `
               <span class="tag">Secure checkout</span>
               <h3>Unlock the Complete bundle</h3>
-              <p class="note">${checkout
-                ? 'Checkout is handled by Selar. After payment, your account upgrades automatically when the webhook reaches us.'
-                : 'Checkout is being finalized. Email us and we will send you a secure payment link.'}</p>
-              <a class="btn gold wide" data-checkout href="${checkoutHref}" ${external}>${checkout ? 'Continue to secure checkout →' : 'Email us to complete your order →'}</a>
+              ${providers.length ? `
+                <p class="note">Choose the checkout that matches your region. Both options unlock the same Complete bundle.</p>
+                ${primary ? `<a class="btn gold wide" data-checkout data-provider="${primary.id}" href="${withRef(primary.url)}" target="_blank" rel="noopener">Pay with ${primary.label} — ${primary.region} →</a>` : ''}
+                ${secondary ? `<a class="btn ghost wide" data-checkout data-provider="${secondary.id}" href="${withRef(secondary.url)}" target="_blank" rel="noopener">Pay with ${secondary.label} — ${secondary.region} →</a>` : ''}
+                <p class="note center">Recommended for your region: <b>${primary.label}</b>. ${primary.note}</p>
+              ` : `
+                <p class="note">Checkout is being finalized. Email us and we will send you a secure payment link.</p>
+                <a class="btn gold wide" data-checkout data-provider="email" href="mailto:${support}?subject=${encodeURIComponent('Complete bundle — The Soft Life System')}">Email us to complete your order →</a>
+              `}
               <p class="note">Already paid but still locked? Email <a href="mailto:${support}">${support}</a> with your receipt and we will unlock it manually.</p>
             `}
             <a class="btn ghost wide" href="${back}">${me ? 'Back to dashboard' : 'Create a free account first'}</a>
             <p class="note center"><a href="/consultation/">Need a plan for your own business? Apply for the Business Audit →</a></p>
-            <p class="note center"><a href="/legal/refund/">14-day refund policy</a> · <a href="/legal/terms/">Terms</a></p>
+            <p class="note center"><a href="/legal/refund/">14-day refund policy</a> · <a href="/legal/terms/">Terms</a> · <a href="/legal/cookies/">Cookies</a></p>
           </div>
         </div>
       </main>`, {});
-    const checkoutLink = document.querySelector('[data-checkout]');
-    if (checkoutLink) checkoutLink.addEventListener('click', () => {
-      API.event('checkout_click', { tier: 'complete' }).catch(() => {});
+    document.querySelectorAll('[data-checkout]').forEach((link) => {
+      link.addEventListener('click', () => {
+        API.event('checkout_click', { tier: 'complete', provider: link.dataset.provider || 'unknown' }).catch(() => {});
+      });
     });
   },
 
@@ -395,7 +424,7 @@ const App = {
       <main class="page">
         <div class="auth-card">
           <span class="tag">Super-admin</span>
-          <h2>Operations dashboard</h2>
+          <h1>Operations dashboard</h1>
           <p class="note">Members, purchases, referrals and audio status. This is separate from member sign-in.</p>
           <form id="adminForm">
             <label>Admin password<input name="password" type="password" autocomplete="current-password" required autofocus></label>
@@ -427,7 +456,7 @@ const App = {
       <main class="page">
         <div class="wrap admin-shell">
           <div class="dash-head">
-            <div><h2 class="hi">Super-admin</h2><p class="note">Live business operations for The Soft Life System.</p></div>
+            <div><h1 class="hi">Super-admin</h1><p class="note">Live business operations for The Soft Life System.</p></div>
             <div class="admin-actions">
               <button class="btn ghost" id="adminRefresh" type="button">Refresh</button>
               <button class="btn dark" id="adminLogout" type="button">Log out</button>
@@ -500,10 +529,10 @@ const App = {
         </div>
         <div class="card">
           <span class="tag">Purchase webhook</span>
-          <h3>Selar → app upgrade</h3>
+          <h3>Checkout → app upgrade</h3>
           <code class="webhook-url">${location.origin}/api/webhooks/purchase</code>
           <p class="note">Send <code>Authorization: Bearer &lt;webhook secret&gt;</code> with JSON containing <code>email</code>, <code>order_id</code>, <code>amount</code> and <code>currency</code>. Never share the secret.</p>
-          <p class="note">${this.conf.checkoutUrl ? 'Checkout URL is configured.' : 'Checkout URL is not configured yet. Set CHECKOUT_URL in wrangler.toml.'}</p>
+          <p class="note">${(this.conf.selarUrl || this.conf.payhipUrl || this.conf.checkoutUrl) ? 'Checkout is configured.' : 'Checkout is not configured yet. Set SELAR_CHECKOUT_URL and PAYHIP_CHECKOUT_URL in wrangler.toml.'}</p>
         </div>
       </div>
 
@@ -625,7 +654,7 @@ const App = {
 
   renderNotFound($app) {
     $app.innerHTML = this.chrome(`<main class="page"><div class="card center">
-      <h2>Page not found</h2><p>The soft life isn't here — but it's a click away.</p>
+      <h1 class="hi">Page not found</h1><p>The soft life isn't here — but it's a click away.</p>
       <a class="btn" href="#/">Back home</a></div></main>`, {});
   },
 
@@ -648,7 +677,7 @@ const App = {
             `<a class="${active(href)}" href="${href}"><span class="t-ic">${icon}</span>${label}</a>`).join('')}
         </div>
       </nav>
-      <main id="member" class="member"></main>`, {});
+      <main id="member" class="member"></main>`, { member: true });
     if (path === '/dashboard') this.viewDashboard(me);
     if (path === '/onboarding') this.viewOnboarding(me, params);
     if (path === '/tasks') this.viewTasks(me);
@@ -662,7 +691,7 @@ const App = {
     $m.innerHTML = `<div class="wrap">
       <div class="dash-head">
         <div>
-          <h2 class="hi">Welcome, ${esc(me.name)} 👋</h2>
+          <h1 class="hi">Welcome, ${esc(me.name)} 👋</h1>
           <p class="note">Your 90-day launch plan is loaded. Small moves, big life.</p>
         </div>
         <span class="tier">${me.tier === 'free' ? 'FREE' : esc(me.tier.toUpperCase())}</span>
@@ -712,7 +741,7 @@ const App = {
     const checked = (value) => value ? ' checked' : '';
     $m.innerHTML = `<div class="wrap">
       <div class="dash-head">
-        <div><h2 class="hi">${o.completed_at ? 'Your profile' : `A little about you, ${esc(me.name)}`}</h2>
+        <div><h1 class="hi">${o.completed_at ? 'Your profile' : `A little about you, ${esc(me.name)}`}</h1>
         <p class="note">Optional context that helps us improve the app and point you to the right resources.</p></div>
       </div>
       ${params.get('notice') ? `<div class="notice">${esc(params.get('notice'))}</div>` : ''}
@@ -846,7 +875,7 @@ const App = {
     const $m = document.getElementById('member');
     $m.innerHTML = `<div class="wrap">
       <div class="dash-head">
-        <div><h2 class="hi">Your 90-Day Launch</h2><p class="note">From the book, preloaded as tasks. Add your own below.</p></div>
+        <div><h1 class="hi">Your 90-Day Launch</h1><p class="note">From the book, preloaded as tasks. Add your own below.</p></div>
         <div class="progress mini"><span id="tprog" style="width:0%"></span></div>
       </div>
       <div id="taskList" class="task-list"><p class="note">Loading…</p></div>
@@ -921,7 +950,7 @@ const App = {
     const playable = full ? chapters : chapters.filter(c => c.slug === 'ch01');
     const locked = full ? [] : chapters.filter(c => c.slug !== 'ch01');
     $m.innerHTML = `<div class="wrap">
-      <div class="dash-head"><div><h2 class="hi">Read-aloud library</h2><p class="note">The Soft Life System, narrated by Ava.</p></div></div>
+      <div class="dash-head"><div><h1 class="hi">Read-aloud library</h1><p class="note">The Soft Life System, narrated by Ava.</p></div></div>
       <div class="audio-card">
         <div class="audio-row"><div class="a-dot">▶</div><div><b>Introduction: The 15-Hour Promise</b><small>15 min · free for everyone</small></div></div>
         <audio controls preload="none" data-slug="intro" src="${src('intro')}"></audio>
@@ -954,7 +983,7 @@ const App = {
   async viewAffiliate(me) {
     const $m = document.getElementById('member');
     $m.innerHTML = `<div class="wrap"><div class="dash-head">
-      <div><h2 class="hi">Your affiliate link</h2><p class="note">Share it. Earn <b>30%</b> on referred Complete bundle sales.</p></div></div>
+      <div><h1 class="hi">Your affiliate link</h1><p class="note">Share it. Earn <b>30%</b> on referred Complete bundle sales.</p></div></div>
       <div class="ref-card">
         <code id="reflink">${location.origin}/?ref=${me.ref_code}</code>
         <button class="btn dark" id="copyRef">Copy link</button>
@@ -964,13 +993,25 @@ const App = {
         <span class="tag">How it works</span>
         <p>1 · Share your link — on WhatsApp, TikTok, your email list, anywhere.<br>
            2 · Your friend lands on the free trial (intro + Chapter 1).<br>
-           3 · They buy the Complete bundle — you earn 30%, paid through Selar on its payout schedule.</p>
+           3 · They buy the Complete bundle — you earn 30%, paid through the checkout provider on its payout schedule.</p>
       </div></div>`;
     document.getElementById('copyRef').addEventListener('click', async () => {
       const linkEl = document.getElementById('reflink');
       const copyEl = document.getElementById('copyRef');
       if (!linkEl || !copyEl) return;
-      await navigator.clipboard.writeText(linkEl.textContent);
+      try {
+        await navigator.clipboard.writeText(linkEl.textContent);
+      } catch (error) {
+        const input = document.createElement('textarea');
+        input.value = linkEl.textContent;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+      }
       copyEl.textContent = 'Copied ✓';
       setTimeout(() => {
         const el = document.getElementById('copyRef');
@@ -992,7 +1033,7 @@ const App = {
     try { o = (await API.onboarding()).onboarding; } catch (e) { /* profile is optional */ }
     const consent = o && o.whatsapp_consent ? `Yes — ${esc(o.whatsapp_number)}` : 'Not joined';
     $m.innerHTML = `<div class="wrap">
-      <div class="dash-head"><div><h2 class="hi">Account</h2><p class="note">Your membership at a glance.</p></div></div>
+      <div class="dash-head"><div><h1 class="hi">Account</h1><p class="note">Your membership at a glance.</p></div></div>
       <div class="card">
         <p><b>Name:</b> ${esc(me.name)}</p>
         <p><b>Email:</b> ${esc(me.email)}</p>

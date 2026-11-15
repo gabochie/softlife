@@ -1,6 +1,6 @@
-const SW_VERSION = 'softlife-v15';
+const SW_VERSION = 'softlife-v17';
 const SHELL = [
-  '/', '/index.html', '/products/', '/consultation/', '/contact/', '/blog/', '/llms.txt', '/css/app.css', '/js/api.js', '/js/store.js', '/js/app.js',
+  '/', '/index.html', '/products/', '/consultation/', '/contact/', '/legal/cookies/', '/blog/', '/llms.txt', '/css/app.css', '/js/api.js', '/js/store.js', '/js/app.js',
   '/manifest.webmanifest', '/assets/icons/icon-192.png', '/assets/icons/icon-512.png', '/assets/logo-softlife.png', '/assets/logo-softlife-header.png', '/assets/hero-soft-life.jpg', '/assets/hero-soft-life-square.jpg',
   '/assets/audio/retail-sample.mp3', '/assets/blog/og-default.png'
 ];

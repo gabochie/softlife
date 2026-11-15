@@ -838,6 +838,16 @@
           "checkoutUrl": {
             "type": "string"
           },
+          "selarUrl": {
+            "type": "string"
+          },
+          "payhipUrl": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string",
+            "description": "Two-letter country from Cloudflare, when available."
+          },
           "supportEmail": {
             "type": "string",
             "format": "email"

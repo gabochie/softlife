@@ -106,7 +106,7 @@ This directory covers the product test launch, not the full 12-week book launch.
 - Admin shows profile completion, WhatsApp opt-ins and a consent-only CSV
   export. The dashboard and CSV download were verified in production.
 - Admin password and purchase webhook secret were generated and set; the only copy is `/tmp/softlife-secrets.json`.
-- Production hardening is live on `softlife-v9`/`v10`: the public Admin link is
+- Production hardening landed on `softlife-v9`/`v10` and remains live in `v17`: the public Admin link is
   removed, member sessions expire after 30 days and are hashed at rest, and
   audio uses separate 2-hour tokens. Migration
   `003-session-and-audio-tokens.sql` was applied on 2026-11-14; existing
@@ -115,6 +115,12 @@ This directory covers the product test launch, not the full 12-week book launch.
   footer links, sitemap/`llms.txt` entries and service-worker cache update. It
   was deployed on 2026-11-14 (Worker version
   `dbb7ecd0-55ec-4043-bbe2-94289370ac8c`).
+- `softlife-v16` added the cookie policy, mobile public tab bar and the
+  Selar/Payhip checkout routing. It was deployed on 2026-11-15.
+- `softlife-v17` replaced the text social pills with accessible icon buttons,
+  added top/bottom blog share bars, improved mobile touch targets, promoted SPA
+  route headings to `h1`, and removed the broken YouTube/X links. It was deployed
+  on 2026-11-15 (Worker version `49387315-e2ec-4ae3-95ab-12ec35782c93`).
 - The Products and Consultation pages are public. The audit offer, first-five
   capacity and guarantee were approved on 2026-11-14; no PDF toolkit is for sale
   yet.

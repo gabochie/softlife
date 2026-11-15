@@ -310,6 +310,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({
                 "siteUrl": f"http://{host}",
                 "checkoutUrl": os.environ.get("CHECKOUT_URL", ""),
+                "selarUrl": os.environ.get("SELAR_CHECKOUT_URL", os.environ.get("CHECKOUT_URL", "")),
+                "payhipUrl": os.environ.get("PAYHIP_CHECKOUT_URL", ""),
+                "country": os.environ.get("CF_COUNTRY", ""),
                 "supportEmail": os.environ.get("SUPPORT_EMAIL", "admin@gabochie.com"),
                 "freeAudio": sorted(FREE_AUDIO),
                 "allAudio": AUDIO_SLUGS,

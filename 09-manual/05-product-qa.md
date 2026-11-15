@@ -209,6 +209,8 @@ Run once more immediately before inviting testers:
 | 2026-11-15 | Automated | Chromium desktop/mobile | Pass | Local v13; original logo on cream footer plate, compact lotus header, one global footer on 13 pages, no overflow |
 | 2026-11-15 | Automated | Chromium desktop/mobile | Pass | Local v14; full-logo header plate, original logo on cream footer plate, 14 pages with global footer, /contact/ live, 30 internal links 200, no overflow |
 | 2026-11-15 | Automated | Chromium desktop/mobile | Pass | Local v15; social links added site-wide, legacy #/legal redirects removed, one canonical refund page, 29 tests |
+| 2026-11-15 | Automated | Chromium desktop/mobile | Pass | Local v16; cookie policy added, footer refund duplicate removed, mobile public tab bar, Selar/Payhip checkout routing, 29 tests |
+| 2026-11-15 | Automated | Chromium desktop/mobile | Pass | Production v17; icon socials, blog share bars/copy, 44px mobile share/task targets, SPA `h1`s, checkout routing, full signup/onboarding/tasks/affiliate/account flows, 29 tests, internal links 200 |
 |  |  |  |  |  |
 |  |  |  |  |  |
 
@@ -226,7 +228,7 @@ Run once more immediately before inviting testers:
 - [x] Mobile and desktop layout checked at common widths.
 - [x] Production service worker `softlife-v9` verified after the 2026-11-14 deploy.
 - [x] Static `/products/` and `/consultation/` pages built, deployed and verified in
-  production; service worker is `softlife-v10`.
+  production; service worker is `softlife-v17`.
 - [x] Onboarding, consent withdrawal and admin consent export verified in production.
 - [x] Local API suite passes 29 tests, including session/audio token hardening and
   static page delivery.

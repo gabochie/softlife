@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from email.utils import format_datetime
 from html import escape
 from pathlib import Path
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app"
@@ -562,7 +563,7 @@ We collect the information you give us and the information needed to operate the
 - **Communications:** messages you send to us for support, refunds or privacy requests.
 - **Device data:** browser type, approximate region, IP address and error logs used for security and reliability.
 
-We do not ask for payment card details directly. Payments are processed by our checkout provider, Selar, or another provider we identify at checkout.
+We do not ask for payment card details directly. Payments are processed by our checkout provider, Selar for Africa or Payhip for North America and the rest of the world.
 
 ## Why we use it
 
@@ -599,14 +600,14 @@ You can withdraw consent at any time from **Account → Profile & community** in
 
 The app uses browser local storage for your sign-in token, basic profile, referral code and first-touch acquisition details such as UTM campaign tags. These are necessary for the service to work and to understand how people found us. The admin dashboard uses a separate local storage token that is only created after an admin signs in.
 
-We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required.
+We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required. See our [Cookie Policy](/legal/cookies/) for the cookies and browser storage we use.
 
 ## Who we share with
 
 We share only what is necessary with service providers who help us run the business, including:
 
 - **Cloudflare** for hosting, security and infrastructure.
-- **Selar** or another checkout provider for payments.
+- **Selar** or **Payhip** for payments and digital delivery.
 - **Email and support providers** for service messages and customer support.
 - **WhatsApp** (operated by Meta) if you consent to us contacting you there. Your use of WhatsApp is also governed by WhatsApp's own terms and privacy policy.
 - **Professional advisers** where necessary for legal, tax or accounting advice.
@@ -809,6 +810,70 @@ Refund questions: **admin@gabochie.com**
 This policy is a production draft for The Soft Life System. It is not legal advice to you. We recommend having counsel review it for your specific markets before launch.
 """,
     },
+    "cookies": {
+        "title": "Cookie Policy",
+        "description": "How The Soft Life System uses cookies, local storage and similar technologies.",
+        "md": """
+**Last updated: November 15, 2026**
+
+This Cookie Policy explains how The Soft Life System uses cookies and similar technologies. It should be read with our [Privacy Policy](/legal/privacy/).
+
+## The short version
+
+We do not use advertising cookies or sell data. The app uses browser storage that is necessary to keep you signed in, remember your progress and understand how you found us. Our hosting and checkout providers may set their own security or payment cookies when you use their services.
+
+## What cookies and local storage are
+
+A cookie is a small file a website stores in your browser. Local storage and session storage are similar browser features that can store information without sending it with every request. They are often used to keep a service working.
+
+## What we use
+
+The app currently uses:
+
+- **Sign-in token** (`softlife_token`) in local storage, so you stay signed in.
+- **Basic profile cache** (`softlife_user`) in local storage, so the app can show your name and tier while it loads.
+- **Referral code** (`softlife_ref`) in session storage, so a referral is not lost before you create an account.
+- **First-touch acquisition details** (`softlife_acquisition`) in local storage, such as referral code, UTM campaign tags and referring page, so we know how people found us.
+- **Admin token** (`softlife_admin_token`) in local storage, only after an admin signs in to the admin dashboard.
+- **Service worker cache** in your browser, so the app can load faster and work better on a weak connection.
+
+These are used for the service you requested, security, basic measurement and reliability. We do not use them to build advertising profiles.
+
+## Third-party cookies
+
+Our service providers may set cookies or similar identifiers on their own domains:
+
+- **Cloudflare** for hosting, security and bot protection. Cloudflare may set security cookies such as `__cf_bm` or `cf_clearance`.
+- **Selar** or **Payhip** when you visit their checkout or download pages. Their cookies, payment processing and privacy policies apply on their domains.
+- **Email and support providers** when you open a link or reply to a service message, according to their own policies.
+
+We do not control third-party cookies. Check the provider's policy before paying or downloading.
+
+## Analytics and advertising
+
+We do not currently run advertising pixels or third-party behavioural analytics. If we add non-essential analytics or marketing cookies, we will update this policy and ask for consent where the law requires it.
+
+## Managing cookies and storage
+
+You can clear or block cookies and site data in your browser settings. Clearing the app's local storage will sign you out and may remove saved preferences. Blocking essential storage may stop the app from working.
+
+On Android, you can clear site data from Chrome settings for `soft.gabochie.com`. On iPhone or iPad, use Safari's website data settings.
+
+## Do Not Track
+
+Browsers may send a "Do Not Track" signal. There is no common standard for responding to it. We limit non-essential tracking as described above.
+
+## Changes
+
+We may update this policy when our providers or features change. We will post the new date on this page.
+
+## Contact
+
+Cookie questions: **admin@gabochie.com**
+
+This policy is a production draft for The Soft Life System. It is not legal advice to you. We recommend having counsel review it for your specific markets before launch.
+""",
+    },
 }
 
 
@@ -981,6 +1046,25 @@ def ld_scripts(items: list[dict]) -> str:
     )
 
 
+def public_tabbar(path: str) -> str:
+    links = [
+        ("/", "Home", path == "/"),
+        ("/products/", "Products", path == "/products/"),
+        ("/blog/", "Blog", path == "/blog/" or path.startswith("/blog/")),
+        ("/contact/", "Contact", path == "/contact/"),
+        ("/#/signup", "Start", False),
+    ]
+    items = "\n".join(
+        f'      <a href="{href}"' + (' class="active" aria-current="page"' if active else "") + f'>{label}</a>'
+        for href, label, active in links
+    )
+    return f"""<nav class="tabbar public-tabbar" aria-label="Quick navigation">
+  <div class="wrap tabs">
+{items}
+  </div>
+</nav>"""
+
+
 def page(
     title: str,
     description: str,
@@ -1044,6 +1128,7 @@ def page(
   </div>
 </header>
 {body}
+{public_tabbar(path)}
 <footer class="site-footer">
   <div class="wrap">
     <div class="footer-cta">
@@ -1065,9 +1150,7 @@ def page(
         <div class="footer-social" aria-label="Follow Soft Life">
           <a href="https://www.instagram.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Instagram">Instagram</a>
           <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
-          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
           <a href="https://www.facebook.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Facebook">Facebook</a>
-          <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
         </div>
       </div>
       <nav aria-label="Explore">
@@ -1083,13 +1166,13 @@ def page(
         <a href="/#/affiliate">Affiliates</a>
         <a href="/#/signin">Sign in</a>
         <a href="/contact/">Contact</a>
-        <a href="/legal/refund/">Refund policy</a>
       </nav>
       <nav aria-label="Legal">
         <b>Legal</b>
         <a href="/legal/privacy/">Privacy</a>
         <a href="/legal/terms/">Terms</a>
         <a href="/legal/refund/">Refunds</a>
+        <a href="/legal/cookies/">Cookies</a>
       </nav>
     </div>
     <div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div>
@@ -1178,6 +1261,79 @@ def blog_index() -> str:
     )
 
 
+def share_bar(post: dict, panel: bool = False) -> str:
+    url = quote(post_url(post), safe="")
+    title = quote(post["title"], safe="")
+    message = quote(f"{post['title']} — {JOURNAL}", safe="")
+    links = [
+        ("x", "Share on X", f"https://twitter.com/intent/tweet?text={title}&url={url}"),
+        ("facebook", "Share on Facebook", f"https://www.facebook.com/sharer/sharer.php?u={url}"),
+        ("linkedin", "Share on LinkedIn", f"https://www.linkedin.com/sharing/share-offsite/?url={url}"),
+        ("whatsapp", "Share on WhatsApp", f"https://wa.me/?text={message}%20{url}"),
+        ("email", "Share by email", f"mailto:?subject={title}&body={url}"),
+    ]
+    platform = "".join(
+        f'<a class="share-btn" href="{escape(href, quote=True)}" target="_blank" rel="noopener" aria-label="{label}" title="{label}"><span class="share-ic share-{icon}" aria-hidden="true"></span></a>'
+        for icon, label, href in links
+    )
+    return f"""
+<div class="post-share{' share-panel' if panel else ''}">
+  <span class="post-share-label">{'Share this essay' if panel else 'Share'}</span>
+  {platform}
+  <button type="button" class="share-btn" data-share-copy aria-label="Copy link" title="Copy link"><span class="share-ic share-link" aria-hidden="true"></span></button>
+  <button type="button" class="share-btn" data-share-native aria-label="Share with your device" title="Share with your device" hidden><span class="share-ic share-native" aria-hidden="true"></span></button>
+  <span class="share-status sr-only" role="status" aria-live="polite"></span>
+</div>"""
+
+
+def share_script() -> str:
+    return """
+<script>
+(() => {
+  const url = window.location.href.split('#')[0];
+  const title = document.querySelector('meta[property="og:title"]')?.content || document.title;
+  const text = document.querySelector('meta[name="description"]')?.content || '';
+  const statusFor = (button) => button.closest('.post-share')?.querySelector('.share-status');
+  const fallbackCopy = (value) => {
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+  };
+  document.querySelectorAll('[data-share-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (error) {
+        fallbackCopy(url);
+      }
+      const status = statusFor(button);
+      button.classList.add('is-done');
+      if (status) status.textContent = 'Link copied';
+      window.setTimeout(() => {
+        button.classList.remove('is-done');
+        if (status) status.textContent = '';
+      }, 2200);
+    });
+  });
+  const nativeButtons = document.querySelectorAll('[data-share-native]');
+  if (navigator.share) {
+    nativeButtons.forEach((button) => {
+      button.hidden = false;
+      button.addEventListener('click', () => {
+        navigator.share({ title, text, url }).catch(() => {});
+      });
+    });
+  }
+})();
+</script>"""
+
+
 def post_page(post: dict) -> str:
     related = [p for p in POSTS if p["slug"] != post["slug"]][:2]
     faq_html = ""
@@ -1196,6 +1352,7 @@ def post_page(post: dict) -> str:
         <h1>{escape(post['title'])}</h1>
         <p class="post-dek">{escape(post['dek'])}</p>
         <p class="post-meta">By <b>{AUTHOR}</b> · <time datetime="{post['date']}">{date_display(post['date'])}</time> · {post['read']} min read</p>
+        {share_bar(post)}
       </div>
     </header>
     <div class="wrap post-layout">
@@ -1206,6 +1363,7 @@ def post_page(post: dict) -> str:
           <div class="author-mark">DC</div>
           <div><b>{AUTHOR}</b><p>Writer, systems thinker and author of <i>The Soft Life System</i>. Helping women build businesses that buy back their time.</p></div>
         </div>
+        {share_bar(post, panel=True)}
       </div>
       <aside class="post-aside" aria-label="Related">
         <div class="card">
@@ -1229,7 +1387,8 @@ def post_page(post: dict) -> str:
       <a class="btn gold big" href="/#/signup">Create my free account →</a>
     </div>
   </section>
-</main>"""
+</main>
+{share_script()}"""
     return page(
         post["title"],
         post["description"],
@@ -1265,6 +1424,7 @@ def legal_page(kind: str, data: dict) -> str:
         <a class="aside-link" href="/legal/privacy/">Privacy Policy</a>
         <a class="aside-link" href="/legal/terms/">Terms of Service</a>
         <a class="aside-link" href="/legal/refund/">Refund Policy</a>
+        <a class="aside-link" href="/legal/cookies/">Cookie Policy</a>
       </div>
     </aside>
   </div>
@@ -1276,7 +1436,7 @@ def legal_page(kind: str, data: dict) -> str:
             "name": data["title"],
             "description": data["description"],
             "url": SITE + f"/legal/{kind}/",
-            "dateModified": iso_datetime(UPDATED),
+            "dateModified": iso_datetime(TODAY if kind == "cookies" else UPDATED),
             "isPartOf": {"@type": "WebSite", "name": BRAND, "url": SITE},
             "publisher": {"@type": "Organization", "name": ORG, "url": SITE},
         },
@@ -1420,6 +1580,7 @@ def build() -> None:
         ("/legal/privacy/", UPDATED, "yearly", "0.4"),
         ("/legal/terms/", UPDATED, "yearly", "0.4"),
         ("/legal/refund/", UPDATED, "yearly", "0.4"),
+        ("/legal/cookies/", TODAY, "yearly", "0.4"),
     ]
     urls = "\n".join(
         f"  <url><loc>{SITE}{path}</loc><lastmod>{lastmod}</lastmod><changefreq>{freq}</changefreq><priority>{priority}</priority></url>"
@@ -1513,9 +1674,7 @@ Sitemap: {SITE}/sitemap.xml
         "## Socials",
         "- [Instagram](https://www.instagram.com/softlifesys)",
         "- [TikTok](https://www.tiktok.com/@softlifesys)",
-        "- [YouTube](https://www.youtube.com/@softlifesys)",
         "- [Facebook](https://www.facebook.com/softlifesys)",
-        "- [X](https://x.com/softlifesys)",
         "",
         "## Best answers for common questions",
         "- [The 15-hour workweek for women who are done doing everything](" + SITE + "/blog/15-hour-workweek-for-women/)",
@@ -1528,6 +1687,7 @@ Sitemap: {SITE}/sitemap.xml
         f"- [Privacy]({SITE}/legal/privacy/)",
         f"- [Terms]({SITE}/legal/terms/)",
         f"- [Refunds]({SITE}/legal/refund/)",
+        f"- [Cookies]({SITE}/legal/cookies/)",
         f"- [Security contact]({SITE}/.well-known/security.txt)",
         "",
         "## Machine-readable",
@@ -1854,6 +2014,9 @@ Policy: {SITE}/legal/privacy/
                     "properties": {
                         "siteUrl": {"type": "string", "format": "uri"},
                         "checkoutUrl": {"type": "string"},
+                        "selarUrl": {"type": "string"},
+                        "payhipUrl": {"type": "string"},
+                        "country": {"type": "string", "description": "Two-letter country from Cloudflare, when available."},
                         "supportEmail": {"type": "string", "format": "email"},
                         "freeAudio": {"type": "array", "items": {"type": "string"}},
                         "allAudio": {"type": "array", "items": {"type": "string"}},

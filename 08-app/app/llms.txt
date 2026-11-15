@@ -17,9 +17,7 @@ Contact: admin@gabochie.com
 ## Socials
 - [Instagram](https://www.instagram.com/softlifesys)
 - [TikTok](https://www.tiktok.com/@softlifesys)
-- [YouTube](https://www.youtube.com/@softlifesys)
 - [Facebook](https://www.facebook.com/softlifesys)
-- [X](https://x.com/softlifesys)
 
 ## Best answers for common questions
 - [The 15-hour workweek for women who are done doing everything](https://soft.gabochie.com/blog/15-hour-workweek-for-women/)
@@ -32,6 +30,7 @@ Contact: admin@gabochie.com
 - [Privacy](https://soft.gabochie.com/legal/privacy/)
 - [Terms](https://soft.gabochie.com/legal/terms/)
 - [Refunds](https://soft.gabochie.com/legal/refund/)
+- [Cookies](https://soft.gabochie.com/legal/cookies/)
 - [Security contact](https://soft.gabochie.com/.well-known/security.txt)
 
 ## Machine-readable

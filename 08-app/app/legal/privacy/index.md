@@ -21,7 +21,7 @@ We collect the information you give us and the information needed to operate the
 - **Communications:** messages you send to us for support, refunds or privacy requests.
 - **Device data:** browser type, approximate region, IP address and error logs used for security and reliability.
 
-We do not ask for payment card details directly. Payments are processed by our checkout provider, Selar, or another provider we identify at checkout.
+We do not ask for payment card details directly. Payments are processed by our checkout provider, Selar for Africa or Payhip for North America and the rest of the world.
 
 ## Why we use it
 
@@ -58,14 +58,14 @@ You can withdraw consent at any time from **Account → Profile & community** in
 
 The app uses browser local storage for your sign-in token, basic profile, referral code and first-touch acquisition details such as UTM campaign tags. These are necessary for the service to work and to understand how people found us. The admin dashboard uses a separate local storage token that is only created after an admin signs in.
 
-We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required.
+We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required. See our [Cookie Policy](/legal/cookies/) for the cookies and browser storage we use.
 
 ## Who we share with
 
 We share only what is necessary with service providers who help us run the business, including:
 
 - **Cloudflare** for hosting, security and infrastructure.
-- **Selar** or another checkout provider for payments.
+- **Selar** or **Payhip** for payments and digital delivery.
 - **Email and support providers** for service messages and customer support.
 - **WhatsApp** (operated by Meta) if you consent to us contacting you there. Your use of WhatsApp is also governed by WhatsApp's own terms and privacy policy.
 - **Professional advisers** where necessary for legal, tax or accounting advice.

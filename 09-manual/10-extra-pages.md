@@ -5,7 +5,7 @@
 ## Pickup card
 
 - **Pick ID:** `PAGES-01`
-- **Status:** Partial — offer approved and previewed 2026-11-14; pages are live on `softlife-v10`; the first PDF product and its supplied cover are built, but Selar delivery and product-page listing remain.
+- **Status:** Partial — offer approved and previewed 2026-11-14; pages are live on `softlife-v17`; the first PDF product and its supplied cover are built, but Selar delivery and product-page listing remain.
 - **Live pages:** `https://soft.gabochie.com/products/`, `https://soft.gabochie.com/consultation/` and `https://soft.gabochie.com/contact/`
 - **Outstanding:** approve the Career Compass price, create the Selar product/order bump, list it only after delivery is tested, create the Selar consultation product/payment link, replace the application email with checkout/booking, and run conversion QA.
 - **Need from you:** Career Compass final price approval, booking method, and the Selar payment/product links. The cover, audit price, first-five capacity and guarantee are in place.
@@ -137,13 +137,13 @@ route from every footer and the main navigation.
 
 ## What is live now
 
-- `/products/`, `/consultation/` and `/contact/` are built as static pages.
+- `/products/`, `/consultation/` and `/contact/` are built as static pages; `/legal/cookies/` is generated with the other policy pages.
 - All three pages have canonical URLs, Open Graph/Twitter metadata, structured
   data, sitemap entries and `llms.txt` links.
 - Home page, app navigation and footers link to all three pages.
 - Blog and legal pages link to Products and Contact; blog footer also links to Consultation.
 - `robots.txt` does not block any of the pages.
-- Production runs service worker `softlife-v10`; the next local build includes the full-logo header plate, original-logo footer plate and global footer as `softlife-v15`.
+- Production runs service worker `softlife-v17`, deployed 2026-11-15. It includes the full-logo header plate, original-logo footer plate, global footer, cookie policy, mobile public tab bar, accessible social/share controls and SPA `h1` fixes.
 - Production verified on 2026-11-14: both pages return 200 on the custom domain
   and workers.dev, no console errors, no horizontal overflow at 1280px and
   390px, CTAs resolve, and the sitemap/`llms.txt` contain both URLs.
@@ -195,8 +195,7 @@ route from every footer and the main navigation.
 
 ## Tracking and analytics
 
-The static pages do not add cookies or tracking scripts. `#/checkout` still
-records the existing `checkout_click` event for signed-in members. Consultation
+The static pages do not add cookies or tracking scripts. The cookie policy documents the app's local storage, Cloudflare security cookies and Selar/Payhip checkout cookies. `#/checkout` still records the existing `checkout_click` event for signed-in members. Consultation
 applications arrive by email, so track them manually in the launch sheet until a
 privacy-friendly analytics or booking tool is chosen.
 

@@ -64,7 +64,9 @@ Non-secret settings live in `wrangler.toml` `[vars]`:
 
 ```toml
 SITE_URL = "https://soft.gabochie.com"
-CHECKOUT_URL = ""                       # set to the Selar product URL when live
+CHECKOUT_URL = ""                       # legacy alias for the Selar product URL
+SELAR_CHECKOUT_URL = ""                 # Selar: recommended for Africa
+PAYHIP_CHECKOUT_URL = ""                # Payhip: recommended for North America and rest of world
 SUPPORT_EMAIL = "admin@gabochie.com"
 ADMIN_SESSION_HOURS = "12"
 ```
@@ -127,7 +129,7 @@ If training crawlers should be allowed, set Training to **Allow** and turn off
   app/                       the PWA (vanilla JS SPA, hash router)
     index.html               shell + metadata + static fallback home
     manifest.webmanifest     installable-app manifest
-    sw.js                    service worker (offline app shell, v15)
+    sw.js                    service worker (offline app shell, v17)
     css/app.css              Soft Life brand + blog/admin/checkout styles
     js/api.js                backend adapter — the ONLY file that talks to /api
     js/store.js              member session + admin token store
@@ -163,7 +165,7 @@ If training crawlers should be allowed, set Training to **Allow** and turn off
 | `/consultation/` | public | Static Business Audit offer, application and guarantee |
 | `#/` | public | Onboarding: promise, free read-aloud trial, system, signup CTA |
 | `#/signup` / `#/signin` | public | Email auth; captures `?ref=CODE` attribution |
-| `#/checkout` | public/member | Complete bundle checkout; Selar URL or email fallback |
+| `#/checkout` | public/member | Complete bundle checkout; Selar/Payhip URLs or email fallback |
 | `#/dashboard` | member | Progress bar, next task, quick links, tier badge |
 | `#/tasks` | member | 90-day launch plan (preloaded, week-grouped, checkable) + custom tasks |
 | `#/listen` | member | Read-aloud library: free intro + chapter 1, locked chapters, upsell |
@@ -188,7 +190,7 @@ GET  /api/tasks                            → {tasks[]}
 POST /api/tasks {title,week}               → {task}
 POST /api/tasks/toggle {id}                → {task}
 GET  /api/affiliate                        → {ref_code,clicks,signups,commission_rate}
-GET  /api/config                           → {siteUrl,checkoutUrl,supportEmail,freeAudio,allAudio,tiers}
+GET  /api/config                           → {siteUrl,checkoutUrl,selarUrl,payhipUrl,country,supportEmail,freeAudio,allAudio,tiers}
 GET  /api/audio/{slug}.mp3                 → gated MP3 stream with Range support
 POST /api/webhooks/purchase                → {ok,upgraded,duplicate?}
 POST /api/admin/login                      → {token,role,expires_at}
