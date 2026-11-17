@@ -28,7 +28,7 @@ custom_domain = true
 [vars]
 SITE_URL = "https://soft.gabochie.com"
 CHECKOUT_URL = ""
-SELAR_CHECKOUT_URL = ""
+SELAR_CHECKOUT_URL = "https://selar.com/5u2o7id078"
 PAYHIP_CHECKOUT_URL = ""
 MAINSTACK_CHECKOUT_URL = ""
 PAYSTACK_CHECKOUT_URL = ""

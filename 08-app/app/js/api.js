@@ -28,7 +28,7 @@ const API = {
   saveOnboarding(body) { return this.request('/onboarding', { method: 'POST', body }); },
   event(event, meta = {}) { return this.request('/events', { method: 'POST', body: { event, meta, path: location.pathname + location.hash } }); },
   track(body) { return this.request('/track', { method: 'POST', body }); },
-  claimPreview(token) { return this.request('/claim/preview', { method: 'POST', body: { token } }); },
+  claimPreview(body) { return this.request('/claim/preview', { method: 'POST', body }); },
   claimComplete(body) { return this.request('/claim/complete', { method: 'POST', body }); },
   tasks() { return this.request('/tasks'); },
   addTask(body) { return this.request('/tasks', { method: 'POST', body }); },

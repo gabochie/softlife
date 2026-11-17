@@ -555,9 +555,44 @@ async function validClaim(env, token) {
 
 async function claimPreview(request, env) {
   const body = await readJson(request);
-  const claim = await validClaim(env, String(body.token || ""));
-  if (!claim) return json({ error: "This access link is invalid, already used, or expired." }, 404);
-  return json({ email: claim.email, tier: claim.tier });
+  const token = String(body.token || "");
+  if (token) {
+    const claim = await validClaim(env, token);
+    if (!claim) return json({ error: "This access link is invalid, already used, or expired." }, 404);
+    return json({ email: claim.email, tier: claim.tier });
+  }
+  // Manual verify: buyer enters the email they paid with and their order ID
+  // (shown on the Selar/Paystack receipt). Both must match a recorded purchase.
+  const email = String(body.email || "").trim().toLowerCase();
+  const orderId = String(body.order_id || "").trim();
+  if (!email.includes("@") || !orderId) {
+    return json({ error: "Enter the email you paid with and your order ID from the receipt." }, 400);
+  }
+  const claimed = await env.DB.prepare(
+    "SELECT id FROM softlife_purchase_claims WHERE lower(email) = ? AND order_id = ? AND completed_at IS NOT NULL LIMIT 1"
+  ).bind(email, orderId).first();
+  if (claimed) return json({ error: "This purchase is already unlocked. Please sign in instead." }, 400);
+  const purchase = await env.DB.prepare(
+    "SELECT tier FROM softlife_purchases WHERE lower(email) = ? AND order_id = ? LIMIT 1"
+  ).bind(email, orderId).first();
+  if (!purchase) {
+    await logSecurity(env, "claim_manual_miss", email, clientIp(request), `order_id=${orderId}`);
+    return json({ error: "We haven't received your payment confirmation yet. Give it a few minutes and try again — if it still fails, email admin@gabochie.com with your receipt." }, 404);
+  }
+  // Reuse a pending claim for this purchase if one exists; otherwise mint one.
+  let claim = await env.DB.prepare(
+    "SELECT token FROM softlife_purchase_claims WHERE lower(email) = ? AND order_id = ? AND completed_at IS NULL "
+    + "AND created_at >= datetime('now', '-30 days') LIMIT 1"
+  ).bind(email, orderId).first();
+  if (!claim) {
+    const newToken = randomHex(16);
+    await env.DB.prepare(
+      "INSERT INTO softlife_purchase_claims (email, token, order_id, tier) VALUES (?, ?, ?, ?)"
+    ).bind(email, newToken, orderId, purchase.tier).run();
+    claim = { token: newToken };
+  }
+  await logSecurity(env, "claim_manual_verified", email, clientIp(request), `order_id=${orderId}`);
+  return json({ email, tier: purchase.tier, token: claim.token });
 }
 
 async function claimComplete(request, env) {

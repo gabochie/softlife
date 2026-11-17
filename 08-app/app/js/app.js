@@ -450,19 +450,46 @@ const App = {
     const claimToken = params.get('token') || '';
     let preview = null;
     try {
-      preview = await API.claimPreview(claimToken);
+      preview = await API.claimPreview(claimToken ? { token: claimToken } : {});
     } catch (err) {
+      // No token or bad token: offer the manual verify form (email + order ID
+      // from the payment receipt) instead of a dead end.
       $app.innerHTML = this.chrome(`
         <main class="page">
           <div class="auth-card">
-            <h1>Access link problem</h1>
+            <h1>${claimToken ? 'Access link problem' : 'Unlock your purchase'}</h1>
             <p class="note">${esc(err.message)}</p>
+            <form id="verifyForm">
+              <label>Email you paid with<input name="email" type="email" autocomplete="email" required></label>
+              <label>Order ID from your receipt<input name="orderId" type="text" required placeholder="e.g. SL-8241"></label>
+              <button class="btn gold wide" type="submit">Verify my purchase</button>
+            </form>
             <p class="note">Already have an account? <a href="#/signin">Sign in</a> — your purchase unlocks automatically.</p>
             <p class="note center">Need help? <a href="mailto:${esc(this.conf.supportEmail || 'admin@gabochie.com')}">Contact support</a>.</p>
           </div>
         </main>`, {});
+      const vf = document.getElementById('verifyForm');
+      vf.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = vf.querySelector('button');
+        btn.disabled = true; btn.textContent = 'Verifying…';
+        try {
+          preview = await API.claimPreview({ email: vf.email.value.trim(), order_id: vf.orderId.value.trim() });
+          this.claimSetup($app, preview);
+        } catch (err2) {
+          btn.disabled = false; btn.textContent = 'Verify my purchase';
+          let box = vf.querySelector('.form-error');
+          if (!box) { box = document.createElement('div'); box.className = 'form-error'; vf.prepend(box); }
+          box.textContent = err2.message;
+        }
+      });
       return;
     }
+    this.claimSetup($app, preview, claimToken);
+  },
+
+  claimSetup($app, preview, linkToken = '') {
+    const token = preview.token || linkToken;
     $app.innerHTML = this.chrome(`
       <main class="page">
         <div class="auth-card">
@@ -483,7 +510,7 @@ const App = {
       const btn = f.querySelector('button');
       btn.disabled = true; btn.textContent = 'Unlocking…';
       try {
-        const res = await API.claimComplete({ token: claimToken, name: f.name.value, password: f.password.value });
+        const res = await API.claimComplete({ token: token, name: f.name.value, password: f.password.value });
         if (res.upgraded_existing) {
           location.hash = '#/signin?notice=' + encodeURIComponent('Your purchase is unlocked. Sign in to start.');
           return;

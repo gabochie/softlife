@@ -1133,7 +1133,10 @@ class Handler(SimpleHTTPRequestHandler):
         if route == "/api/webhooks/purchase":
             if not WEBHOOK_SECRET:
                 return self._json({"error": "purchase webhook not configured"}, 503)
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             provided = (self.headers.get("Authorization", "")[7:] or self.headers.get("X-Webhook-Secret", "")).strip()
+            if not provided:
+                provided = (qs.get("secret", [""])[0] or qs.get("key", [""])[0]).strip()
             if not secrets.compare_digest(provided.encode(), WEBHOOK_SECRET.encode()):
                 conn = db()
                 _log_webhook(conn, "rejected", data, None, str(data.get("email") or ""))
@@ -1427,14 +1430,55 @@ class Handler(SimpleHTTPRequestHandler):
         if route == "/api/claim/preview":
             token = str(data.get("token") or "")
             conn = db()
-            claim = conn.execute(
-                "SELECT email, tier FROM purchase_claims WHERE token = ? AND completed_at IS NULL "
-                "AND created_at >= datetime('now', '-30 days')", (token,),
-            ).fetchone()
+            if token:
+                claim = conn.execute(
+                    "SELECT email, tier FROM purchase_claims WHERE token = ? AND completed_at IS NULL "
+                    "AND created_at >= datetime('now', '-30 days')", (token,),
+                ).fetchone()
+                conn.close()
+                if not claim:
+                    return self._json({"error": "This access link is invalid, already used, or expired."}, 404)
+                return self._json({"email": claim["email"], "tier": claim["tier"]})
+            # Manual verify: email + order ID from the payment receipt.
+            email = str(data.get("email") or "").strip().lower()
+            order_id = str(data.get("order_id") or "").strip()
             conn.close()
-            if not claim:
-                return self._json({"error": "This access link is invalid, already used, or expired."}, 404)
-            return self._json({"email": claim["email"], "tier": claim["tier"]})
+            if "@" not in email or not order_id:
+                return self._json({"error": "Enter the email you paid with and your order ID from the receipt."}, 400)
+            conn = db()
+            claimed = conn.execute(
+                "SELECT id FROM purchase_claims WHERE lower(email) = ? AND order_id = ? AND completed_at IS NOT NULL LIMIT 1",
+                (email, order_id),
+            ).fetchone()
+            if claimed:
+                conn.close()
+                return self._json({"error": "This purchase is already unlocked. Please sign in instead."}, 400)
+            purchase = conn.execute(
+                "SELECT tier FROM purchases WHERE lower(email) = ? AND order_id = ? LIMIT 1",
+                (email, order_id),
+            ).fetchone()
+            if not purchase:
+                _log_security(conn, "claim_manual_miss", email=email, ip=self._client_ip(), detail=f"order_id={order_id}")
+                conn.commit()
+                conn.close()
+                return self._json({"error": "We haven't received your payment confirmation yet. Give it a few minutes and try again — if it still fails, email admin@gabochie.com with your receipt."}, 404)
+            existing = conn.execute(
+                "SELECT token FROM purchase_claims WHERE lower(email) = ? AND order_id = ? AND completed_at IS NULL "
+                "AND created_at >= datetime('now', '-30 days') LIMIT 1",
+                (email, order_id),
+            ).fetchone()
+            if existing:
+                claim_token = existing["token"]
+            else:
+                claim_token = secrets.token_hex(16)
+                conn.execute(
+                    "INSERT INTO purchase_claims (email, token, order_id, tier) VALUES (?,?,?,?)",
+                    (email, claim_token, order_id, purchase["tier"]),
+                )
+            _log_security(conn, "claim_manual_verified", email=email, ip=self._client_ip(), detail=f"order_id={order_id}")
+            conn.commit()
+            conn.close()
+            return self._json({"email": email, "tier": purchase["tier"], "token": claim_token})
 
         if route == "/api/claim/complete":
             token = str(data.get("token") or "")
