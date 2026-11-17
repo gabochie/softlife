@@ -24,6 +24,9 @@ const API = {
   onboarding() { return this.request('/onboarding'); },
   saveOnboarding(body) { return this.request('/onboarding', { method: 'POST', body }); },
   event(event, meta = {}) { return this.request('/events', { method: 'POST', body: { event, meta, path: location.pathname + location.hash } }); },
+  track(body) { return this.request('/track', { method: 'POST', body }); },
+  claimPreview(token) { return this.request('/claim/preview', { method: 'POST', body: { token } }); },
+  claimComplete(body) { return this.request('/claim/complete', { method: 'POST', body }); },
   tasks() { return this.request('/tasks'); },
   addTask(body) { return this.request('/tasks', { method: 'POST', body }); },
   toggleTask(id) { return this.request('/tasks/toggle', { method: 'POST', body: { id } }); },
@@ -39,7 +42,30 @@ const API = {
   adminReferrals() { return this.request('/admin/referrals', { admin: true }); },
   adminPurchases() { return this.request('/admin/purchases', { admin: true }); },
   adminOnboarding() { return this.request('/admin/onboarding', { admin: true }); },
-  adminAudio() { return this.request('/admin/audio', { admin: true }); }
+  adminAudio() { return this.request('/admin/audio', { admin: true }); },
+
+  analyticsOverview() { return this.request('/admin/analytics/overview', { admin: true }); },
+  analyticsAudio() { return this.request('/admin/analytics/audio', { admin: true }); },
+  analyticsTasks() { return this.request('/admin/analytics/tasks', { admin: true }); },
+  analyticsOnboarding() { return this.request('/admin/analytics/onboarding', { admin: true }); },
+  analyticsEngagement() { return this.request('/admin/analytics/engagement', { admin: true }); },
+  analyticsContent() { return this.request('/admin/analytics/content', { admin: true }); },
+
+  securityOverview() { return this.request('/admin/security', { admin: true }); },
+
+  crmProfile(id) { return this.request('/admin/crm?user_id=' + encodeURIComponent(id), { admin: true }); },
+  crmSetStage(id, stage) { return this.request('/admin/crm/stage', { method: 'POST', body: { user_id: id, stage }, admin: true }); },
+  crmAddNote(id, note) { return this.request('/admin/crm/notes', { method: 'POST', body: { user_id: id, note }, admin: true }); },
+
+  staffLogin(body) { return this.request('/staff/login', { method: 'POST', body }); },
+  teamList() { return this.request('/admin/team', { admin: true }); },
+  teamAdd(body) { return this.request('/admin/team', { method: 'POST', body, admin: true }); },
+  teamSetActive(id, active) { return this.request('/admin/team/' + id + '/active', { method: 'POST', body: { active }, admin: true }); },
+  teamSetRole(id, role) { return this.request('/admin/team/' + id + '/role', { method: 'POST', body: { role }, admin: true }); },
+
+  webhookLog() { return this.request('/admin/webhooks', { admin: true }); },
+  webhookReplay(id) { return this.request('/admin/webhooks/replay', { method: 'POST', body: { id }, admin: true }); },
+  adminClaims() { return this.request('/admin/claims', { admin: true }); }
 };
 
 class ApiError extends Error {

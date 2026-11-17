@@ -50,6 +50,12 @@ const App = {
     const params = new URLSearchParams(hashQuery || location.search.replace(/^\?/, ''));
     this.view = path;
     const $app = document.getElementById('app');
+    // Passive product analytics: one page_view per route (admin screens excluded).
+    // Signed-in members are tracked with their account; everyone else anonymously.
+    if (path !== '/admin') {
+      if (Store.token()) API.event('page_view').catch(() => {});
+      else API.track({ event: 'page_view', path }).catch(() => {});
+    }
 
     if (params.get('demo') === '1') return this.demoLogin();
 
@@ -197,6 +203,7 @@ const App = {
     if (path === '/' || path === '/home') return this.home($app, params);
     if (path === '/signup') return this.auth($app, 'signup', params);
     if (path === '/signin') return this.auth($app, 'signin', params);
+    if (path === '/claim') return this.claim($app, params);
     if (path === '/checkout') return this.checkout($app, params);
     if (path === '/admin') return this.admin($app);
     this.renderNotFound($app);
@@ -348,6 +355,59 @@ const App = {
     });
   },
 
+  async claim($app, params = new URLSearchParams()) {
+    const claimToken = params.get('token') || '';
+    let preview = null;
+    try {
+      preview = await API.claimPreview(claimToken);
+    } catch (err) {
+      $app.innerHTML = this.chrome(`
+        <main class="page">
+          <div class="auth-card">
+            <h1>Access link problem</h1>
+            <p class="note">${esc(err.message)}</p>
+            <p class="note">Already have an account? <a href="#/signin">Sign in</a> — your purchase unlocks automatically.</p>
+            <p class="note center">Need help? <a href="mailto:${esc(this.conf.supportEmail || 'admin@gabochie.com')}">Contact support</a>.</p>
+          </div>
+        </main>`, {});
+      return;
+    }
+    $app.innerHTML = this.chrome(`
+      <main class="page">
+        <div class="auth-card">
+          <span class="tag">Purchase verified</span>
+          <h1>Finish setting up your access</h1>
+          <p class="note">Your <b>${esc(preview.tier)}</b> purchase for <b>${esc(preview.email)}</b> is confirmed. Choose a password to open your account — the full system unlocks instantly.</p>
+          <form id="claimForm">
+            <label>Your name<input name="name" type="text" autocomplete="name" placeholder="Amara"></label>
+            <label>Choose a password<input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8"></label>
+            <button class="btn gold wide" type="submit">Unlock my system →</button>
+          </form>
+          <p class="note center">Wrong email? <a href="mailto:${esc(this.conf.supportEmail || 'admin@gabochie.com')}">Contact support</a>.</p>
+        </div>
+      </main>`, {});
+    document.getElementById('claimForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const btn = f.querySelector('button');
+      btn.disabled = true; btn.textContent = 'Unlocking…';
+      try {
+        const res = await API.claimComplete({ token: claimToken, name: f.name.value, password: f.password.value });
+        if (res.upgraded_existing) {
+          location.hash = '#/signin?notice=' + encodeURIComponent('Your purchase is unlocked. Sign in to start.');
+          return;
+        }
+        Store.token(res.token); Store.user(res.user);
+        location.hash = '#/onboarding';
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Unlock my system →';
+        let box = f.querySelector('.form-error');
+        if (!box) { box = document.createElement('div'); box.className = 'form-error'; f.prepend(box); }
+        box.textContent = err.message;
+      }
+    });
+  },
+
   checkout($app, params = new URLSearchParams()) {
     const me = Store.user();
     const complete = me && me.tier === 'complete';
@@ -430,6 +490,12 @@ const App = {
             <label>Admin password<input name="password" type="password" autocomplete="current-password" required autofocus></label>
             <button class="btn gold wide" type="submit">Unlock dashboard →</button>
           </form>
+          <div class="auth-divider"><span>or</span></div>
+          <form id="staffForm">
+            <label>Staff email<input name="email" type="email" autocomplete="username" placeholder="you@softlife.app"></label>
+            <label>Staff password<input name="password" type="password" autocomplete="current-password"></label>
+            <button class="btn dark wide" type="submit">Staff sign-in →</button>
+          </form>
           <p class="note center"><a href="#/">Back to the site</a></p>
         </div>
       </main>`, {});
@@ -441,6 +507,7 @@ const App = {
       try {
         const data = await API.adminLogin({ password: form.password.value });
         Store.adminToken(data.token);
+        Store.adminRole(data.role || 'superadmin');
         this.viewAdmin($app);
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Unlock dashboard →';
@@ -449,45 +516,266 @@ const App = {
         box.textContent = err.message;
       }
     });
+    const staffForm = document.getElementById('staffForm');
+    staffForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = staffForm.querySelector('button');
+      btn.disabled = true; btn.textContent = 'Checking…';
+      try {
+        const data = await API.staffLogin({ email: staffForm.email.value, password: staffForm.password.value });
+        Store.adminToken(data.token);
+        Store.adminRole(data.role || 'sales');
+        this.viewAdmin($app);
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Staff sign-in →';
+        let box = staffForm.querySelector('.form-error');
+        if (!box) { box = document.createElement('div'); box.className = 'form-error'; staffForm.prepend(box); }
+        box.textContent = err.message;
+      }
+    });
   },
 
   async viewAdmin($app) {
-    $app.innerHTML = this.chrome(`
-      <main class="page">
-        <div class="wrap admin-shell">
-          <div class="dash-head">
-            <div><h1 class="hi">Super-admin</h1><p class="note">Live business operations for The Soft Life System.</p></div>
+    const ic = this.icons;
+    const role = Store.adminRole() || 'superadmin';
+    const sections = [
+      ['overview', 'Overview', ic.grid],
+      ['analytics', 'Analytics', ic.chart],
+      ['members', 'Members', ic.members],
+      ['audience', 'Audience', ic.audience],
+      ['purchases', 'Purchases', ic.purchases],
+      ['referrals', 'Referrals', ic.share]
+    ];
+    if (role === 'superadmin') sections.push(['team', 'Team', ic.members]);
+    if (role === 'superadmin' || role === 'sales') sections.push(['webhooks', 'Webhooks', ic.purchases]);
+    if (role === 'superadmin') sections.push(['security', 'Security', ic.shield]);
+    const navButtons = sections.map(([id, label, icon], i) =>
+      `<button type="button" class="side-link${i === 0 ? ' active' : ''}" data-target="${id}">${icon}<span>${label}</span></button>`).join('');
+    const roleLabel = { superadmin: 'Super-admin', sales: 'Sales', support: 'Support', content: 'Content' }[role] || role;
+    const initials = role === 'superadmin' ? 'SA' : role.slice(0, 2).toUpperCase();
+    $app.innerHTML = `
+      <div class="shell">
+        <aside class="sidebar">
+          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+          <nav class="side-nav" aria-label="Admin sections">${navButtons}</nav>
+          <a class="side-user ${role === 'superadmin' ? 'admin-user' : ''}" href="#/dashboard" aria-label="Back to the member app">
+            <span class="dash-avatar sm sa">${initials}</span>
+            <span class="side-user-meta"><b>${roleLabel}</b><small>Back to member app →</small></span>
+          </a>
+        </aside>
+        <nav class="m-tabbar" aria-label="Admin sections">${navButtons}</nav>
+        <main class="member shell-main admin-main">
+          <header class="admin-head">
+            <div>
+              <h1 class="hi">${roleLabel}</h1>
+              <p class="note">Live business operations for The Soft Life System.</p>
+            </div>
             <div class="admin-actions">
               <button class="btn ghost" id="adminRefresh" type="button">Refresh</button>
               <button class="btn dark" id="adminLogout" type="button">Log out</button>
             </div>
-          </div>
+          </header>
           <div id="adminBody"><p class="note">Loading live data…</p></div>
-        </div>
-      </main>`, {});
+        </main>
+      </div>
+      <div class="crm-drawer" id="crmDrawer" hidden></div>`;
+    this.bindAdminNav();
     document.getElementById('adminRefresh').addEventListener('click', () => this.loadAdmin());
     document.getElementById('adminLogout').addEventListener('click', async () => {
       try { await API.adminLogout(); } catch (e) { /* token may be stale */ }
       Store.clearAdmin();
+      Store.adminRole(null);
       this.admin($app);
     });
     await this.loadAdmin();
   },
 
+  bindAdminNav() {
+    const setActive = (id) => document.querySelectorAll('[data-target]')
+      .forEach((b) => b.classList.toggle('active', b.dataset.target === id));
+    document.querySelectorAll('[data-target]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const el = document.getElementById('sec-' + btn.dataset.target);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActive(btn.dataset.target);
+      });
+    });
+    this.refreshAdminSpy();
+  },
+
+  refreshAdminSpy() {
+    const sections = [...new Set([...document.querySelectorAll('[data-target]')].map((b) => b.dataset.target))]
+      .map((t) => document.getElementById('sec-' + t)).filter(Boolean);
+    if (!sections.length || !('IntersectionObserver' in window)) return;
+    if (this._adminSpy) this._adminSpy.disconnect();
+    const spy = new IntersectionObserver((entries) => {
+      const hit = entries.filter((e) => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (hit) {
+        const id = hit.target.id.replace(/^sec-/, '');
+        document.querySelectorAll('[data-target]')
+          .forEach((b) => b.classList.toggle('active', b.dataset.target === id));
+      }
+    }, { rootMargin: '-10% 0px -55% 0px', threshold: [0, 0.25, 0.6] });
+    sections.forEach((s) => spy.observe(s));
+    this._adminSpy = spy;
+  },
+
+  closeCrm() {
+    const drawer = document.getElementById('crmDrawer');
+    if (drawer) { drawer.classList.remove('open'); setTimeout(() => { drawer.hidden = true; }, 250); }
+  },
+
+  async openCrm(id) {
+    const drawer = document.getElementById('crmDrawer');
+    if (!drawer) return;
+    drawer.hidden = false;
+    drawer.innerHTML = '<div class="crm-panel"><p class="note">Loading member…</p></div>';
+    requestAnimationFrame(() => drawer.classList.add('open'));
+    let c;
+    try { c = await API.crmProfile(id); }
+    catch (err) {
+      drawer.innerHTML = `<div class="crm-panel"><p class="note">Could not load member: ${esc(err.message)}</p><button class="btn dark" data-close-crm type="button">Close</button></div>`;
+      return;
+    }
+    drawer.innerHTML = this.crmDrawer(c);
+    const stageSel = document.getElementById('crmStage');
+    stageSel.addEventListener('change', async () => {
+      stageSel.disabled = true;
+      try { await API.crmSetStage(id, stageSel.value); this._auditFlash('Stage updated → ' + stageSel.value); }
+      catch (err) { alert(err.message); }
+      stageSel.disabled = false;
+    });
+    const noteForm = document.getElementById('crmNoteForm');
+    noteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = noteForm.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+      const btn = noteForm.querySelector('button');
+      btn.disabled = true;
+      try {
+        await API.crmAddNote(id, text);
+        input.value = '';
+        await this.openCrm(id);
+      } catch (err) { alert(err.message); btn.disabled = false; }
+    });
+  },
+
+  _auditFlash(message) {
+    let el = document.getElementById('crmFlash');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'crmFlash';
+      el.className = 'crm-flash';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(this._flashTimer);
+    this._flashTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  },
+
+  crmDrawer(c) {
+    const m = c.member;
+    const onb = c.onboarding || {};
+    const s = c.signals;
+    const stageLabel = (stage) => ({ lead: 'Lead', engaged: 'Engaged', checkout_abandoned: 'Checkout abandoned', customer: 'Customer', client: 'Client', lost: 'Lost' }[stage] || stage);
+    const field = (label, value) => `<div class="crm-field"><small>${label}</small><b>${value ? esc(String(value)) : '—'}</b></div>`;
+    const timeline = (c.timeline || []).map((t) =>
+      `<li><small>${esc(String(t.created_at).slice(0, 16).replace('T', ' '))}</small> <span>${esc(t.event)}</span><code>${esc(String(t.path || '').replace('/#', '#'))}</code></li>`).join('');
+    const orders = (c.purchases || []).map((p) =>
+      `<li><span>${esc(p.tier)}</span> <b>${p.currency ? esc(p.currency) + ' ' : ''}${esc(p.amount ?? '—')}</b><small>${esc(String(p.created_at).slice(0, 10))}</small></li>`).join('');
+    const notes = (c.notes || []).map((n) =>
+      `<li><p>${esc(n.note)}</p><small>${esc(n.author)} · ${esc(String(n.created_at).slice(0, 16).replace('T', ' '))}</small></li>`).join('');
+    const wa = (onb.whatsapp_number || '').replace(/[^\d+]/g, '');
+    return `
+      <div class="crm-panel">
+        <header class="crm-head">
+          <div>
+            <span class="tag">Customer 360</span>
+            <h3>${esc(m.name)}</h3>
+            <p class="note">${esc(m.email)} · Member since ${esc(String(m.created_at).slice(0, 10))} · Ref <b>${esc(m.ref_code)}</b>${m.referred_by ? ' · referred by ' + esc(m.referred_by) : ''}</p>
+          </div>
+          <button class="btn ghost" data-close-crm type="button" aria-label="Close">✕</button>
+        </header>
+        <div class="crm-stage-row">
+          <label>Pipeline stage
+            <select id="crmStage" aria-label="Pipeline stage">
+              ${['lead', 'engaged', 'checkout_abandoned', 'customer', 'client', 'lost'].map((st) => this.adminOption(st, c.stage, stageLabel(st))).join('')}
+            </select>
+          </label>
+          ${wa ? `<a class="btn dark" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp ${esc(onb.whatsapp_number)} →</a>` : ''}
+        </div>
+        <div class="crm-grid">
+          <section class="crm-card">
+            <span class="tag">Signals</span>
+            <div class="crm-sig">
+              <div><b>${s.tasksDone}/${s.tasksTotal}</b><small>Tasks done</small></div>
+              <div><b>${s.audioStarted}</b><small>Chapter plays</small></div>
+              <div><b>${s.audioCompleted}</b><small>Chapters finished</small></div>
+              <div><b>${s.checkoutClicks}</b><small>Checkout clicks</small></div>
+              <div><b>${c.ltv ? '$' + esc(c.ltv) : '—'}</b><small>Lifetime value</small></div>
+            </div>
+          </section>
+          <section class="crm-card">
+            <span class="tag">Acquisition</span>
+            <div class="crm-fields">
+              ${field('Source', onb.source)}${field('UTM source', onb.utm_source)}${field('Campaign', onb.utm_campaign)}
+              ${field('Business', onb.business_name)}${field('Stage', onb.business_stage)}${field('Country', onb.country)}
+              ${field('Main goal', onb.main_goal)}${field('Biggest challenge', onb.biggest_challenge)}${field('Revenue range', onb.revenue_range)}
+            </div>
+          </section>
+          <section class="crm-card">
+            <span class="tag">Purchases</span>
+            ${orders ? `<ul class="crm-list">${orders}</ul>` : '<p class="note">No orders recorded yet.</p>'}
+          </section>
+          <section class="crm-card">
+            <span class="tag">Recent activity</span>
+            ${timeline ? `<ul class="crm-timeline">${timeline}</ul>` : '<p class="note">No events yet.</p>'}
+          </section>
+          <section class="crm-card wide">
+            <span class="tag">Staff notes</span>
+            ${notes ? `<ul class="crm-notes">${notes}</ul>` : '<p class="note">No notes yet — add the first one below.</p>'}
+            <form id="crmNoteForm" class="crm-note-form">
+              <input type="text" placeholder="Add a note — follow-ups, context, next step…" aria-label="New note" maxlength="1000">
+              <button class="btn dark" type="submit">Add note</button>
+            </form>
+          </section>
+        </div>
+      </div>`;
+  },
+
   async loadAdmin(q = '') {
     const box = document.getElementById('adminBody');
     if (!box) return;
+    // Analytics endpoints are fault-isolated: if any fails the core dashboard still renders.
+    const safe = (p) => p.catch(() => null);
+    const isSuper = (Store.adminRole() || 'superadmin') === 'superadmin';
     try {
-      const [overview, users, audio, purchases, referrals, onboarding] = await Promise.all([
-        API.adminOverview(),
-        API.adminUsers(q),
-        API.adminAudio(),
-        API.adminPurchases(),
-        API.adminReferrals(),
-        API.adminOnboarding()
+      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims] = await Promise.all([
+        safe(API.adminOverview()),
+        safe(API.adminUsers(q)),
+        safe(API.adminAudio()),
+        safe(API.adminPurchases()),
+        safe(API.adminReferrals()),
+        safe(API.adminOnboarding()),
+        safe(API.analyticsOverview()),
+        safe(API.analyticsAudio()),
+        safe(API.analyticsTasks()),
+        safe(API.analyticsOnboarding()),
+        safe(API.analyticsEngagement()),
+        isSuper ? safe(API.teamList()) : Promise.resolve(null),
+        (isSuper || Store.adminRole() === 'sales') ? safe(API.webhookLog()) : Promise.resolve(null),
+        safe(API.analyticsContent()),
+        isSuper ? safe(API.securityOverview()) : Promise.resolve(null),
+        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminClaims()) : Promise.resolve(null)
       ]);
-      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding);
+      const analytics = { overview: anOv, audio: anAu, tasks: anTasks, onboarding: anOnb, engagement: anEn, content: anCt };
+      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims);
       this.bindAdmin();
+      this.refreshAdminSpy();
+      this.renderAdminCharts(analytics);
     } catch (err) {
       if (err.status === 401) {
         Store.clearAdmin();
@@ -497,36 +785,238 @@ const App = {
     }
   },
 
+  ensureChart() {
+    if (window.Chart) return Promise.resolve(window.Chart);
+    if (this._chartPromise) return this._chartPromise;
+    this._chartPromise = new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.onload = () => resolve(window.Chart || null);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+      setTimeout(() => resolve(window.Chart || null), 8000);
+    });
+    return this._chartPromise;
+  },
+
+  chartColors: { pink: '#f078a8', gold: '#e8b93b', purple: '#7b3fa0', deep: '#5d2189', slate: '#6d5f7a' },
+
+  async renderAdminCharts(an) {
+    const canvasIds = ['chDau', 'chAudio', 'chTasks', 'chOnb', 'chEvents', 'chViews'];
+    const Chart = await this.ensureChart();
+    if (!Chart) {
+      canvasIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.replaceWith(Object.assign(document.createElement('p'), { className: 'note', textContent: 'Charts need an internet connection (CDN). The numbers above are live.' }));
+      });
+      return;
+    }
+    if (this._charts) Object.values(this._charts).forEach((c) => c.destroy());
+    this._charts = {};
+    // Chart.js with maintainAspectRatio:false needs a sized parent, or canvases grow unbounded.
+    canvasIds.forEach((id) => {
+      const c = document.getElementById(id);
+      if (c && !c.parentElement.classList.contains('chart-wrap')) {
+        const wrap = document.createElement('div');
+        wrap.className = 'chart-wrap';
+        c.replaceWith(wrap);
+        wrap.appendChild(c);
+        c.removeAttribute('height');
+      }
+    });
+    const FONT = { family: "'Inter', system-ui, sans-serif", size: 11 };
+    const baseOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { font: FONT, boxWidth: 12 } } },
+      scales: {
+        x: { ticks: { font: FONT }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { font: FONT, precision: 0 }, grid: { color: 'rgba(93,33,137,.08)' } }
+      }
+    };
+    const axisTime = { ...baseOpts, scales: { ...baseOpts.scales, x: { ticks: { font: FONT, maxTicksLimit: 8 }, grid: { display: false } } } };
+
+    // 1 · Daily active members (30d line)
+    const dau = an.overview && an.overview.dailyActive ? an.overview.dailyActive : [];
+    if (dau.length) this._charts.dau = new Chart(document.getElementById('chDau'), {
+      type: 'line',
+      data: {
+        labels: dau.map((d) => d.day.slice(5)),
+        datasets: [{
+          label: 'Active members',
+          data: dau.map((d) => d.active),
+          borderColor: this.chartColors.deep,
+          backgroundColor: 'rgba(240,120,168,.18)',
+          fill: true, tension: 0.35, pointRadius: 2, borderWidth: 2
+        }]
+      },
+      options: axisTime
+    });
+
+    // 1b · Page views (14d line, includes anonymous public traffic)
+    const views = an.content && an.content.dailyViews ? an.content.dailyViews : [];
+    if (views.length && document.getElementById('chViews')) this._charts.views = new Chart(document.getElementById('chViews'), {
+      type: 'line',
+      data: {
+        labels: views.map((d) => d.day.slice(5)),
+        datasets: [{
+          label: 'Page views',
+          data: views.map((d) => d.views),
+          borderColor: this.chartColors.pink,
+          backgroundColor: 'rgba(123,63,160,.14)',
+          fill: true, tension: 0.35, pointRadius: 2, borderWidth: 2
+        }]
+      },
+      options: axisTime
+    });
+
+    // 2 · Audio reach & drop-off (plays vs completions per chapter)
+    const chapters = an.audio && an.audio.chapters ? an.audio.chapters : [];
+    if (chapters.length) this._charts.audio = new Chart(document.getElementById('chAudio'), {
+      type: 'bar',
+      data: {
+        labels: chapters.map((c) => c.slug),
+        datasets: [
+          { label: 'Plays', data: chapters.map((c) => c.plays), backgroundColor: this.chartColors.purple, borderRadius: 4 },
+          { label: 'Completions', data: chapters.map((c) => c.completions), backgroundColor: this.chartColors.gold, borderRadius: 4 }
+        ]
+      },
+      options: baseOpts
+    });
+
+    // 3 · Task completion by week (assigned vs done)
+    const weeks = an.tasks && an.tasks.weeks ? an.tasks.weeks : [];
+    if (weeks.length) this._charts.tasks = new Chart(document.getElementById('chTasks'), {
+      type: 'bar',
+      data: {
+        labels: weeks.map((w) => 'W' + w.week),
+        datasets: [
+          { label: 'Assigned', data: weeks.map((w) => w.total), backgroundColor: 'rgba(123,63,160,.35)', borderRadius: 4 },
+          { label: 'Done', data: weeks.map((w) => w.done), backgroundColor: this.chartColors.deep, borderRadius: 4 }
+        ]
+      },
+      options: baseOpts
+    });
+
+    // 4 · Onboarding field completion (horizontal bars)
+    const steps = an.onboarding && an.onboarding.steps ? an.onboarding.steps : [];
+    if (steps.length) this._charts.onb = new Chart(document.getElementById('chOnb'), {
+      type: 'bar',
+      data: {
+        labels: steps.map((s) => s.field.replace(/_/g, ' ')),
+        datasets: [{ label: '% filled', data: steps.map((s) => s.rate), backgroundColor: this.chartColors.pink, borderRadius: 4 }]
+      },
+      options: { ...baseOpts, indexAxis: 'y', scales: { x: { max: 100, ticks: { font: FONT, precision: 0 }, grid: { color: 'rgba(93,33,137,.08)' } }, y: { ticks: { font: FONT }, grid: { display: false } } } }
+    });
+
+    // 5 · Events by type (doughnut, top 6 + other)
+    const byEvent = an.engagement && an.engagement.byEvent ? an.engagement.byEvent : [];
+    if (byEvent.length) {
+      const top = byEvent.slice(0, 6);
+      const other = byEvent.slice(6).reduce((sum, e) => sum + e.c, 0);
+      if (other) top.push({ event: 'other', c: other });
+      this._charts.events = new Chart(document.getElementById('chEvents'), {
+        type: 'doughnut',
+        data: {
+          labels: top.map((e) => e.event),
+          datasets: [{
+            data: top.map((e) => e.c),
+            backgroundColor: [this.chartColors.pink, this.chartColors.gold, this.chartColors.purple, this.chartColors.deep, '#b48ec7', '#e3cfe8', '#3c2a4d'],
+            borderWidth: 0
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '58%', plugins: { legend: { position: 'right', labels: { font: FONT, boxWidth: 12 } } } }
+      });
+    }
+  },
+
   adminOption(value, current, label) {
     return `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
   },
 
-  adminDashboard(o, u, a, p, r, ob) {
-    const missing = a.missing || [];
-    const profiles = ob.onboarding || [];
+  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null) {
+    const missing = a?.missing || [];
+    const profiles = ob?.onboarding || [];
     const optedIn = profiles.filter((row) => row.whatsapp_consent);
+    const denied = '<p class="note">This section is not available for your role.</p>';
     const money = (row) => row.amount == null ? '—' : `${row.currency ? esc(row.currency) + ' ' : ''}${esc(row.amount)}`;
     return `
-      <div class="admin-stats">
-        <div class="stat"><b>${o.users}</b><small>Members</small></div>
-        <div class="stat"><b>${o.signups7d}</b><small>New · 7 days</small></div>
-        <div class="stat"><b>${o.signups30d}</b><small>New · 30 days</small></div>
-        <div class="stat"><b>${o.tasksDone}/${o.tasks}</b><small>Tasks done</small></div>
-        <div class="stat"><b>${o.referrals}</b><small>Referral events</small></div>
-        <div class="stat"><b>${o.purchases}</b><small>Purchases</small></div>
-        <div class="stat"><b>${esc(o.revenue)}</b><small>Recorded revenue</small></div>
-        <div class="stat"><b>${o.onboardingCompleted || 0}</b><small>Profiles completed</small></div>
-        <div class="stat"><b>${o.whatsappOptIn || 0}</b><small>WhatsApp opt-ins</small></div>
-        <div class="stat"><b>${a.uploaded.length}/${a.expected.length}</b><small>Audio in KV</small></div>
+      <div class="admin-stats" id="sec-overview">
+        <div class="stat"><b>${o ? o.users : '—'}</b><small>Members</small></div>
+        <div class="stat"><b>${o ? o.signups7d : '—'}</b><small>New · 7 days</small></div>
+        <div class="stat"><b>${o ? o.signups30d : '—'}</b><small>New · 30 days</small></div>
+        <div class="stat"><b>${o ? o.tasksDone + '/' + o.tasks : '—'}</b><small>Tasks done</small></div>
+        <div class="stat"><b>${o ? o.referrals : '—'}</b><small>Referral events</small></div>
+        <div class="stat"><b>${o ? o.purchases : '—'}</b><small>Purchases</small></div>
+        <div class="stat"><b>${o ? esc(o.revenue) : '—'}</b><small>Recorded revenue</small></div>
+        <div class="stat"><b>${o ? (o.onboardingCompleted || 0) : '—'}</b><small>Profiles completed</small></div>
+        <div class="stat"><b>${o ? (o.whatsappOptIn || 0) : '—'}</b><small>WhatsApp opt-ins</small></div>
+        <div class="stat"><b>${a ? a.uploaded.length + '/' + a.expected.length : '—'}</b><small>Audio in KV</small></div>
       </div>
 
+      <div class="card" id="sec-analytics">
+        <div class="admin-toolbar">
+          <div><span class="tag">Analytics</span><h3>Product engagement</h3></div>
+          <small class="note">${an.overview ? 'Generated ' + esc(String(an.overview.generatedAt || '').slice(0, 16).replace('T', ' ')) + ' UTC' : ''}</small>
+        </div>
+        ${an.overview ? `
+        <div class="an-stats">
+          <div class="stat"><b>${an.overview.dau}</b><small>DAU</small></div>
+          <div class="stat"><b>${an.overview.wau}</b><small>WAU</small></div>
+          <div class="stat"><b>${an.overview.mau}</b><small>MAU</small></div>
+          <div class="stat"><b>${an.overview.activationRate}%</b><small>Activation · 3+ tasks</small></div>
+          <div class="stat"><b>${an.overview.daysToFirstTask == null ? '—' : an.overview.daysToFirstTask}</b><small>Days to 1st task</small></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-box wide"><span class="tag">Active members · last 30 days</span><canvas id="chDau" height="110"></canvas></div>
+          <div class="chart-box"><span class="tag">Audio reach &amp; drop-off</span><canvas id="chAudio" height="170"></canvas></div>
+          <div class="chart-box"><span class="tag">Task completion by week</span><canvas id="chTasks" height="170"></canvas></div>
+          <div class="chart-box"><span class="tag">Onboarding fields filled</span><canvas id="chOnb" height="170"></canvas></div>
+          <div class="chart-box"><span class="tag">Events by type</span><canvas id="chEvents" height="170"></canvas></div>
+        </div>` : '<p class="note">Analytics are unavailable right now.</p>'}
+      </div>
+
+      ${an.content ? `
+      <div class="card" id="sec-content">
+        <div class="admin-toolbar">
+          <div><span class="tag">Content</span><h3>Blog &amp; site traffic</h3></div>
+          <small class="note">Generated ${esc(String(an.content.generatedAt || '').slice(0, 16).replace('T', ' '))} UTC</small>
+        </div>
+        <div class="an-stats">
+          <div class="stat"><b>${an.content.posts.reduce((s, row) => s + row.views, 0)}</b><small>Blog views</small></div>
+          <div class="stat"><b>${an.content.posts.length}</b><small>Posts with traffic</small></div>
+          <div class="stat"><b>${an.content.referrers.length ? an.content.referrers[0].c : 0}</b><small>Top referrer hits</small></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-box wide"><span class="tag">Page views · last 14 days</span><canvas id="chViews" height="110"></canvas></div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Post</th><th>Views</th><th>Members</th><th>Anonymous</th></tr></thead>
+            <tbody>${an.content.posts.length ? an.content.posts.map((row) => `
+              <tr>
+                <td><b>${esc(row.title)}</b><br><small>${esc(row.path)}</small></td>
+                <td>${row.views}</td><td>${row.members}</td><td>${row.anonymous}</td>
+              </tr>`).join('') : '<tr><td colspan="4" class="note">No blog traffic recorded yet. Views start flowing once the tracker ships to the live site.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Traffic source</th><th>Views</th></tr></thead>
+            <tbody>${an.content.referrers.length ? an.content.referrers.map((row) => `
+              <tr><td><small>${esc(row.referrer)}</small></td><td>${row.c}</td></tr>`).join('') : '<tr><td colspan="2" class="note">No referrer data yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+
       <div class="admin-grid2">
+        ${a === null ? `<div class="card">${denied}</div>` : `
         <div class="card">
           <span class="tag">Audio library</span>
           <h3>${missing.length ? 'Some chapters are missing' : 'All chapters uploaded'}</h3>
           <p class="note">${missing.length ? 'Missing: ' + missing.map(esc).join(', ') : 'The full read-aloud library is available in KV.'}</p>
           <p class="note">Upload missing files from <code>deploy/cloudflare</code> with <code>npx wrangler kv key put --binding SOFTLIFE_AUDIO "audio:chXX" --path ../../server/audio/chXX.mp3 --remote</code>.</p>
-        </div>
+        </div>`}
         <div class="card">
           <span class="tag">Purchase webhook</span>
           <h3>Checkout → app upgrade</h3>
@@ -536,7 +1026,8 @@ const App = {
         </div>
       </div>
 
-      <div class="card">
+      ${u === null ? `<div class="card" id="sec-members">${denied}</div>` : `
+      <div class="card" id="sec-members">
         <div class="admin-toolbar">
           <div><span class="tag">Members</span><h3>People in the system</h3></div>
           <form id="adminSearch" class="admin-search">
@@ -546,7 +1037,7 @@ const App = {
         </div>
         <div class="table-wrap">
           <table class="admin-table">
-            <thead><tr><th>ID</th><th>Member</th><th>Tier</th><th>Role</th><th>Tasks</th><th>Joined</th></tr></thead>
+            <thead><tr><th>ID</th><th>Member</th><th>Tier</th><th>Role</th><th>Tasks</th><th>Joined</th><th>CRM</th></tr></thead>
             <tbody>${u.users.length ? u.users.map((row) => `
               <tr>
                 <td>${row.id}</td>
@@ -559,12 +1050,14 @@ const App = {
                 </select></td>
                 <td>${row.done}/${row.tasks}</td>
                 <td><small>${esc(row.created_at)}</small></td>
-              </tr>`).join('') : '<tr><td colspan="6" class="note">No members match that search.</td></tr>'}</tbody>
+                <td><button class="btn ghost sm" data-crm="${row.id}" type="button" aria-label="Open CRM for ${esc(row.email)}">Open CRM</button></td>
+              </tr>`).join('') : '<tr><td colspan="7" class="note">No members match that search.</td></tr>'}</tbody>
           </table>
         </div>
-      </div>
+      </div>`}
 
-      <div class="card">
+      ${ob === null ? `<div class="card" id="sec-audience">${denied}</div>` : `
+      <div class="card" id="sec-audience">
         <div class="admin-toolbar">
           <div><span class="tag">Audience</span><h3>Profiles and WhatsApp consent</h3>
           <p class="note">Only people who explicitly opted in are in the contact export. Withdrawing consent clears the number.</p></div>
@@ -584,22 +1077,164 @@ const App = {
               </tr>`).join('') : '<tr><td colspan="6" class="note">No profiles yet. New members are invited to complete one after signup.</td></tr>'}</tbody>
           </table>
         </div>
-      </div>
+      </div>`}
 
       <div class="admin-grid2">
-        <div class="card">
+        ${p === null ? `<div class="card" id="sec-purchases">${denied}</div>` : `
+        <div class="card" id="sec-purchases">
           <span class="tag">Purchases</span><h3>Recent orders</h3>
           ${p.purchases.length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Email</th><th>Tier</th><th>Amount</th><th>Date</th></tr></thead><tbody>
             ${p.purchases.map((row) => `<tr><td><small>${esc(row.order_id || '—')}</small></td><td><small>${esc(row.email)}</small></td><td>${esc(row.tier)}</td><td>${money(row)}</td><td><small>${esc(row.created_at)}</small></td></tr>`).join('')}
           </tbody></table></div>` : '<p class="note">No purchases recorded yet. The webhook will populate this table automatically.</p>'}
-        </div>
-        <div class="card">
+        </div>`}
+        ${r === null ? `<div class="card" id="sec-referrals">${denied}</div>` : `
+        <div class="card" id="sec-referrals">
           <span class="tag">Referrals</span><h3>Recent referral events</h3>
           ${r.referrals.length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Email</th><th>Status</th><th>Date</th></tr></thead><tbody>
             ${r.referrals.map((row) => `<tr><td><b>${esc(row.ref_code)}</b></td><td><small>${esc(row.email || '—')}</small></td><td>${esc(row.status)}</td><td><small>${esc(row.created_at)}</small></td></tr>`).join('')}
           </tbody></table></div>` : '<p class="note">No referral events yet. Share links will appear here.</p>'}
-        </div>
+        </div>`}
       </div>
+
+      ${Array.isArray(team && team.staff) ? `
+      <div class="card" id="sec-team">
+        <div class="admin-toolbar">
+          <div><span class="tag">Team</span><h3>Staff accounts &amp; access</h3>
+          <p class="note">Sales, support and content staff sign in at <code>#/admin</code> with their own email. Their access is limited to their role — you see everything.</p></div>
+        </div>
+        <form id="teamAddForm" class="team-add">
+          <input name="name" type="text" placeholder="Name" aria-label="Staff name" required>
+          <input name="email" type="email" placeholder="work email" aria-label="Staff email" required>
+          <select name="role" aria-label="Staff role">
+            <option value="sales">Sales</option>
+            <option value="support">Support</option>
+            <option value="content">Content</option>
+          </select>
+          <input name="password" type="text" placeholder="Starter password (8+)" aria-label="Starter password" minlength="8" required autocomplete="off">
+          <button class="btn dark" type="submit">Add staff</button>
+        </form>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Staff</th><th>Role</th><th>Status</th><th>Live sessions</th><th>Added</th><th></th></tr></thead>
+            <tbody>${team.staff.length ? team.staff.map((row) => `
+              <tr>
+                <td><b>${esc(row.name || '—')}</b><br><small>${esc(row.email)}</small></td>
+                <td><select data-staff-role="${row.id}" aria-label="Role for ${esc(row.email)}"${row.role === 'superadmin' ? ' disabled' : ''}>
+                  ${['sales', 'support', 'content'].map((rl) => this.adminOption(rl, row.role, rl.charAt(0).toUpperCase() + rl.slice(1))).join('')}
+                </select></td>
+                <td>${row.active ? '<span class="pill ok">Active</span>' : '<span class="pill off">Disabled</span>'}</td>
+                <td>${row.sessions}</td>
+                <td><small>${esc(String(row.created_at).slice(0, 10))}</small></td>
+                <td>${row.role === 'superadmin' ? '' : `<button class="btn ghost sm" data-staff-active="${row.id}" data-next="${row.active ? 0 : 1}" type="button">${row.active ? 'Disable' : 'Enable'}</button>`}</td>
+              </tr>`).join('') : '<tr><td colspan="6" class="note">No staff yet — add your first team member above.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+      ${hooks ? `
+      <div class="card" id="sec-webhooks">
+        <div class="admin-toolbar">
+          <div><span class="tag">Webhook ledger</span><h3>Purchase deliveries</h3></div>
+          <code class="webhook-url">${location.origin}/api/webhooks/purchase</code>
+        </div>
+        <div class="admin-stats wh-tiles">
+          <div class="stat"><b>${hooks.stats.applied}</b><small>Applied</small></div>
+          <div class="stat"><b>${hooks.stats.duplicate}</b><small>Duplicates</small></div>
+          <div class="stat"><b>${hooks.stats.rejected}</b><small>Rejected</small></div>
+          <div class="stat"><b>${hooks.stats.invalid}</b><small>Invalid</small></div>
+          <div class="stat"><b>${hooks.stats.failed}</b><small>Failed</small></div>
+          <div class="stat"><b>${hooks.total}</b><small>Total deliveries</small></div>
+        </div>
+        <p class="note">Last delivery: ${hooks.lastDelivery ? esc(String(hooks.lastDelivery).slice(0, 19)) : 'never yet'} · secret ${hooks.configured ? 'configured' : 'missing'}. Rejected = wrong secret, invalid = missing email, failed = processing error.</p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Status</th><th>Order</th><th>Email</th><th>Received</th><th>Error</th><th></th></tr></thead>
+            <tbody>${hooks.deliveries.length ? hooks.deliveries.map((d) => `
+              <tr>
+                <td><span class="pill ${{ applied: 'ok', duplicate: 'ok', rejected: 'warn', invalid: 'warn', failed: 'off' }[d.status] || 'off'}">${esc(d.status)}</span></td>
+                <td><small>${esc(d.order_id || '—')}</small></td>
+                <td><small>${esc(d.email || '—')}</small></td>
+                <td><small>${esc(String(d.created_at).slice(0, 19))}</small></td>
+                <td><small>${esc(d.error || '')}</small></td>
+                <td>${['failed', 'rejected', 'invalid'].includes(d.status) ? `<button class="btn ghost sm" data-webhook-replay="${d.id}" type="button">Replay</button>` : ''}</td>
+              </tr>`).join('') : '<tr><td colspan="6" class="note">No webhook deliveries yet. Purchases posted to the webhook URL appear here.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+      ${claims ? `
+      <div class="card" id="sec-claims">
+        <div class="admin-toolbar">
+          <div><span class="tag">Access claims</span><h3>Paid buyers without a login</h3></div>
+          <small class="note">${claims.completed} claimed so far</small>
+        </div>
+        <p class="note">These customers paid but had no account at checkout. Send each one their personal access link (or paste it into your welcome email). The link opens a one-time password page and unlocks their purchase.</p>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Buyer</th><th>Order</th><th>Email</th><th>Waiting since</th><th></th></tr></thead>
+            <tbody>${claims.pending.length ? claims.pending.map((row) => `
+              <tr>
+                <td><b>${esc(row.email)}</b></td>
+                <td><small>${esc(row.order_id || '—')}</small></td>
+                <td><span class="pill ${row.email_status === 'sent' ? 'ok' : row.email_status === 'failed' ? 'off' : 'warn'}">${esc(row.email_status || 'queued_local')}</span></td>
+                <td><small>${esc(String(row.created_at).slice(0, 19))}</small></td>
+                <td><button class="btn ghost sm" data-claim-copy="${esc(row.claimUrl)}" type="button">Copy access link</button></td>
+              </tr>`).join('') : '<tr><td colspan="5" class="note">No pending claims — every buyer has an account. 🎉</td></tr>'}</tbody>
+          </table>
+        </div>
+        ${claims.emails && claims.emails.length ? `
+        <details>
+          <summary class="note">Purchase emails — last ${claims.emails.length}</summary>
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>To</th><th>Kind</th><th>Status</th><th>Sent at</th></tr></thead>
+              <tbody>${claims.emails.map((row) => `
+                <tr>
+                  <td><b>${esc(row.to_email)}</b></td>
+                  <td><small>${esc(row.kind)}</small></td>
+                  <td><span class="pill ${row.status === 'sent' ? 'ok' : row.status === 'failed' ? 'off' : 'warn'}">${esc(row.status)}</span>${row.error ? `<small class="note"> ${esc(row.error)}</small>` : ''}</td>
+                  <td><small>${esc(String(row.created_at).slice(0, 19))}</small></td>
+                </tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </details>` : ''}
+      </div>` : ''}
+      ${sec ? `
+      <div class="card" id="sec-security">
+        <div class="admin-toolbar">
+          <div><span class="tag">Security</span><h3>Access &amp; threat monitor</h3></div>
+          <small class="note">Generated ${esc(String(sec.generatedAt || '').slice(0, 16).replace('T', ' '))} UTC</small>
+        </div>
+        <div class="an-stats">
+          <div class="stat"><b>${(sec.last24.member_login_failed || 0) + (sec.last24.admin_login_failed || 0) + (sec.last24.staff_login_failed || 0)}</b><small>Failed logins · 24h</small></div>
+          <div class="stat"><b>${sec.last24.webhook_rejected || 0}</b><small>Rejected webhooks · 24h</small></div>
+          <div class="stat"><b>${sec.last24.track_rate_limited || 0}</b><small>Rate-limited · 24h</small></div>
+          <div class="stat"><b>${sec.liveSessions.member + sec.liveSessions.admin + sec.liveSessions.staff}</b><small>Live sessions</small></div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>When</th><th>Event</th><th>Email</th><th>IP</th><th>Detail</th></tr></thead>
+            <tbody>${sec.recent.length ? sec.recent.map((row) => `
+              <tr>
+                <td><small>${esc(String(row.created_at).slice(0, 19))}</small></td>
+                <td><span class="pill ${/failed|rejected|limited/.test(row.kind) ? 'warn' : 'off'}">${esc(row.kind)}</span></td>
+                <td><small>${esc(row.email || '—')}</small></td>
+                <td><small>${esc(row.ip || '—')}</small></td>
+                <td><small>${esc(row.detail || '')}</small></td>
+              </tr>`).join('') : '<tr><td colspan="5" class="note">Nothing suspicious logged yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Actor</th><th>Action</th><th>Target</th><th>When</th></tr></thead>
+            <tbody>${sec.audit.length ? sec.audit.map((row) => `
+              <tr>
+                <td><b>${esc(row.actor)}</b></td>
+                <td><small>${esc(row.action)}</small></td>
+                <td><small>${esc(row.target)}</small></td>
+                <td><small>${esc(String(row.created_at).slice(0, 19))}</small></td>
+              </tr>`).join('') : '<tr><td colspan="4" class="note">No admin actions recorded yet.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
       <p class="note">Generated ${esc(o.generatedAt)}. Role is for future staff access; the admin login remains a separate super-admin session.</p>`;
   },
 
@@ -625,6 +1260,67 @@ const App = {
         catch (err) { alert(err.message); select.disabled = false; }
       });
     });
+    document.querySelectorAll('[data-crm]').forEach((btn) => {
+      btn.addEventListener('click', () => this.openCrm(btn.dataset.crm));
+    });
+    const teamAdd = document.getElementById('teamAddForm');
+    if (teamAdd) teamAdd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = teamAdd.querySelector('button');
+      btn.disabled = true;
+      const fd = new FormData(teamAdd);
+      try {
+        await API.teamAdd({ name: fd.get('name'), email: fd.get('email'), role: fd.get('role'), password: fd.get('password') });
+        this._auditFlash('Staff account created — share the starter password securely.');
+        await this.loadAdmin();
+      } catch (err) { alert(err.message); btn.disabled = false; }
+    });
+    document.querySelectorAll('[data-staff-role]').forEach((select) => {
+      select.addEventListener('change', async () => {
+        const id = select.dataset.staffRole;
+        select.disabled = true;
+        try { await API.teamSetRole(id, select.value); this._auditFlash('Role updated → ' + select.value); await this.loadAdmin(); }
+        catch (err) { alert(err.message); select.disabled = false; }
+      });
+    });
+    document.querySelectorAll('[data-staff-active]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          await API.teamSetActive(btn.dataset.staffActive, btn.dataset.next === '1');
+          this._auditFlash(btn.dataset.next === '1' ? 'Staff access enabled.' : 'Staff access disabled — sessions revoked.');
+          await this.loadAdmin();
+        } catch (err) { alert(err.message); btn.disabled = false; }
+      });
+    });
+    document.querySelectorAll('[data-webhook-replay]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          const res = await API.webhookReplay(btn.dataset.webhookReplay);
+          this._auditFlash('Replayed → ' + (res.status || 'unknown') + '.');
+          await this.loadAdmin();
+        } catch (err) { alert(err.message); btn.disabled = false; }
+      });
+    });
+    document.querySelectorAll('[data-claim-copy]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(btn.dataset.claimCopy);
+          this._auditFlash('Access link copied — send it to the buyer.');
+        } catch (err) {
+          prompt('Copy this access link:', btn.dataset.claimCopy);
+        }
+      });
+    });
+    const drawer = document.getElementById('crmDrawer');
+    if (drawer && !drawer.dataset.bound) {
+      drawer.dataset.bound = '1';
+      drawer.addEventListener('click', (e) => {
+        if (e.target === drawer || e.target.closest('[data-close-crm]')) this.closeCrm();
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drawer.classList.contains('open')) this.closeCrm(); });
+    }
     const download = document.getElementById('downloadConsent');
     if (download) download.addEventListener('click', async () => {
       try {
@@ -660,24 +1356,49 @@ const App = {
 
   // ---------- member shell ----------
 
+  icons: {
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.5h4V20"/></svg>',
+    tasks: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16.5" rx="4"/><path d="M8 12.2l2.6 2.6 5.2-5.3"/></svg>',
+    listen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 17.5v-5a7.5 7.5 0 0 1 15 0v5"/><rect x="3.5" y="14" width="4.2" height="6.5" rx="2.1"/><rect x="16.3" y="14" width="4.2" height="6.5" rx="2.1"/></svg>',
+    affiliate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 17.5l5.4-5.4 3.4 3.4 7-7.5"/><path d="M14.5 7.5h5v5"/></svg>',
+    account: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.9"/><path d="M4.5 20.5c1.4-3.6 4.2-5.3 7.5-5.3s6.1 1.7 7.5 5.3"/></svg>',
+    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>',
+    members: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.4"/><path d="M2.8 20c1.2-3.2 3.6-4.8 6.2-4.8s5 1.6 6.2 4.8"/><circle cx="17.2" cy="9.5" r="2.7"/><path d="M16.4 15.3c2.5.3 4.2 1.7 5.1 4.2"/></svg>',
+    audience: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.6a8.2 8.2 0 0 1-12 7.3L4 20.3l1.3-4.1A8.2 8.2 0 1 1 21 11.6z"/></svg>',
+    purchases: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a1.9 1.9 0 0 1-2.7 0L3.6 13.5V4h9.5l7.5 7.5a1.9 1.9 0 0 1 0 1.9z"/><circle cx="8" cy="8" r="1.4"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.6M8.2 13.2l7.6 4.6"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M6.5 16.5v-4"/><path d="M11 16.5V7.5"/><path d="M15.5 16.5v-6.5"/><path d="M20 16.5V4.5"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 5 6.2v5.1c0 4.3 2.9 7.6 7 9.2 4.1-1.6 7-4.9 7-9.2V6.2L12 3.5z"/><path d="m9.2 11.8 2 2 3.6-3.9"/></svg>'
+  },
+
   renderShell(path, me, params) {
-    const tabs = [
-      ['#/dashboard', 'Dashboard', '⌂'],
-      ['#/tasks', 'Tasks', '📋'],
-      ['#/listen', 'Listen', '🎧'],
-      ['#/affiliate', 'Affiliate', '💸'],
-      ['#/account', 'Account', '⚙']
+    const ic = this.icons;
+    const nav = [
+      ['#/dashboard', 'Dashboard', ic.home],
+      ['#/tasks', 'Tasks', ic.tasks],
+      ['#/listen', 'Listen', ic.listen],
+      ['#/affiliate', 'Affiliate', ic.affiliate],
+      ['#/account', 'Account', ic.account]
     ];
-    const active = (p) => (path === p || (p === '#/tasks' && path === '/tasks')) ? 'active' : '';
+    const active = (p) => (path === p.slice(1)) ? 'active' : '';
+    const links = nav.map(([href, label, icon]) =>
+      `<a class="${active(href)}" href="${href}"${active(href) ? ' aria-current="page"' : ''}>${icon}<span>${label}</span></a>`).join('');
+    const initials = esc((me.name || '?').trim().split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase() || '?');
+    const tier = me.tier === 'free' ? 'Free plan' : `${esc(String(me.tier).toUpperCase())} plan`;
     const $app = document.getElementById('app');
-    $app.innerHTML = this.chrome(`
-      <nav class="tabbar">
-        <div class="wrap tabs">
-          ${tabs.map(([href, label, icon]) =>
-            `<a class="${active(href)}" href="${href}"><span class="t-ic">${icon}</span>${label}</a>`).join('')}
-        </div>
-      </nav>
-      <main id="member" class="member"></main>`, { member: true });
+    $app.innerHTML = `
+      <div class="shell">
+        <aside class="sidebar">
+          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+          <nav class="side-nav" aria-label="Member navigation">${links}</nav>
+          <a class="side-user" href="#/account" aria-label="Your account">
+            <span class="dash-avatar sm">${initials}</span>
+            <span class="side-user-meta"><b>${esc(me.name)}</b><small>${tier}</small></span>
+          </a>
+        </aside>
+        <nav class="m-tabbar" aria-label="Member navigation">${links}</nav>
+        <main id="member" class="member shell-main"></main>
+      </div>`;
     if (path === '/dashboard') this.viewDashboard(me);
     if (path === '/onboarding') this.viewOnboarding(me, params);
     if (path === '/tasks') this.viewTasks(me);
@@ -688,35 +1409,75 @@ const App = {
 
   async viewDashboard(me) {
     const $m = document.getElementById('member');
-    $m.innerHTML = `<div class="wrap">
-      <div class="dash-head">
-        <div>
-          <h1 class="hi">Welcome, ${esc(me.name)} 👋</h1>
-          <p class="note">Your 90-day launch plan is loaded. Small moves, big life.</p>
+    const first = esc((me.name || '').trim().split(/\s+/)[0] || me.name || 'there');
+    const tier = me.tier === 'free' ? 'FREE' : esc(String(me.tier).toUpperCase());
+    $m.innerHTML = `
+      <header class="dash-head">
+        <div class="dash-who">
+          <span class="dash-avatar">${esc((me.name || '?').trim().split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase() || '?')}</span>
+          <div>
+            <h1 class="hi">Welcome back, ${first} 👋</h1>
+            <p class="note">Your 90-day launch plan is loaded. Small moves, big life.</p>
+          </div>
         </div>
-        <span class="tier">${me.tier === 'free' ? 'FREE' : esc(me.tier.toUpperCase())}</span>
-      </div>
-      <div id="dash-progress" class="progress-wrap">
-        <div class="progress"><span style="width:0%"></span></div>
-        <small class="note">Loading your launch plan…</small>
+        <span class="tier">${tier}</span>
+      </header>
+      <div class="dash-grid">
+        <section class="dash-focus">
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120" role="img" aria-label="Launch plan progress">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#f078a8"/><stop offset="100%" stop-color="#e8b93b"/>
+              </linearGradient></defs>
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="ring-label"><b id="ringPct">–</b><small>complete</small></div>
+          </div>
+          <div class="dash-focus-body">
+            <span class="tag">Next up</span>
+            <h3 id="ringNext">Loading your launch plan…</h3>
+            <p class="note" id="ringNote">One checkmark at a time.</p>
+            <a class="btn gold" href="#/tasks">Work your tasks →</a>
+          </div>
+        </section>
+        <aside class="dash-stats">
+          <div class="stat-tile"><small>Steps done</small><b id="statDone">–</b></div>
+          <div class="stat-tile"><small>Steps left</small><b id="statLeft">–</b></div>
+          <div class="stat-tile"><small>Total steps</small><b id="statTotal">–</b></div>
+        </aside>
       </div>
       <div id="profile-prompt"></div>
+      <h2 class="dash-sub">Keep moving</h2>
       <div class="grid3">
         <a class="card link" href="#/tasks"><span class="tag">📋 Next up</span><h3>Work your tasks</h3><p>Your 90-day launch plan, one checkmark at a time.</p></a>
         <a class="card link" href="#/listen"><span class="tag">🎧 Keep learning</span><h3>Listen to the system</h3><p>Play the introduction free — members unlock all 15 chapters.</p></a>
         <a class="card link" href="#/affiliate"><span class="tag">💸 Earn</span><h3>Share your link</h3><p>30% commission on referred Complete bundle sales.</p></a>
-      </div>
-    </div>`;
+      </div>`;
     try {
       const { tasks } = await API.tasks();
       const done = tasks.filter((t) => t.done).length;
       const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
       const next = tasks.find((t) => !t.done);
-      document.getElementById('dash-progress').innerHTML = `
-        <div class="progress"><span style="width:${pct}%"></span></div>
-        <small class="note">${done} of ${tasks.length} launch steps done (${pct}%)
-        ${next ? ` · Next: <b>${esc(next.title)}</b> (week ${next.week})` : ' · 🎉 Launch complete!'}</small>`;
-    } catch (e) { /* keep placeholder */ }
+      const C = 2 * Math.PI * 52;
+      const fill = document.getElementById('ringFill');
+      fill.style.strokeDasharray = `${C}`;
+      fill.style.strokeDashoffset = `${C * (1 - pct / 100)}`;
+      document.getElementById('ringPct').textContent = `${pct}%`;
+      document.getElementById('statDone').textContent = done;
+      document.getElementById('statLeft').textContent = tasks.length - done;
+      document.getElementById('statTotal').textContent = tasks.length;
+      if (next) {
+        document.getElementById('ringNext').textContent = next.title;
+        document.getElementById('ringNote').textContent = `Week ${next.week} of your 90-day plan`;
+      } else {
+        document.getElementById('ringNext').textContent = '🎉 Launch complete!';
+        document.getElementById('ringNote').textContent = 'Every step checked — time to scale.';
+      }
+    } catch (e) {
+      const note = document.getElementById('ringNote');
+      if (note) note.textContent = 'Couldn\u2019t load your plan — open Tasks.';
+    }
     try {
       const { onboarding } = await API.onboarding();
       if (!onboarding || !onboarding.completed_at) {
@@ -976,6 +1737,9 @@ const App = {
     $m.querySelectorAll('audio[data-slug]').forEach((audio) => {
       audio.addEventListener('play', () => {
         API.event('audio_play', { slug: audio.dataset.slug }).catch(() => {});
+      }, { once: true });
+      audio.addEventListener('ended', () => {
+        API.event('audio_complete', { slug: audio.dataset.slug }).catch(() => {});
       }, { once: true });
     });
   },

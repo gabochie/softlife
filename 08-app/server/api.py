@@ -16,9 +16,11 @@ import re
 import secrets
 import sqlite3
 import sys
+import time
 import urllib.parse
-from datetime import datetime, timezone
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP = Path(__file__).resolve().parent.parent
@@ -34,6 +36,33 @@ AUDIO_SLUGS = ["intro"] + [f"ch{i:02d}" for i in range(1, 16)]
 CONSENT_VERSION = "2026-11-14"
 SESSION_DAYS = 30
 AUDIO_TOKEN_MINUTES = 120
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin1234")
+ADMIN_SESSION_HOURS = max(1, min(72, int(os.environ.get("ADMIN_SESSION_HOURS") or 12)))
+CRM_STAGES = ["lead", "engaged", "checkout_abandoned", "customer", "client", "lost"]
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", os.environ.get("PURCHASE_WEBHOOK_SECRET", "dev-webhook-secret"))
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+BREVO_SENDER = os.environ.get("BREVO_SENDER", "admin@gabochie.com")
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8100")
+STAFF_ROLES = ["superadmin", "sales", "support", "content"]
+# Which staff roles may use each admin capability. The superadmin password login
+# maps to the "superadmin" role; staff logins carry their own role.
+ADMIN_CAPS = {
+    "overview": {"superadmin", "sales", "support", "content"},
+    "users": {"superadmin", "sales", "support"},
+    "set_tier": {"superadmin", "sales", "support"},
+    "set_role": {"superadmin"},
+    "crm": {"superadmin", "sales", "support"},
+    "crm_stage": {"superadmin", "sales"},
+    "crm_note": {"superadmin", "sales", "support"},
+    "analytics": {"superadmin", "sales", "support", "content"},
+    "referrals": {"superadmin", "sales"},
+    "purchases": {"superadmin", "sales"},
+    "onboarding": {"superadmin", "sales", "support"},
+    "audio": {"superadmin", "sales", "support", "content"},
+    "team": {"superadmin"},
+    "webhooks": {"superadmin", "sales"},
+    "security": {"superadmin"},
+}
 ONBOARDING_CHOICES = {
     "business_stage": {"idea", "early", "growing", "established", "other"},
     "main_goal": {"simplify", "offer", "systems", "delegate", "time", "freedom", "other"},
@@ -45,7 +74,7 @@ ACQUISITION_KEYS = ["source", "utm_source", "utm_medium", "utm_campaign", "utm_c
 EVENT_NAMES = {
     "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
     "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
-    "task_added", "task_completed", "audio_play", "checkout_click",
+    "task_added", "task_completed", "audio_play", "audio_complete", "page_view", "checkout_click",
 }
 
 LAUNCH_TASKS = [
@@ -183,11 +212,190 @@ def save_onboarding_row(conn: sqlite3.Connection, user_id: int, data: dict, acqu
     return load_onboarding(conn, user_id)
 
 
+def _migrate_admin_tables(conn: sqlite3.Connection) -> None:
+    """Bring older local dev DBs onto the super-admin + purchases schema."""
+    user_cols = {row[1] for row in conn.execute("PRAGMA table_info(users)")}
+    if "role" not in user_cols:
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'")
+    conn.commit()
+
+
+def _log_webhook(conn: sqlite3.Connection, status: str, data: dict, order_id: str | None,
+                 email: str | None, error: str = "") -> None:
+    conn.execute(
+        "INSERT INTO webhook_logs (status, order_id, email, payload, error) VALUES (?,?,?,?,?)",
+        (status, order_id, email, json.dumps(data)[:4000], error),
+    )
+
+
+def _log_security(conn: sqlite3.Connection, kind: str, email: str = "", ip: str = "", detail: str = "") -> None:
+    conn.execute(
+        "INSERT INTO security_log (kind, email, ip, detail) VALUES (?,?,?,?)",
+        (kind, email[:120], ip[:64], detail[:500]),
+    )
+
+
+def _email_shell(title: str, body_html: str) -> str:
+    return (
+        '<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px;color:#2a0f4a;">'
+        f'<h2 style="color:#5d2189;margin:0 0 12px;">{title}</h2>'
+        f'<div style="font-size:15px;line-height:1.6;">{body_html}</div>'
+        '<p style="font-size:12px;color:#6d5f7a;margin-top:28px;">The Soft Life System · Gabochie Books<br>'
+        "Questions? Just reply to this email.</p>"
+        "</div>"
+    )
+
+
+def _claim_email_html(link: str) -> str:
+    return _email_shell(
+        "Your access is ready 🎉",
+        "<p>Your payment went through — welcome to The Soft Life System.</p>"
+        "<p>One last step: choose a password and open your system. Your purchase is already "
+        "attached to this email, so everything unlocks the moment you land inside.</p>"
+        f'<p><a href="{link}" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;'
+        'border-radius:10px;text-decoration:none;font-weight:600;">Set my password &amp; start →</a></p>'
+        f"<p style=\"font-size:13px;\">Or paste this link into your browser:<br><code>{link}</code></p>"
+        "<p style=\"font-size:13px;color:#6d5f7a;\">This link works once and stays valid for 30 days.</p>",
+    )
+
+
+def _purchase_confirmation_html() -> str:
+    return _email_shell(
+        "Purchase confirmed ✅",
+        "<p>Your purchase of the complete system is confirmed and your account has been upgraded.</p>"
+        "<p>Sign in and start with the introduction, then work the 90-day plan at your pace.</p>",
+    )
+
+
+def _send_email(conn: sqlite3.Connection, to_email: str, subject: str, html: str, kind: str) -> None:
+    """Send via the Brevo API when BREVO_API_KEY is set; always log the attempt.
+    Never raises: email failures must not break the webhook."""
+    status, error = ("queued_local" if not BREVO_API_KEY else "failed", "")
+    if BREVO_API_KEY:
+        try:
+            req = urllib.request.Request(
+                "https://api.brevo.com/v3/smtp/email",
+                data=json.dumps({
+                    "sender": {"email": BREVO_SENDER, "name": "The Soft Life System"},
+                    "to": [{"email": to_email}],
+                    "replyTo": {"email": BREVO_SENDER},
+                    "subject": subject,
+                    "htmlContent": html,
+                }).encode(),
+                headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10):
+                status = "sent"
+        except Exception as exc:  # noqa: BLE001 - email failures must not break the webhook
+            status, error = "failed", str(exc)[:300]
+    try:
+        conn.execute(
+            "INSERT INTO email_log (to_email, subject, kind, status, error) VALUES (?,?,?,?,?)",
+            (to_email[:120], subject[:200], kind, status, error),
+        )
+    except sqlite3.Error:
+        pass
+
+
+def _log_track(conn: sqlite3.Connection, event: str, path: str, meta: dict) -> None:
+    """Anonymous public analytics (no member account required)."""
+    payload = json.dumps(meta)[:2000]
+    conn.execute(
+        "INSERT INTO events (user_id, event, path, meta) VALUES (NULL, ?, ?, ?)",
+        (event, clean_text(path, 200), payload),
+    )
+
+
+_TRACK_WINDOW = 60          # seconds per rate-limit window
+_TRACK_MAX = 60             # max track requests per window per client
+_track_hits: dict[str, int] = {}
+
+
+def _track_allow(ip: str) -> bool:
+    window = int(time.time() // _TRACK_WINDOW)
+    key = f"{window}:{ip}"
+    hits = _track_hits.get(key, 0) + 1
+    _track_hits[key] = hits
+    if len(_track_hits) > 500:  # keep the in-memory map bounded
+        for old in [k for k in _track_hits if not k.startswith(f"{window}:")]:
+            _track_hits.pop(old, None)
+    return hits <= _TRACK_MAX
+
+
+try:  # blog post metadata for content analytics (slug -> title)
+    sys.path.insert(0, str(APP / "tools"))
+    from build_blog import POSTS as BLOG_POSTS  # noqa: E402
+except Exception:
+    BLOG_POSTS = []
+
+
+def _process_purchase(conn: sqlite3.Connection, data: dict, base_url: str = "") -> tuple[str, dict]:
+    """Validate + record a purchase payload and upgrade the buyer's tier.
+
+    Returns (status, response) where status is applied | duplicate | invalid.
+    Raises on database errors so the caller can log a failed delivery.
+    Mirrors deploy/cloudflare worker.js purchaseWebhook semantics.
+    """
+    customer = data.get("customer") if isinstance(data.get("customer"), dict) else {}
+    order = data.get("order") if isinstance(data.get("order"), dict) else {}
+    email = str(
+        data.get("email") or data.get("customer_email") or data.get("buyer_email")
+        or customer.get("email") or ""
+    ).strip().lower()
+    order_id = str(
+        data.get("order_id") or data.get("orderId") or data.get("reference")
+        or data.get("id") or order.get("id") or ""
+    ).strip() or None
+    if not email or "@" not in email:
+        _log_webhook(conn, "invalid", data, None, email)
+        return "invalid", {"error": "valid email required"}
+    if order_id and conn.execute("SELECT 1 FROM purchases WHERE order_id = ?", (order_id,)).fetchone():
+        _log_webhook(conn, "duplicate", data, order_id, email)
+        return "duplicate", {"ok": True, "duplicate": True}
+    tier = "free" if str(data.get("tier") or "complete").lower() == "free" else "complete"
+    amount = data.get("amount") if isinstance(data.get("amount"), (int, float)) else None
+    currency = str(data.get("currency") or "").upper()[:8]
+    provider = str(data.get("provider") or "selar")[:40]
+    conn.execute(
+        "INSERT INTO purchases (order_id, email, tier, amount, currency, provider) VALUES (?,?,?,?,?,?)",
+        (order_id, email, tier, amount, currency, provider),
+    )
+    upgraded = False
+    claim_token = None
+    user = conn.execute("SELECT id FROM users WHERE lower(email) = ?", (email,)).fetchone()
+    if user:
+        conn.execute("UPDATE users SET tier = ? WHERE id = ?", (tier, user["id"]))
+        # They now have an account: any pending access claim for this email is satisfied.
+        conn.execute("UPDATE purchase_claims SET completed_at = datetime('now') WHERE lower(email) = ? AND completed_at IS NULL", (email,))
+        upgraded = True
+        # Transactional confirmation: account exists, purchase is attached.
+        _send_email(conn, email, "Your Soft Life System purchase is confirmed ✅",
+                    _purchase_confirmation_html(), "purchase_confirmation")
+    else:
+        # Stranger-buy flow: no account yet. Mint a one-time claim link so the buyer
+        # can set their password and land on a paid-tier account.
+        claim_token = secrets.token_hex(16)
+        conn.execute(
+            "INSERT INTO purchase_claims (email, token, order_id, tier) VALUES (?,?,?,?)",
+            (email, claim_token, order_id, tier),
+        )
+        base = base_url or SITE_URL
+        _send_email(conn, email, "Your Soft Life System access is ready 🎉",
+                    _claim_email_html(f"{base}/#/claim?token={claim_token}"), "claim")
+    _log_webhook(conn, "applied", data, order_id, email)
+    response = {"ok": True, "upgraded": upgraded}
+    if claim_token:
+        response["claim"] = True
+    return "applied", response
+
+
 def init_db() -> None:
     first = not DB.exists()
     conn = db()
     conn.executescript((APP / "server" / "schema.sql").read_text())
     _migrate_session_tables(conn)
+    _migrate_admin_tables(conn)
     if first:
         _seed(conn)
     conn.close()
@@ -267,6 +475,17 @@ class Handler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             return {}
 
+    def _client_ip(self) -> str:
+        forwarded = self.headers.get("X-Forwarded-For", "")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        return self.client_address[0] if self.client_address else ""
+
+    def _origin(self) -> str:
+        host = self.headers.get("Host") or "localhost:8100"
+        proto = "https" if self.headers.get("X-Forwarded-Proto") == "https" else "http"
+        return f"{proto}://{host}"
+
     def _user_by_token(self, token: str | None) -> sqlite3.Row | None:
         if not token:
             return None
@@ -282,6 +501,39 @@ class Handler(SimpleHTTPRequestHandler):
     def _user(self) -> sqlite3.Row | None:
         auth = self.headers.get("Authorization", "")
         return self._user_by_token(auth[7:] if auth.startswith("Bearer ") else None)
+
+    def _admin_auth(self):
+        """Resolve the Bearer token to (role, staff_row|None). None = no valid session."""
+        auth = self.headers.get("Authorization", "")
+        token = auth[7:] if auth.startswith("Bearer ") else ""
+        if not token:
+            return None
+        token_hash = _token_hash(token)
+        conn = db()
+        legacy = conn.execute(
+            "SELECT 1 FROM admin_sessions WHERE token_hash = ? AND expires_at > datetime('now')",
+            (token_hash,),
+        ).fetchone()
+        conn.close()
+        if legacy:
+            self._admin_actor = "superadmin"
+            return ("superadmin", None)
+        conn = db()
+        staff = conn.execute(
+            "SELECT s.id, s.email, s.name, s.role FROM staff_users s "
+            "JOIN staff_sessions ss ON ss.staff_id = s.id "
+            "WHERE ss.token_hash = ? AND ss.expires_at > datetime('now') AND s.active = 1",
+            (token_hash,),
+        ).fetchone()
+        conn.close()
+        if staff:
+            self._admin_actor = staff["email"]
+            return (staff["role"], dict(staff))
+        return None
+
+    def _allowed(self, role: str, route: str) -> bool:
+        cap = self._cap_for_route(route)
+        return bool(cap) and role in ADMIN_CAPS.get(cap, set())
 
     def _audio_user(self) -> sqlite3.Row | None:
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -361,6 +613,460 @@ class Handler(SimpleHTTPRequestHandler):
                 "commission_rate": "30%",
                 "payout_note": "Payouts run monthly via Selar mobile money (MVP: manual review).",
             })
+        if route.startswith("/api/admin/"):
+            auth = self._admin_auth()
+            if not auth:
+                return self._json({"error": "unauthorized"}, 401)
+            if not self._allowed(auth[0], route):
+                return self._json({"error": "not allowed for your role"}, 403)
+            return self._admin_get(route)
+        return self._json({"error": "not found"}, 404)
+
+    def _admin_audio_uploaded(self) -> list[str]:
+        if not AUDIO_DIR.exists():
+            return []
+        return sorted(p.stem for p in AUDIO_DIR.glob("*.mp3"))
+
+    def _cap_for_route(self, route: str) -> str | None:
+        if route.startswith("/api/admin/analytics/"):
+            return "analytics"
+        if route.startswith("/api/admin/webhooks"):
+            return "webhooks"
+        if route == "/api/admin/claims":
+            return "webhooks"
+        if route == "/api/admin/security":
+            return "security"
+        if route == "/api/admin/crm/stage":
+            return "crm_stage"
+        if route == "/api/admin/crm/notes":
+            return "crm_note"
+        if route.startswith("/api/admin/crm"):
+            return "crm"
+        if route.startswith("/api/admin/team"):
+            return "team"
+        if route.startswith("/api/admin/users/"):
+            if route.endswith("/tier"):
+                return "set_tier"
+            if route.endswith("/role"):
+                return "set_role"
+            return "users"
+        if route == "/api/admin/overview":
+            return "overview"
+        if route == "/api/admin/users":
+            return "users"
+        if route == "/api/admin/referrals":
+            return "referrals"
+        if route == "/api/admin/purchases":
+            return "purchases"
+        if route == "/api/admin/onboarding":
+            return "onboarding"
+        if route == "/api/admin/audio":
+            return "audio"
+        return None
+
+    def _audit(self, conn: sqlite3.Connection, action: str, target: str, meta: dict | None = None) -> None:
+        conn.execute(
+            "INSERT INTO audit_logs (actor, action, target, meta) VALUES (?, ?, ?, ?)",
+            (getattr(self, "_admin_actor", "superadmin"), action, target, json.dumps(meta or {})),
+        )
+
+    def _admin_get(self, route: str):
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+
+        def param(name: str, default: str) -> str:
+            return (qs.get(name) or [default])[0]
+
+        conn = db()
+
+        def count(sql: str, args: tuple = ()) -> int:
+            return conn.execute(sql, args).fetchone()["c"]
+
+        if route == "/api/admin/overview":
+            uploaded = self._admin_audio_uploaded()
+            out = {
+                "users": count("SELECT COUNT(*) c FROM users"),
+                "signups7d": count("SELECT COUNT(*) c FROM users WHERE created_at >= datetime('now', '-7 days')"),
+                "signups30d": count("SELECT COUNT(*) c FROM users WHERE created_at >= datetime('now', '-30 days')"),
+                "tasks": count("SELECT COUNT(*) c FROM tasks"),
+                "tasksDone": count("SELECT COUNT(*) c FROM tasks WHERE done = 1"),
+                "referrals": count("SELECT COUNT(*) c FROM referrals"),
+                "purchases": count("SELECT COUNT(*) c FROM purchases"),
+                "revenue": conn.execute("SELECT COALESCE(SUM(amount), 0) s FROM purchases").fetchone()["s"],
+                "onboardingCompleted": count("SELECT COUNT(*) c FROM onboarding WHERE completed_at IS NOT NULL"),
+                "whatsappOptIn": count("SELECT COUNT(*) c FROM onboarding WHERE whatsapp_consent = 1"),
+                "events7d": count("SELECT COUNT(*) c FROM events WHERE created_at >= datetime('now', '-7 days')"),
+                "audio": {"uploaded": uploaded, "count": len(uploaded), "expected": AUDIO_SLUGS},
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            }
+            conn.close()
+            return self._json(out)
+
+        if route == "/api/admin/users":
+            q = param("q", "").strip()
+            try:
+                limit = min(100, max(1, int(param("limit", "50"))))
+            except ValueError:
+                limit = 50
+            try:
+                offset = max(0, int(param("offset", "0")))
+            except ValueError:
+                offset = 0
+            like = f"%{q}%"
+            rows = conn.execute(
+                "SELECT u.id, u.email, u.name, u.tier, u.role, u.ref_code, u.created_at, "
+                "(SELECT COUNT(*) FROM tasks t WHERE t.user_id = u.id) AS tasks, "
+                "(SELECT COUNT(*) FROM tasks t WHERE t.user_id = u.id AND t.done = 1) AS done "
+                "FROM users u WHERE (? = '' OR u.email LIKE ? OR u.name LIKE ?) "
+                "ORDER BY u.id DESC LIMIT ? OFFSET ?",
+                (q, like, like, limit, offset),
+            ).fetchall()
+            conn.close()
+            return self._json({"users": [dict(r) for r in rows], "q": q, "limit": limit, "offset": offset})
+
+        if route == "/api/admin/referrals":
+            rows = conn.execute(
+                "SELECT id, ref_code, email, status, created_at FROM referrals ORDER BY id DESC LIMIT 100"
+            ).fetchall()
+            conn.close()
+            return self._json({"referrals": [dict(r) for r in rows]})
+
+        if route == "/api/admin/purchases":
+            rows = conn.execute(
+                "SELECT id, order_id, email, tier, amount, currency, provider, created_at "
+                "FROM purchases ORDER BY id DESC LIMIT 100"
+            ).fetchall()
+            conn.close()
+            return self._json({"purchases": [dict(r) for r in rows]})
+
+        if route == "/api/admin/onboarding":
+            rows = conn.execute(
+                "SELECT o.*, u.email, u.name, u.tier FROM onboarding o JOIN users u ON u.id = o.user_id "
+                "ORDER BY o.updated_at DESC LIMIT 200"
+            ).fetchall()
+            conn.close()
+            return self._json({"onboarding": [dict(r) for r in rows]})
+
+        if route == "/api/admin/audio":
+            uploaded = self._admin_audio_uploaded()
+            conn.close()
+            return self._json({
+                "uploaded": uploaded,
+                "missing": [slug for slug in AUDIO_SLUGS if slug not in uploaded],
+                "expected": AUDIO_SLUGS,
+            })
+
+        # ---------- product analytics ----------
+        def daily_active(days: int) -> list[dict]:
+            rows = conn.execute(
+                "SELECT date(created_at) d, COUNT(DISTINCT user_id) c FROM events "
+                "WHERE user_id IS NOT NULL AND created_at >= datetime('now', ?) GROUP BY d",
+                (f"-{days - 1} days",),
+            ).fetchall()
+            by_day = {r["d"]: r["c"] for r in rows}
+            today = datetime.now(timezone.utc)
+            return [
+                {"day": (today - timedelta(days=i)).strftime("%Y-%m-%d"), "active": by_day.get((today - timedelta(days=i)).strftime("%Y-%m-%d"), 0)}
+                for i in range(days - 1, -1, -1)
+            ]
+
+        def daily_events(days: int) -> list[dict]:
+            rows = conn.execute(
+                "SELECT date(created_at) d, COUNT(*) c FROM events "
+                "WHERE created_at >= datetime('now', ?) GROUP BY d",
+                (f"-{days - 1} days",),
+            ).fetchall()
+            by_day = {r["d"]: r["c"] for r in rows}
+            today = datetime.now(timezone.utc)
+            return [
+                {"day": (today - timedelta(days=i)).strftime("%Y-%m-%d"), "events": by_day.get((today - timedelta(days=i)).strftime("%Y-%m-%d"), 0)}
+                for i in range(days - 1, -1, -1)
+            ]
+
+        if route == "/api/admin/analytics/overview":
+            users_total = count("SELECT COUNT(*) c FROM users")
+            dau = count("SELECT COUNT(DISTINCT user_id) c FROM events WHERE user_id IS NOT NULL AND created_at >= datetime('now', '-1 day')")
+            wau = count("SELECT COUNT(DISTINCT user_id) c FROM events WHERE user_id IS NOT NULL AND created_at >= datetime('now', '-7 days')")
+            mau = count("SELECT COUNT(DISTINCT user_id) c FROM events WHERE user_id IS NOT NULL AND created_at >= datetime('now', '-30 days')")
+            activated = count(
+                "SELECT COUNT(*) c FROM (SELECT user_id FROM events WHERE event = 'task_completed' "
+                "GROUP BY user_id HAVING COUNT(*) >= 3)"
+            )
+            velocity = conn.execute(
+                "SELECT AVG(julianday(e.first_done) - julianday(u.created_at)) v FROM users u "
+                "JOIN (SELECT user_id, MIN(created_at) first_done FROM events "
+                "      WHERE event = 'task_completed' GROUP BY user_id) e ON e.user_id = u.id"
+            ).fetchone()["v"]
+            series = daily_active(30)
+            conn.close()
+            return self._json({
+                "users": users_total,
+                "dau": dau,
+                "wau": wau,
+                "mau": mau,
+                "activationRate": round(100 * activated / users_total) if users_total else 0,
+                "activatedUsers": activated,
+                "daysToFirstTask": round(velocity, 1) if velocity is not None else None,
+                "dailyActive": series,
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if route == "/api/admin/analytics/audio":
+            plays = {
+                r["slug"]: {"plays": r["plays"], "listeners": r["listeners"]}
+                for r in conn.execute(
+                    "SELECT json_extract(meta, '$.slug') slug, COUNT(*) plays, "
+                    "COUNT(DISTINCT user_id) listeners FROM events "
+                    "WHERE event = 'audio_play' AND json_extract(meta, '$.slug') IS NOT NULL "
+                    "GROUP BY slug",
+                ).fetchall()
+            }
+            completions = {
+                r["slug"]: r["completions"]
+                for r in conn.execute(
+                    "SELECT json_extract(meta, '$.slug') slug, COUNT(*) completions FROM events "
+                    "WHERE event = 'audio_complete' AND json_extract(meta, '$.slug') IS NOT NULL "
+                    "GROUP BY slug",
+                ).fetchall()
+            }
+            chapters = []
+            for slug in AUDIO_SLUGS:
+                p = plays.get(slug, {"plays": 0, "listeners": 0})
+                chapters.append({
+                    "slug": slug,
+                    "plays": p["plays"],
+                    "listeners": p["listeners"],
+                    "completions": completions.get(slug, 0),
+                })
+            conn.close()
+            return self._json({"chapters": chapters, "expected": AUDIO_SLUGS})
+
+        if route == "/api/admin/analytics/tasks":
+            weeks = [dict(r) for r in conn.execute(
+                "SELECT COALESCE(week, 0) week, COUNT(*) total, COALESCE(SUM(done), 0) done "
+                "FROM tasks GROUP BY week ORDER BY week",
+            ).fetchall()]
+            top_tasks = [dict(r) for r in conn.execute(
+                "SELECT title, week, COUNT(*) total, COALESCE(SUM(done), 0) done "
+                "FROM tasks GROUP BY title ORDER BY done DESC, total DESC LIMIT 16",
+            ).fetchall()]
+            completed_events = count("SELECT COUNT(*) c FROM events WHERE event = 'task_completed'")
+            added_events = count("SELECT COUNT(*) c FROM events WHERE event = 'task_added'")
+            conn.close()
+            return self._json({
+                "weeks": weeks,
+                "topTasks": top_tasks,
+                "completedEvents": completed_events,
+                "addedEvents": added_events,
+            })
+
+        if route == "/api/admin/analytics/onboarding":
+            fields = ["business_name", "business_stage", "country", "timezone", "main_goal",
+                      "biggest_challenge", "revenue_range", "team_size", "whatsapp_number"]
+            started = count("SELECT COUNT(*) c FROM onboarding")
+            steps = []
+            for field in fields:
+                filled = count(f"SELECT COUNT(*) c FROM onboarding WHERE {field} != ''")
+                steps.append({
+                    "field": field,
+                    "filled": filled,
+                    "rate": round(100 * filled / started) if started else 0,
+                })
+            completed = count("SELECT COUNT(*) c FROM onboarding WHERE completed_at IS NOT NULL")
+            opt_in = count("SELECT COUNT(*) c FROM onboarding WHERE whatsapp_consent = 1")
+            conn.close()
+            return self._json({
+                "started": started,
+                "completed": completed,
+                "whatsappOptIn": opt_in,
+                "steps": steps,
+            })
+
+        if route == "/api/admin/analytics/engagement":
+            pages = [dict(r) for r in conn.execute(
+                "SELECT path, COUNT(*) views, COUNT(DISTINCT user_id) users FROM events "
+                "WHERE event = 'page_view' GROUP BY path ORDER BY views DESC LIMIT 12",
+            ).fetchall()]
+            by_event = [dict(r) for r in conn.execute(
+                "SELECT event, COUNT(*) c FROM events GROUP BY event ORDER BY c DESC",
+            ).fetchall()]
+            events_series = daily_events(14)
+            conn.close()
+            return self._json({
+                "pages": pages,
+                "byEvent": by_event,
+                "dailyEvents": events_series,
+            })
+
+        if route == "/api/admin/analytics/content":
+            def daily_views(days: int) -> list[dict]:
+                rows = conn.execute(
+                    "SELECT date(created_at) d, COUNT(*) c FROM events "
+                    "WHERE event = 'page_view' AND created_at >= datetime('now', ?) GROUP BY d",
+                    (f"-{days - 1} days",),
+                ).fetchall()
+                by_day = {r["d"]: r["c"] for r in rows}
+                today = datetime.now(timezone.utc)
+                return [
+                    {"day": (today - timedelta(days=i)).strftime("%Y-%m-%d"), "views": by_day.get((today - timedelta(days=i)).strftime("%Y-%m-%d"), 0)}
+                    for i in range(days - 1, -1, -1)
+                ]
+            posts = [dict(r) for r in conn.execute(
+                "SELECT path, COUNT(*) views, COUNT(DISTINCT user_id) members, "
+                "SUM(CASE WHEN user_id IS NULL THEN 1 ELSE 0 END) anonymous "
+                "FROM events WHERE event = 'page_view' AND path LIKE '/blog/%' "
+                "GROUP BY path ORDER BY views DESC LIMIT 20",
+            ).fetchall()]
+            titles = {"/blog/" + p["slug"] + "/": p["title"] for p in BLOG_POSTS}
+            for row in posts:
+                row["title"] = titles.get(row["path"], row["path"])
+            sources = [dict(r) for r in conn.execute(
+                "SELECT COALESCE(NULLIF(json_extract(meta, '$.utm_source'), ''), '(none)') utm, COUNT(*) c "
+                "FROM events WHERE event = 'page_view' GROUP BY 1 ORDER BY c DESC LIMIT 8",
+            ).fetchall()]
+            referrers = [dict(r) for r in conn.execute(
+                "SELECT COALESCE(NULLIF(json_extract(meta, '$.referrer'), ''), '(direct)') referrer, COUNT(*) c "
+                "FROM events WHERE event = 'page_view' GROUP BY 1 ORDER BY c DESC LIMIT 10",
+            ).fetchall()]
+            views = daily_views(14)
+            conn.close()
+            return self._json({
+                "posts": posts,
+                "expectedPosts": ["/blog/" + p["slug"] + "/" for p in BLOG_POSTS],
+                "sources": sources,
+                "referrers": referrers,
+                "dailyViews": views,
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if route == "/api/admin/security":
+            def sec_counts(where: str) -> dict:
+                return {
+                    r["kind"]: r["c"] for r in conn.execute(
+                        f"SELECT kind, COUNT(*) c FROM security_log WHERE created_at >= datetime('now', {where}) GROUP BY kind",
+                    ).fetchall()
+                }
+            last24 = sec_counts("'-1 days'")
+            last7 = sec_counts("'-7 days'")
+            live = {
+                "member": count("SELECT COUNT(*) c FROM sessions WHERE expires_at > datetime('now')"),
+                "admin": count("SELECT COUNT(*) c FROM admin_sessions WHERE expires_at > datetime('now')"),
+                "staff": count("SELECT COUNT(*) c FROM staff_sessions WHERE expires_at > datetime('now')"),
+            }
+            recent = [dict(r) for r in conn.execute(
+                "SELECT id, kind, email, ip, detail, created_at FROM security_log ORDER BY id DESC LIMIT 50",
+            ).fetchall()]
+            audit = [dict(r) for r in conn.execute(
+                "SELECT id, actor, action, target, created_at FROM audit_logs ORDER BY id DESC LIMIT 25",
+            ).fetchall()]
+            conn.close()
+            return self._json({
+                "last24": last24,
+                "last7": last7,
+                "liveSessions": live,
+                "recent": recent,
+                "audit": audit,
+                "generatedAt": datetime.now(timezone.utc).isoformat(),
+            })
+
+        if route == "/api/admin/team":
+            rows = conn.execute(
+                "SELECT s.id, s.email, s.name, s.role, s.active, s.created_at, "
+                "(SELECT COUNT(*) FROM staff_sessions ss WHERE ss.staff_id = s.id "
+                " AND ss.expires_at > datetime('now')) AS sessions "
+                "FROM staff_users s ORDER BY s.id",
+            ).fetchall()
+            conn.close()
+            return self._json({"staff": [dict(r) for r in rows], "roles": STAFF_ROLES})
+
+        if route == "/api/admin/crm":
+            try:
+                uid = int(param("user_id", "0"))
+            except ValueError:
+                uid = 0
+            member = conn.execute(
+                "SELECT id, email, name, tier, role, ref_code, referred_by, created_at FROM users WHERE id = ?",
+                (uid,),
+            ).fetchone()
+            if not member:
+                conn.close()
+                return self._json({"error": "not found"}, 404)
+            onb = conn.execute("SELECT * FROM onboarding WHERE user_id = ?", (uid,)).fetchone()
+            purchases = [dict(r) for r in conn.execute(
+                "SELECT id, order_id, tier, amount, currency, provider, created_at FROM purchases "
+                "WHERE lower(email) = lower(?) ORDER BY id DESC",
+                (member["email"],),
+            ).fetchall()]
+            ltv = sum((p["amount"] or 0) for p in purchases if isinstance(p["amount"], (int, float)))
+            timeline = [dict(r) for r in conn.execute(
+                "SELECT event, path, meta, created_at FROM events WHERE user_id = ? "
+                "ORDER BY id DESC LIMIT 25",
+                (uid,),
+            ).fetchall()]
+            signals = {
+                "tasksDone": count("SELECT COUNT(*) c FROM tasks WHERE user_id = ? AND done = 1", (uid,)),
+                "tasksTotal": count("SELECT COUNT(*) c FROM tasks WHERE user_id = ?", (uid,)),
+                "audioStarted": count("SELECT COUNT(*) c FROM events WHERE user_id = ? AND event = 'audio_play'", (uid,)),
+                "audioCompleted": count("SELECT COUNT(*) c FROM events WHERE user_id = ? AND event = 'audio_complete'", (uid,)),
+                "checkoutClicks": count("SELECT COUNT(*) c FROM events WHERE user_id = ? AND event = 'checkout_click'", (uid,)),
+            }
+            stage_row = conn.execute("SELECT stage, updated_at FROM crm_pipeline WHERE user_id = ?", (uid,)).fetchone()
+            notes = [dict(r) for r in conn.execute(
+                "SELECT id, note, author, created_at FROM crm_notes WHERE user_id = ? ORDER BY id DESC LIMIT 50",
+                (uid,),
+            ).fetchall()]
+            conn.close()
+            return self._json({
+                "member": dict(member),
+                "onboarding": dict(onb) if onb else None,
+                "purchases": purchases,
+                "ltv": round(ltv, 2),
+                "timeline": timeline,
+                "signals": signals,
+                "stage": stage_row["stage"] if stage_row else "lead",
+                "stageUpdatedAt": stage_row["updated_at"] if stage_row else None,
+                "notes": notes,
+            })
+
+        if route == "/api/admin/webhooks":
+            stats = {s: 0 for s in ("applied", "duplicate", "rejected", "invalid", "failed")}
+            for row in conn.execute("SELECT status, COUNT(*) c FROM webhook_logs GROUP BY status"):
+                if row["status"] in stats:
+                    stats[row["status"]] = row["c"]
+            last = conn.execute("SELECT created_at FROM webhook_logs ORDER BY id DESC LIMIT 1").fetchone()
+            deliveries = [dict(r) for r in conn.execute(
+                "SELECT id, status, order_id, email, error, created_at, "
+                "length(payload) AS payload_size FROM webhook_logs ORDER BY id DESC LIMIT 50",
+            ).fetchall()]
+            conn.close()
+            total = sum(stats.values())
+            return self._json({
+                "stats": stats,
+                "total": total,
+                "lastDelivery": last["created_at"] if last else None,
+                "configured": bool(WEBHOOK_SECRET),
+                "deliveries": deliveries,
+            })
+
+        if route == "/api/admin/claims":
+            pending = [dict(r) for r in conn.execute(
+                "SELECT id, email, order_id, tier, created_at, token, "
+                "(SELECT status FROM email_log WHERE to_email = purchase_claims.email AND kind = 'claim' "
+                " ORDER BY id DESC LIMIT 1) AS email_status "
+                "FROM purchase_claims "
+                "WHERE completed_at IS NULL AND created_at >= datetime('now', '-30 days') ORDER BY id DESC LIMIT 50",
+            ).fetchall()]
+            completed = conn.execute(
+                "SELECT COUNT(*) c FROM purchase_claims WHERE completed_at IS NOT NULL",
+            ).fetchone()["c"]
+            emails = [dict(r) for r in conn.execute(
+                "SELECT to_email, subject, kind, status, error, created_at FROM email_log ORDER BY id DESC LIMIT 20",
+            ).fetchall()]
+            conn.close()
+            for row in pending:
+                row["claimUrl"] = f"{self._origin()}/#/claim?token={row.pop('token')}"
+            return self._json({"pending": pending, "completed": completed, "emails": emails})
+
+        conn.close()
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self):
@@ -368,6 +1074,56 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({"error": "not found"}, 404)
         route = self.path.split("?")[0]
         data = self._body()
+
+        if route == "/api/webhooks/purchase":
+            if not WEBHOOK_SECRET:
+                return self._json({"error": "purchase webhook not configured"}, 503)
+            provided = (self.headers.get("Authorization", "")[7:] or self.headers.get("X-Webhook-Secret", "")).strip()
+            if not secrets.compare_digest(provided.encode(), WEBHOOK_SECRET.encode()):
+                conn = db()
+                _log_webhook(conn, "rejected", data, None, str(data.get("email") or ""))
+                _log_security(conn, "webhook_rejected", email=str(data.get("email") or ""), ip=self._client_ip(),
+                              detail=f"order_id={data.get('order_id') or ''}")
+                conn.commit()
+                conn.close()
+                return self._json({"error": "unauthorized"}, 401)
+            conn = db()
+            try:
+                status, response = _process_purchase(conn, data, self._origin())
+                conn.commit()
+                return self._json(response, 200 if status != "invalid" else 400)
+            except Exception as exc:
+                conn.rollback()
+                _log_webhook(conn, "failed", data, None, str(data.get("email") or ""), error=str(exc)[:500])
+                conn.commit()
+                return self._json({"error": "webhook processing failed"}, 500)
+            finally:
+                conn.close()
+
+        if route == "/api/track":
+            event = clean_text(data.get("event"), 60)
+            if event not in ("page_view", "checkout_click") or event not in EVENT_NAMES:
+                return self._json({"error": "unknown event"}, 400)
+            path = clean_text(data.get("path"), 200)
+            if not path.startswith("/") or path.startswith("//"):
+                return self._json({"error": "bad path"}, 400)
+            ip = self._client_ip()
+            if not _track_allow(ip):
+                conn = db()
+                _log_security(conn, "track_rate_limited", ip=ip)
+                conn.commit()
+                conn.close()
+                return self._json({"error": "slow down"}, 429)
+            meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
+            clean_meta = {"referrer": clean_text(meta.get("referrer"), 300)}
+            for key in ("utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"):
+                if meta.get(key):
+                    clean_meta[key] = clean_text(meta.get(key), 100)
+            conn = db()
+            _log_track(conn, event, path, clean_meta)
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True})
 
         if route == "/api/signup":
             email = (data.get("email") or "").strip().lower()
@@ -382,11 +1138,23 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json({"error": "That email is already registered. Sign in instead."}, 409)
             salt = secrets.token_hex(8)
             ref_code = "SL" + secrets.token_hex(3).upper()
+            # A buyer may create their account after paying (stranger-buy flow):
+            # if a purchase already exists for this email, start them on that tier.
+            paid = conn.execute(
+                "SELECT tier FROM purchases WHERE lower(email) = ? AND tier != 'free' ORDER BY id DESC LIMIT 1",
+                (email,),
+            ).fetchone()
+            tier = paid["tier"] if paid else "free"
             cur = conn.execute(
                 "INSERT INTO users (email, name, password_hash, salt, tier, ref_code, referred_by) VALUES (?,?,?,?,?,?,?)",
-                (email, name or email.split("@")[0].title(), _hash(password, salt), salt, "free", ref_code, ref or None),
+                (email, name or email.split("@")[0].title(), _hash(password, salt), salt, tier, ref_code, ref or None),
             )
             uid = cur.lastrowid
+            if paid:
+                conn.execute(
+                    "UPDATE purchase_claims SET completed_at = datetime('now') WHERE lower(email) = ? AND completed_at IS NULL",
+                    (email,),
+                )
             acquisition = clean_acquisition(data.get("acquisition"), "referral" if ref else "direct")
             save_onboarding_row(conn, uid, {}, acquisition)
             log_event(conn, uid, "signup", "/signup", {"ref": ref or None, "source": acquisition["source"]})
@@ -408,12 +1176,82 @@ class Handler(SimpleHTTPRequestHandler):
             conn = db()
             row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
             if not row or _hash(password, row["salt"]) != row["password_hash"]:
+                if not row:
+                    bought = conn.execute(
+                        "SELECT 1 FROM purchases WHERE lower(email) = ? LIMIT 1", (email,)
+                    ).fetchone()
+                    claimed = conn.execute(
+                        "SELECT 1 FROM purchase_claims WHERE lower(email) = ? AND completed_at IS NULL LIMIT 1", (email,)
+                    ).fetchone()
+                    if bought or claimed:
+                        _log_security(conn, "member_login_failed", email=email, ip=self._client_ip(),
+                                      detail="purchased but no account yet")
+                        conn.commit()
+                        conn.close()
+                        return self._json({
+                            "error": "We found your purchase, but this email has no login yet. Use the access link from your receipt, or create your account on the sign-up page — your purchase unlocks automatically.",
+                        }, 401)
+                _log_security(conn, "member_login_failed", email=email, ip=self._client_ip())
+                conn.commit()
                 conn.close()
                 return self._json({"error": "Wrong email or password."}, 401)
             log_event(conn, row["id"], "signin", "/signin", {})
             conn.commit()
             conn.close()
             return self._json(self._authed(row))
+
+        if route == "/api/claim/preview":
+            token = str(data.get("token") or "")
+            conn = db()
+            claim = conn.execute(
+                "SELECT email, tier FROM purchase_claims WHERE token = ? AND completed_at IS NULL "
+                "AND created_at >= datetime('now', '-30 days')", (token,),
+            ).fetchone()
+            conn.close()
+            if not claim:
+                return self._json({"error": "This access link is invalid, already used, or expired."}, 404)
+            return self._json({"email": claim["email"], "tier": claim["tier"]})
+
+        if route == "/api/claim/complete":
+            token = str(data.get("token") or "")
+            name = clean_text(data.get("name"), 80)
+            password = str(data.get("password") or "")
+            if len(password) < 8:
+                return self._json({"error": "Password needs at least 8 characters."}, 400)
+            conn = db()
+            claim = conn.execute(
+                "SELECT * FROM purchase_claims WHERE token = ? AND completed_at IS NULL "
+                "AND created_at >= datetime('now', '-30 days')", (token,),
+            ).fetchone()
+            if not claim:
+                conn.close()
+                return self._json({"error": "This access link is invalid, already used, or expired."}, 404)
+            email = claim["email"]
+            existing = conn.execute("SELECT * FROM users WHERE lower(email) = ?", (email,)).fetchone()
+            if existing:
+                conn.execute("UPDATE users SET tier = ? WHERE id = ?", (claim["tier"], existing["id"]))
+                conn.execute("UPDATE purchase_claims SET completed_at = datetime('now') WHERE id = ?", (claim["id"],))
+                conn.commit()
+                conn.close()
+                return self._json({"ok": True, "upgraded_existing": True})
+            salt = secrets.token_hex(8)
+            cur = conn.execute(
+                "INSERT INTO users (email, name, password_hash, salt, tier, ref_code) VALUES (?,?,?,?,?,?)",
+                (email, name or email.split("@")[0].title(), _hash(password, salt), salt, claim["tier"], "SL" + secrets.token_hex(3).upper()),
+            )
+            uid = cur.lastrowid
+            save_onboarding_row(conn, uid, {}, clean_acquisition(None, "purchase"))
+            log_event(conn, uid, "signup", "/claim", {"source": "purchase"})
+            for week, title, detail in LAUNCH_TASKS:
+                conn.execute(
+                    "INSERT INTO tasks (user_id, title, detail, week, kind) VALUES (?,?,?,?, 'launch')",
+                    (uid, title, detail, week),
+                )
+            conn.execute("UPDATE purchase_claims SET completed_at = datetime('now') WHERE id = ?", (claim["id"],))
+            conn.commit()
+            row = conn.execute("SELECT * FROM users WHERE id = ?", (uid,)).fetchone()
+            conn.close()
+            return self._json(self._authed(row), 201)
 
         if route == "/api/signout":
             conn = db()
@@ -423,6 +1261,243 @@ class Handler(SimpleHTTPRequestHandler):
             conn.commit()
             conn.close()
             return self._json({"ok": True})
+
+        if route == "/api/admin/login":
+            if not ADMIN_PASSWORD:
+                return self._json({"error": "Admin login is not configured."}, 503)
+            password = str(data.get("password") or "")
+            if not secrets.compare_digest(password, ADMIN_PASSWORD):
+                time.sleep(0.4)
+                conn = db()
+                _log_security(conn, "admin_login_failed", ip=self._client_ip())
+                conn.commit()
+                conn.close()
+                return self._json({"error": "Wrong admin password."}, 401)
+            token = secrets.token_hex(32)
+            conn = db()
+            conn.execute("DELETE FROM admin_sessions WHERE expires_at <= datetime('now')")
+            conn.execute(
+                "INSERT INTO admin_sessions (token_hash, expires_at) VALUES (?, datetime('now', ?))",
+                (_token_hash(token), f"+{ADMIN_SESSION_HOURS} hours"),
+            )
+            conn.commit()
+            conn.close()
+            return self._json({
+                "token": token,
+                "role": "superadmin",
+                "expires_at": datetime.fromtimestamp(
+                    datetime.now(timezone.utc).timestamp() + ADMIN_SESSION_HOURS * 3600,
+                    timezone.utc,
+                ).isoformat(),
+            })
+
+        if route == "/api/staff/login":
+            email = clean_text(data.get("email"), 120).lower()
+            password = str(data.get("password") or "")
+            conn = db()
+            row = conn.execute(
+                "SELECT * FROM staff_users WHERE lower(email) = ? AND active = 1", (email,)
+            ).fetchone()
+            if not row or _hash(password, row["salt"]) != row["password_hash"]:
+                conn.close()
+                time.sleep(0.4)
+                conn = db()
+                _log_security(conn, "staff_login_failed", email=email, ip=self._client_ip())
+                conn.commit()
+                conn.close()
+                return self._json({"error": "Wrong email or password."}, 401)
+            token = secrets.token_hex(32)
+            conn.execute("DELETE FROM staff_sessions WHERE expires_at <= datetime('now')")
+            conn.execute(
+                "INSERT INTO staff_sessions (token_hash, staff_id, expires_at) "
+                "VALUES (?, ?, datetime('now', ?))",
+                (_token_hash(token), row["id"], f"+{ADMIN_SESSION_HOURS} hours"),
+            )
+            conn.commit()
+            conn.close()
+            return self._json({
+                "token": token,
+                "role": row["role"],
+                "name": row["name"],
+                "expires_at": datetime.fromtimestamp(
+                    datetime.now(timezone.utc).timestamp() + ADMIN_SESSION_HOURS * 3600,
+                    timezone.utc,
+                ).isoformat(),
+            })
+
+        if route == "/api/admin/logout":
+            token = self.headers.get("Authorization", "")[7:]
+            conn = db()
+            if token:
+                th = _token_hash(token)
+                conn.execute("DELETE FROM admin_sessions WHERE token_hash = ?", (th,))
+                conn.execute("DELETE FROM staff_sessions WHERE token_hash = ?", (th,))
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True})
+
+        if route.startswith("/api/admin/"):
+            auth = self._admin_auth()
+            if not auth:
+                return self._json({"error": "unauthorized"}, 401)
+            if not self._allowed(auth[0], route):
+                return self._json({"error": "not allowed for your role"}, 403)
+            tier_match = re.match(r"^/api/admin/users/(\d+)/tier$", route)
+            role_match = re.match(r"^/api/admin/users/(\d+)/role$", route)
+            if not tier_match and not role_match:
+                crm_stage = re.match(r"^/api/admin/crm/stage$", route)
+                crm_note = re.match(r"^/api/admin/crm/notes$", route)
+                team_add = re.match(r"^/api/admin/team$", route)
+                team_active = re.match(r"^/api/admin/team/(\d+)/active$", route)
+                team_role = re.match(r"^/api/admin/team/(\d+)/role$", route)
+                webhook_replay = re.match(r"^/api/admin/webhooks/replay$", route)
+                if not any([crm_stage, crm_note, team_add, team_active, team_role, webhook_replay]):
+                    return self._json({"error": "not found"}, 404)
+                conn = db()
+                if webhook_replay:
+                    try:
+                        wid = int(data.get("id") or 0)
+                    except (TypeError, ValueError):
+                        wid = 0
+                    row = conn.execute("SELECT id, payload FROM webhook_logs WHERE id = ?", (wid,)).fetchone()
+                    if not row:
+                        conn.close()
+                        return self._json({"error": "not found"}, 404)
+                    try:
+                        payload = json.loads(row["payload"] or "{}")
+                    except json.JSONDecodeError:
+                        payload = {}
+                    try:
+                        status, response = _process_purchase(conn, payload, self._origin())
+                        conn.commit()
+                        self._audit(conn, "webhook_replayed", f"webhook:{wid}", {"result": status})
+                        conn.commit()
+                        conn.close()
+                        return self._json({"ok": True, "status": status, **response})
+                    except Exception as exc:
+                        conn.rollback()
+                        _log_webhook(conn, "failed", payload, None, None, error=f"replay: {str(exc)[:400]}")
+                        conn.commit()
+                        conn.close()
+                        return self._json({"error": "replay failed"}, 500)
+                if team_add:
+                    email = clean_text(data.get("email"), 120).lower()
+                    name = clean_text(data.get("name"), 80)
+                    role = str(data.get("role") or "")
+                    password = str(data.get("password") or "")
+                    if not email or "@" not in email:
+                        conn.close()
+                        return self._json({"error": "A valid email is required."}, 400)
+                    if role not in STAFF_ROLES or role == "superadmin":
+                        conn.close()
+                        return self._json({"error": "Pick a staff role: sales, support or content."}, 400)
+                    if len(password) < 8:
+                        conn.close()
+                        return self._json({"error": "Password needs at least 8 characters."}, 400)
+                    if conn.execute("SELECT 1 FROM staff_users WHERE lower(email) = ?", (email,)).fetchone():
+                        conn.close()
+                        return self._json({"error": "That email already has a staff account."}, 409)
+                    salt = secrets.token_hex(16)
+                    cur = conn.execute(
+                        "INSERT INTO staff_users (email, name, password_hash, salt, role) VALUES (?,?,?,?,?)",
+                        (email, name, _hash(password, salt), salt, role),
+                    )
+                    self._audit(conn, "staff_added", f"staff:{cur.lastrowid}", {"email": email, "role": role})
+                    conn.commit()
+                    row = conn.execute(
+                        "SELECT id, email, name, role, active, created_at FROM staff_users WHERE id = ?",
+                        (cur.lastrowid,),
+                    ).fetchone()
+                    conn.close()
+                    return self._json({"staff": dict(row)})
+                if team_active or team_role:
+                    sid = int((team_active or team_role).group(1))
+                    exists = conn.execute("SELECT id FROM staff_users WHERE id = ?", (sid,)).fetchone()
+                    if not exists:
+                        conn.close()
+                        return self._json({"error": "not found"}, 404)
+                    if team_active:
+                        active = 1 if data.get("active") in (True, 1, "1", "true") else 0
+                        conn.execute("UPDATE staff_users SET active = ? WHERE id = ?", (active, sid))
+                        if not active:
+                            conn.execute(
+                                "DELETE FROM staff_sessions WHERE staff_id = ? AND expires_at > datetime('now')",
+                                (sid,),
+                            )
+                        self._audit(conn, "staff_active" if active else "staff_deactivated", f"staff:{sid}", {})
+                    else:
+                        role = str(data.get("role") or "")
+                        if role not in STAFF_ROLES or role == "superadmin":
+                            conn.close()
+                            return self._json({"error": "Pick a staff role: sales, support or content."}, 400)
+                        conn.execute("UPDATE staff_users SET role = ? WHERE id = ?", (role, sid))
+                        self._audit(conn, "staff_role", f"staff:{sid}", {"role": role})
+                    row = conn.execute(
+                        "SELECT id, email, name, role, active, created_at FROM staff_users WHERE id = ?",
+                        (sid,),
+                    ).fetchone()
+                    conn.commit()
+                    conn.close()
+                    return self._json({"staff": dict(row)})
+                conn = db()
+                try:
+                    uid = int(data.get("user_id") or 0)
+                except (TypeError, ValueError):
+                    uid = 0
+                exists = conn.execute("SELECT 1 FROM users WHERE id = ?", (uid,)).fetchone()
+                if not exists:
+                    conn.close()
+                    return self._json({"error": "not found"}, 404)
+                if crm_stage:
+                    stage = str(data.get("stage") or "")
+                    if stage not in CRM_STAGES:
+                        conn.close()
+                        return self._json({"error": "invalid stage"}, 400)
+                    conn.execute(
+                        "INSERT INTO crm_pipeline (user_id, stage, updated_by, updated_at) "
+                        "VALUES (?, ?, 'superadmin', datetime('now')) "
+                        "ON CONFLICT(user_id) DO UPDATE SET stage = excluded.stage, "
+                        "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
+                        (uid, stage),
+                    )
+                    self._audit(conn, "crm_stage", f"user:{uid}", {"stage": stage})
+                else:
+                    note = clean_text(data.get("note"), 1000)
+                    if not note:
+                        conn.close()
+                        return self._json({"error": "Note is empty."}, 400)
+                    conn.execute(
+                        "INSERT INTO crm_notes (user_id, note, author) VALUES (?, ?, 'superadmin')",
+                        (uid, note),
+                    )
+                    self._audit(conn, "crm_note", f"user:{uid}", {"chars": len(note)})
+                conn.commit()
+                conn.close()
+                return self._json({"ok": True})
+            conn = db()
+            if tier_match:
+                tier = str(data.get("tier") or "")
+                if tier not in ("free", "complete"):
+                    conn.close()
+                    return self._json({"error": "invalid tier"}, 400)
+                conn.execute("UPDATE users SET tier = ? WHERE id = ?", (tier, int(tier_match.group(1))))
+            else:
+                role = str(data.get("role") or "")
+                if role not in ("member", "admin", "superadmin"):
+                    conn.close()
+                    return self._json({"error": "invalid role"}, 400)
+                conn.execute("UPDATE users SET role = ? WHERE id = ?", (role, int(role_match.group(1))))
+            self._audit(conn, "tier" if tier_match else "role", f"user:{int((tier_match or role_match).group(1))}",
+                        {"value": tier if tier_match else role})
+            row = conn.execute(
+                "SELECT id, email, name, tier, role FROM users WHERE id = ?",
+                (int((tier_match or role_match).group(1)),),
+            ).fetchone()
+            conn.commit()
+            conn.close()
+            if not row:
+                return self._json({"error": "not found"}, 404)
+            return self._json({"user": dict(row)})
 
         user = self._user()
         if not user:
@@ -600,8 +1675,12 @@ class Handler(SimpleHTTPRequestHandler):
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8100
     init_db()
-    print(f"Soft Life dev server → http://localhost:{port}  (demo: {SEED_EMAIL} / {SEED_PASSWORD})")
-    HTTPServer(("127.0.0.1", port), Handler).serve_forever()
+    try:
+        print(f"Soft Life dev server → http://localhost:{port}  (demo: {SEED_EMAIL} / {SEED_PASSWORD}  ·  admin: {ADMIN_PASSWORD})")
+    except UnicodeEncodeError:
+        # Windows consoles often use cp1252, which can't encode "→".
+        print(f"Soft Life dev server -> http://localhost:{port}  (demo: {SEED_EMAIL} / {SEED_PASSWORD}  -  admin: {ADMIN_PASSWORD})")
+    ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
 
 
 if __name__ == "__main__":

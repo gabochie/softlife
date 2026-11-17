@@ -1111,6 +1111,7 @@ def page(
 <meta name="twitter:description" content="{escape(description, quote=True)}">
 <meta name="twitter:image" content="{SITE + image}">
 {ld_scripts(jsonld or [])}
+<script src="/js/track.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>

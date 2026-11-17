@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
   tier TEXT NOT NULL DEFAULT 'free',
+  role TEXT NOT NULL DEFAULT 'member',
   ref_code TEXT UNIQUE NOT NULL,
   referred_by TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -86,4 +87,117 @@ CREATE TABLE IF NOT EXISTS events (
   path TEXT NOT NULL DEFAULT '',
   meta TEXT NOT NULL DEFAULT '{}',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Analytics aggregation indexes (idempotent; runs on every boot via init_db).
+CREATE INDEX IF NOT EXISTS idx_events_user_time ON events(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_events_time ON events(created_at);
+CREATE INDEX IF NOT EXISTS idx_events_name_time ON events(event, created_at);
+
+CREATE TABLE IF NOT EXISTS purchases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id TEXT UNIQUE,
+  email TEXT NOT NULL,
+  tier TEXT NOT NULL DEFAULT 'complete',
+  amount REAL,
+  currency TEXT NOT NULL DEFAULT '',
+  provider TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Purchase webhook deliveries: full reconciliation ledger (successes, duplicates, rejects).
+CREATE TABLE IF NOT EXISTS webhook_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  status TEXT NOT NULL,            -- applied | duplicate | rejected | invalid | failed
+  order_id TEXT,
+  email TEXT,
+  payload TEXT NOT NULL DEFAULT '{}',
+  error TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Purchase access claims: minted when a webhook applies a purchase for an email
+-- that has no account yet. The buyer sets their password via a one-time link.
+CREATE TABLE IF NOT EXISTS purchase_claims (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  order_id TEXT,
+  tier TEXT NOT NULL DEFAULT 'complete',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_claims_email ON purchase_claims(lower(email));
+
+-- Transactional email log (production sends via the Cloudflare Email Service
+-- binding; local dev queues here and the admin copies links manually).
+CREATE TABLE IF NOT EXISTS email_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  kind TEXT NOT NULL,              -- claim | purchase_confirmation
+  status TEXT NOT NULL,            -- sent | failed | queued_local
+  error TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Security monitoring: failed logins, rejected webhooks, rate-limit hits.
+CREATE TABLE IF NOT EXISTS security_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind TEXT NOT NULL,              -- member_login_failed | admin_login_failed | staff_login_failed | webhook_rejected | track_rate_limited
+  email TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  detail TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_security_time ON security_log(created_at);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  token_hash TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL
+);
+
+-- Sales CRM: pipeline stage per member, staff notes, and an audit trail.
+CREATE TABLE IF NOT EXISTS crm_pipeline (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id),
+  stage TEXT NOT NULL DEFAULT 'lead',
+  updated_by TEXT NOT NULL DEFAULT 'superadmin',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS crm_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  note TEXT NOT NULL,
+  author TEXT NOT NULL DEFAULT 'superadmin',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  actor TEXT NOT NULL DEFAULT 'superadmin',
+  action TEXT NOT NULL,
+  target TEXT NOT NULL DEFAULT '',
+  meta TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Staff accounts: individual logins with role-scoped access (RBAC).
+CREATE TABLE IF NOT EXISTS staff_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  password_hash TEXT NOT NULL,
+  salt TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'sales',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS staff_sessions (
+  token_hash TEXT PRIMARY KEY,
+  staff_id INTEGER NOT NULL REFERENCES staff_users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL
 );
