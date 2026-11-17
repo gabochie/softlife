@@ -44,7 +44,8 @@ const ACQUISITION_KEYS = ["source", "utm_source", "utm_medium", "utm_campaign", 
 const EVENT_NAMES = new Set([
   "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
   "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
-  "task_added", "task_completed", "audio_play", "checkout_click"
+  "task_added", "task_completed", "audio_play", "checkout_click",
+  "password_reset_requested", "password_reset_completed"
 ]);
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",

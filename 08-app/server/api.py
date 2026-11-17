@@ -75,6 +75,7 @@ EVENT_NAMES = {
     "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
     "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
     "task_added", "task_completed", "audio_play", "audio_complete", "page_view", "checkout_click",
+    "password_reset_requested", "password_reset_completed",
 }
 
 LAUNCH_TASKS = [
