@@ -79,11 +79,11 @@ const LAUNCH_TASKS = [
 ];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) {
       try {
-        return await handleApi(request, env, url);
+        return await handleApi(request, env, url, ctx);
       } catch (err) {
         console.error("softlife api error", err);
         return json({ error: "Something went wrong." }, 500);
@@ -108,7 +108,7 @@ export default {
   }
 };
 
-async function handleApi(request, env, url) {
+async function handleApi(request, env, url, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
   if (path === "/api/health") {
@@ -132,7 +132,7 @@ async function handleApi(request, env, url) {
   if (path === "/api/admin/login" && request.method === "POST") return adminLogin(request, env);
   if (path === "/api/staff/login" && request.method === "POST") return staffLogin(request, env);
   if (path === "/api/admin/logout" && request.method === "POST") return adminLogout(request, env);
-  if (path === "/api/webhooks/purchase" && request.method === "POST") return purchaseWebhook(request, env);
+  if (path === "/api/webhooks/purchase" && request.method === "POST") return purchaseWebhook(request, env, ctx);
 
   if (path.startsWith("/api/admin/")) {
     const admin = await currentAdmin(request, env);
@@ -147,6 +147,8 @@ async function handleApi(request, env, url) {
 
   if (path === "/api/signup" && request.method === "POST") return signup(request, env);
   if (path === "/api/signin" && request.method === "POST") return signin(request, env);
+  if (path === "/api/forgot-password" && request.method === "POST") return forgotPassword(request, env);
+  if (path === "/api/reset-password" && request.method === "POST") return resetPassword(request, env);
   if (path === "/api/signout" && request.method === "POST") return signout(request, env);
   if (path === "/api/claim/preview" && request.method === "POST") return claimPreview(request, env);
   if (path === "/api/claim/complete" && request.method === "POST") return claimComplete(request, env);
@@ -308,6 +310,57 @@ async function signin(request, env) {
   const token = await createSession(env, user.id);
   await logEvent(env, user.id, "signin", "/signin", {});
   return json({ token, user: publicUser(user) });
+}
+
+async function forgotPassword(request, env) {
+  const body = await readJson(request);
+  const email = String(body.email || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) return json({ error: "A valid email is required." }, 400);
+  // Anti-enumeration: the response is identical whether or not the account exists.
+  const user = await env.DB.prepare(
+    "SELECT id, name FROM softlife_users WHERE lower(email) = ?"
+  ).bind(email).first();
+  if (!user) {
+    await new Promise((r) => setTimeout(r, 300));
+    return json({ ok: true });
+  }
+  const token = randomHex(32);
+  const tokenHash = await sha256Hex(token);
+  await env.DB.prepare("DELETE FROM softlife_password_resets WHERE expires_at <= datetime('now')").run();
+  await env.DB.prepare(
+    "INSERT INTO softlife_password_resets (token_hash, user_id, expires_at) VALUES (?, ?, datetime('now', '+60 minutes'))"
+  ).bind(tokenHash, user.id).run();
+  const origin = new URL(request.url).origin;
+  const link = `${origin}/#/reset?token=${token}`;
+  try {
+    await sendPurchaseEmail(env, email, "Reset your Soft Life System password",
+                            resetEmailHtml(link), resetEmailText(link), "password_reset");
+  } catch (exc) {
+    console.error("password reset email failed:", exc);
+  }
+  await logEvent(env, user.id, "password_reset_requested", "/forgot", {});
+  return json({ ok: true });
+}
+
+async function resetPassword(request, env) {
+  const body = await readJson(request);
+  const token = String(body.token || "").trim();
+  const password = String(body.password || "");
+  if (password.length < 8) return json({ error: "Password needs at least 8 characters." }, 400);
+  if (!token) return json({ error: "This reset link is invalid or expired." }, 400);
+  const tokenHash = await sha256Hex(token);
+  const row = await env.DB.prepare(
+    "SELECT user_id FROM softlife_password_resets WHERE token_hash = ? AND expires_at > datetime('now')"
+  ).bind(tokenHash).first();
+  if (!row) return json({ error: "This reset link is invalid or expired." }, 400);
+  const salt = randomHex(16);
+  const passwordHash = await hashPassword(password, salt);
+  await env.DB.prepare(
+    "UPDATE softlife_users SET password_hash = ?, salt = ? WHERE id = ?"
+  ).bind(passwordHash, salt, row.user_id).run();
+  await env.DB.prepare("DELETE FROM softlife_password_resets WHERE user_id = ?").bind(row.user_id).run();
+  await logEvent(env, row.user_id, "password_reset_completed", "/reset", {});
+  return json({ ok: true });
 }
 
 async function validClaim(env, token) {
@@ -1344,30 +1397,42 @@ function purchaseBodyOrderId(body) {
   ).trim() || null;
 }
 
-async function purchaseWebhook(request, env) {
+async function purchaseWebhook(request, env, ctx) {
   const secret = env.PURCHASE_WEBHOOK_SECRET || "";
   if (!secret && !env.PAYHIP_API_KEY) return json({ error: "purchase webhook not configured" }, 503);
-  const provided = bearerToken(request) || request.headers.get("X-Webhook-Secret") || "";
+  const url = new URL(request.url);
+  // Auth can arrive as: Bearer header, X-Webhook-Secret header, or ?secret= in the
+  // URL (for providers like Selar that post with no custom headers at all).
+  const provided = bearerToken(request) || request.headers.get("X-Webhook-Secret")
+    || url.searchParams.get("secret") || url.searchParams.get("key") || "";
   const body = await readJson(request);
   const orderId = purchaseBodyOrderId(body);
   const email = purchaseBodyEmail(body);
+  const reject = async () => {
+    await logWebhook(env, "rejected", body, orderId, email);
+    await logSecurity(env, "webhook_rejected", email, clientIp(request), `order_id=${orderId || ""}`);
+    return json({ error: "unauthorized" }, 401);
+  };
   if (provided) {
-    if (!secret || !safeEqual(provided, secret)) {
-      await logWebhook(env, "rejected", body, orderId, email);
-      await logSecurity(env, "webhook_rejected", email, clientIp(request), `order_id=${orderId || ""}`);
-      return json({ error: "unauthorized" }, 401);
-    }
+    if (!secret || !safeEqual(provided, secret)) return reject();
   } else {
     // Payhip posts with no auth header; it signs the payload with sha256(apiKey).
     const payhipKey = env.PAYHIP_API_KEY || "";
     const isPayhipShape = Boolean(body.type && body.signature);
     if (!isPayhipShape || !payhipKey || !safeEqual(String(body.signature), await sha256Hex(payhipKey))) {
-      await logWebhook(env, "rejected", body, orderId, email);
-      await logSecurity(env, "webhook_rejected", email, clientIp(request), `order_id=${orderId || ""}`);
-      return json({ error: "unauthorized" }, 401);
+      return reject();
     }
   }
-  const result = await applyPurchase(env, body, new URL(request.url).origin);
+  // Acknowledge immediately and finish processing in the background — callers like
+  // Zapier's free Code step enforce a 1-second wall clock, and the purchase email
+  // can take longer than that.
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(Promise.resolve().then(() => applyPurchase(env, body, url.origin))
+      .then((r) => console.error("purchase applied:", r.status, orderId || email))
+      .catch((err) => console.error("purchase apply failed:", err)));
+    return json({ ok: true, received: true });
+  }
+  const result = await applyPurchase(env, body, url.origin);
   if (result.status === "failed") return json({ error: "webhook processing failed" }, 500);
   return json(result.response, result.status === "invalid" ? 400 : 200);
 }
@@ -1461,6 +1526,25 @@ function claimEmailHtml(link) {
     + `<p style="font-size:13px;">Or paste this link into your browser:<br><code>${link}</code></p>`
     + '<p style="font-size:13px;color:#6d5f7a;">This link works once and stays valid for 30 days.</p>'
   );
+}
+
+function resetEmailHtml(link) {
+  return emailShell(
+    "Password reset 🔑",
+    "<p>Someone (hopefully you) asked to reset the password for this email.</p>"
+    + "<p>Click below to choose a new password. The link works once and expires in 60 minutes.</p>"
+    + `<p><a href="${link}" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;`
+    + 'border-radius:10px;text-decoration:none;font-weight:600;">Choose a new password →</a></p>'
+    + `<p style="font-size:13px;">Or paste this link into your browser:<br><code>${link}</code></p>`
+    + '<p style="font-size:13px;color:#6d5f7a;">Not you? Ignore this email — your password stays unchanged.</p>'
+  );
+}
+
+function resetEmailText(link) {
+  return "Password reset for The Soft Life System.\n\n"
+    + "Choose a new password: " + link + "\n\n"
+    + "This link works once and expires in 60 minutes. "
+    + "If you didn't request this, ignore this email - your password stays unchanged.";
 }
 
 function purchaseConfirmationHtml() {

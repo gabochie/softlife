@@ -7,6 +7,26 @@ const App = {
     window.addEventListener('hashchange', () => this.route());
     try { this.conf = { ...this.conf, ...(await API.config()) }; } catch (e) { /* defaults are safe */ }
     this.route();
+    this.cookieBanner();
+  },
+
+  // Lightweight cookie notice: essential session cookie + first-party analytics only.
+  // A one-time "OK" is enough for our audience (NDPA/Ghana DPA) — not a GDPR consent manager.
+  cookieBanner() {
+    try {
+      if (localStorage.getItem('sl_cookie_choice')) return;
+    } catch (e) { return; }
+    const bar = document.createElement('div');
+    bar.className = 'cookie-bar';
+    bar.innerHTML = `
+      <span>We use essential cookies to keep you signed in, and privacy-friendly, first-party analytics to see what's working. <a href="/legal/cookies/" target="_blank" rel="noopener">Details</a></span>
+      <button class="btn gold" type="button">OK</button>`;
+    document.body.appendChild(bar);
+    bar.querySelector('button').addEventListener('click', () => {
+      try { localStorage.setItem('sl_cookie_choice', String(Date.now())); } catch (e) { /* ignore */ }
+      bar.classList.add('gone');
+      setTimeout(() => bar.remove(), 350);
+    });
   },
 
   go(path) { location.hash = path; },
@@ -203,6 +223,8 @@ const App = {
     if (path === '/' || path === '/home') return this.home($app, params);
     if (path === '/signup') return this.auth($app, 'signup', params);
     if (path === '/signin') return this.auth($app, 'signin', params);
+    if (path === '/forgot') return this.forgot($app);
+    if (path === '/reset') return this.reset($app, params);
     if (path === '/claim') return this.claim($app, params);
     if (path === '/checkout') return this.checkout($app, params);
     if (path === '/admin') return this.admin($app);
@@ -324,8 +346,10 @@ const App = {
           </form>
           <p class="note center">${isSignup
             ? `Already have an account? <a href="#/signin">Sign in</a>`
-            : `New here? <a href="#/signup">Create a free account</a>`}</p>
-          <p class="note center">Local dev: try <b>demo@softlife.app / demo1234</b> · or <a href="/?demo=1#/dashboard">enter the demo</a></p>
+            : `New here? <a href="#/signup">Create a free account</a>`}${isSignup ? '' : ' · <a href="#/forgot">Forgot password?</a>'}</p>
+          ${(location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+            ? '<p class="note center">Local dev: try <b>demo@softlife.app / demo1234</b> · or <a href="/?demo=1#/dashboard">enter the demo</a></p>'
+            : ''}
         </div>
       </main>`, {});
 
@@ -351,6 +375,72 @@ const App = {
         let box = form.querySelector('.form-error');
         if (!box) { box = document.createElement('div'); box.className = 'form-error'; form.prepend(box); }
         box.textContent = err.message;
+      }
+    });
+  },
+
+  forgot($app) {
+    $app.innerHTML = this.chrome(`
+      <main class="page">
+        <div class="auth-card">
+          <h1>Forgot your password?</h1>
+          <p class="note">Enter the email on your account and we'll send you a reset link. It expires in 60 minutes.</p>
+          <form id="forgotForm">
+            <label>Email<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
+            <button class="btn gold wide" type="submit">Send reset link →</button>
+          </form>
+          <p class="note center"><a href="#/signin">← Back to sign in</a></p>
+        </div>
+      </main>`, {});
+    document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const btn = f.querySelector('button');
+      btn.disabled = true; btn.textContent = 'One moment…';
+      try {
+        await API.forgotPassword({ email: f.email.value });
+        f.innerHTML = '<div class="notice">Check your inbox — the reset link is on its way. It expires in 60 minutes.<br><small>If it doesn\'t arrive within a few minutes, check spam, then try again.</small></div>';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Send reset link →';
+        const box = document.createElement('div');
+        box.className = 'form-error';
+        box.textContent = err.message;
+        f.prepend(box);
+      }
+    });
+  },
+
+  reset($app, params = new URLSearchParams()) {
+    const token = params.get('token') || '';
+    $app.innerHTML = this.chrome(`
+      <main class="page">
+        <div class="auth-card">
+          <h1>Choose a new password</h1>
+          ${!token ? '<div class="notice">This link is missing its token. Request a fresh one below.</div><p class="note center"><a href="#/forgot">Request a new reset link</a></p>'
+          : `<form id="resetForm">
+              <label>New password<input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8"></label>
+              <button class="btn gold wide" type="submit">Save password →</button>
+            </form>`}
+          <p class="note center"><a href="#/signin">← Back to sign in</a></p>
+        </div>
+      </main>`, {});
+    const form = document.getElementById('resetForm');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button');
+      btn.disabled = true; btn.textContent = 'One moment…';
+      try {
+        await API.resetPassword({ token, password: form.password.value });
+        this.go('#/signin?notice=' + encodeURIComponent('Password updated — sign in with your new password.'));
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Save password →';
+        const box = form.querySelector('.form-error') || document.createElement('div');
+        box.className = 'form-error';
+        box.textContent = err.message;
+        if (!box.isConnected) form.prepend(box);
       }
     });
   },

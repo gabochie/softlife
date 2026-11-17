@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from email.utils import format_datetime
@@ -542,7 +543,7 @@ LEGAL = {
         "title": "Privacy Policy",
         "description": "How The Soft Life System collects, uses, stores and protects your personal information.",
         "md": """
-**Last updated: November 14, 2026**
+**Last updated: November 17, 2026**
 
 This Privacy Policy explains how Gabochie Books ("we", "us", "our") handles personal information in connection with The Soft Life System website, app and related services.
 
@@ -559,9 +560,9 @@ We collect the information you give us and the information needed to operate the
 - **Community information:** your WhatsApp number and consent status if you ask to join our optional WhatsApp community.
 - **Acquisition information:** the referral code, referral link, campaign tags (UTM parameters) and referring page that brought you to the service.
 - **Usage information:** your onboarding progress, task progress, audio plays, checkout clicks, referral activity and basic technical logs.
-- **Purchase information:** your email, order reference, product tier, amount, currency and payment provider.
+- **Purchase information:** your email, order reference, product tier, amount, currency and payment provider. When you buy, our checkout provider (Selar or Payhip) notifies us automatically and that notification is logged — including a record of attempts, delivery status and the order details it contains — so we can verify your purchase and honour refunds.
 - **Communications:** messages you send to us for support, refunds or privacy requests.
-- **Device data:** browser type, approximate region, IP address and error logs used for security and reliability.
+- **Device data:** browser type, approximate region, IP address and error logs used for security and reliability. Sign-in attempts are logged with your IP address and kept in a security log so we can detect and block abuse.
 
 We do not ask for payment card details directly. Payments are processed by our checkout provider, Selar for Africa or Payhip for North America and the rest of the world.
 
@@ -601,6 +602,8 @@ You can withdraw consent at any time from **Account → Profile & community** in
 The app uses browser local storage for your sign-in token, basic profile, referral code and first-touch acquisition details such as UTM campaign tags. These are necessary for the service to work and to understand how people found us. The admin dashboard uses a separate local storage token that is only created after an admin signs in.
 
 We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required. See our [Cookie Policy](/legal/cookies/) for the cookies and browser storage we use.
+
+We show a small notice on your first visit explaining this. When you tap OK, we record your choice in your browser (local storage) so the notice does not reappear. It is not sent to our servers, and clearing your browser storage will simply bring the notice back.
 
 ## Who we share with
 
@@ -947,7 +950,11 @@ def plain(text: str) -> str:
 
 
 def date_display(iso: str) -> str:
-    return datetime.strptime(iso, "%Y-%m-%d").strftime("%B %-d, %Y")
+    d = datetime.strptime(iso, "%Y-%m-%d")
+    # %-d (no padded day) is Linux-only; Windows uses %#d.
+    if os.name == "nt":
+        return d.strftime("%B %#d, %Y")
+    return d.strftime("%B %-d, %Y")
 
 
 def iso_datetime(iso: str) -> str:

@@ -267,6 +267,18 @@ def _purchase_confirmation_html() -> str:
     )
 
 
+def _reset_email_html(link: str) -> str:
+    return _email_shell(
+        "Password reset 🔑",
+        "<p>Someone (hopefully you) asked to reset the password for this email.</p>"
+        "<p>Click below to choose a new password. The link works once and expires in 60 minutes.</p>"
+        f'<p><a href="{link}" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;'
+        'border-radius:10px;text-decoration:none;font-weight:600;">Choose a new password →</a></p>'
+        f"<p style=\"font-size:13px;\">Or paste this link into your browser:<br><code>{link}</code></p>"
+        "<p style=\"font-size:13px;color:#6d5f7a;\">Not you? Ignore this email — your password stays unchanged.</p>",
+    )
+
+
 def _send_email(conn: sqlite3.Connection, to_email: str, subject: str, html: str, kind: str) -> None:
     """Send via the Brevo API when BREVO_API_KEY is set; always log the attempt.
     Never raises: email failures must not break the webhook."""
@@ -1199,6 +1211,58 @@ class Handler(SimpleHTTPRequestHandler):
             conn.commit()
             conn.close()
             return self._json(self._authed(row))
+
+        if route == "/api/forgot-password":
+            email = (data.get("email") or "").strip().lower()
+            if not email or "@" not in email:
+                return self._json({"error": "A valid email is required."}, 400)
+            # Anti-enumeration: the response is identical whether or not the account exists.
+            conn = db()
+            user = conn.execute("SELECT id FROM users WHERE lower(email) = ?", (email,)).fetchone()
+            if user:
+                token = secrets.token_hex(32)
+                conn.execute("DELETE FROM password_resets WHERE expires_at <= datetime('now')")
+                conn.execute(
+                    "INSERT INTO password_resets (token_hash, user_id, expires_at) "
+                    "VALUES (?,?,datetime('now','+60 minutes'))",
+                    (_token_hash(token), user["id"]),
+                )
+                link = SITE_URL + "/#/reset?token=" + token
+                # _send_email never raises; email failures must not break this endpoint.
+                _send_email(conn, email, "Reset your Soft Life System password",
+                            _reset_email_html(link), "password_reset")
+                log_event(conn, user["id"], "password_reset_requested", "/forgot", {})
+            else:
+                time.sleep(0.3)
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True})
+
+        if route == "/api/reset-password":
+            token = str(data.get("token") or "").strip()
+            password = str(data.get("password") or "")
+            if len(password) < 8:
+                return self._json({"error": "Password needs at least 8 characters."}, 400)
+            if not token:
+                return self._json({"error": "This reset link is invalid or expired."}, 400)
+            conn = db()
+            row = conn.execute(
+                "SELECT user_id FROM password_resets WHERE token_hash = ? AND expires_at > datetime('now')",
+                (_token_hash(token),),
+            ).fetchone()
+            if not row:
+                conn.close()
+                return self._json({"error": "This reset link is invalid or expired."}, 400)
+            salt = secrets.token_hex(16)
+            conn.execute(
+                "UPDATE users SET password_hash = ?, salt = ? WHERE id = ?",
+                (_hash(password, salt), salt, row["user_id"]),
+            )
+            conn.execute("DELETE FROM password_resets WHERE user_id = ?", (row["user_id"],))
+            log_event(conn, row["user_id"], "password_reset_completed", "/reset", {})
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True})
 
         if route == "/api/claim/preview":
             token = str(data.get("token") or "")
