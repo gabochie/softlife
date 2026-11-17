@@ -44,7 +44,7 @@ const ACQUISITION_KEYS = ["source", "utm_source", "utm_medium", "utm_campaign", 
 const EVENT_NAMES = new Set([
   "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
   "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
-  "task_added", "task_completed", "audio_play", "checkout_click",
+  "task_added", "task_completed", "audio_play", "checkout_click", "ref_visit",
   "password_reset_requested", "password_reset_completed", "password_changed"
 ]);
 const SECURITY_HEADERS = {
@@ -157,6 +157,8 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/signout" && request.method === "POST") return signout(request, env);
   if (path === "/api/claim/preview" && request.method === "POST") return claimPreview(request, env);
   if (path === "/api/claim/complete" && request.method === "POST") return claimComplete(request, env);
+  // Public: anonymous referral clicks must count before any account exists.
+  if (path === "/api/ref-visit" && request.method === "POST") return refVisit(request, env);
 
   const user = await currentUser(request, env);
   if (!user) return json({ error: "unauthorized" }, 401);
@@ -212,16 +214,34 @@ async function handleApi(request, env, url, ctx) {
   }
 
   if (path === "/api/affiliate" && request.method === "GET") {
-    const clicks = await env.DB.prepare(
-      "SELECT COUNT(*) AS c FROM softlife_referrals WHERE ref_code = ?"
-    ).bind(user.ref_code).first();
-    const signups = await env.DB.prepare(
-      "SELECT COUNT(*) AS c FROM softlife_referrals WHERE ref_code = ? AND status = 'signed_up'"
-    ).bind(user.ref_code).first();
+    const code = user.ref_code;
+    const [clicks, signups, purchases, pending, paid] = await Promise.all([
+      env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM softlife_referrals WHERE ref_code = ? AND status = 'clicked'"
+      ).bind(code).first(),
+      env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM softlife_referrals WHERE ref_code = ? AND status IN ('signed_up','purchased')"
+      ).bind(code).first(),
+      env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM softlife_purchases WHERE ref_code = ?"
+      ).bind(code).first(),
+      env.DB.prepare(
+        "SELECT COALESCE(SUM(amount), 0) AS s FROM softlife_affiliate_earnings WHERE ref_code = ? AND status = 'pending'"
+      ).bind(code).first(),
+      env.DB.prepare(
+        "SELECT COALESCE(SUM(amount), 0) AS s FROM softlife_affiliate_earnings WHERE ref_code = ? AND status = 'paid'"
+      ).bind(code).first()
+    ]);
+    const lifetime = Number(pending.s) + Number(paid.s);
     return json({
-      ref_code: user.ref_code,
+      ref_code: code,
       clicks: clicks ? clicks.c : 0,
       signups: signups ? signups.c : 0,
+      purchases: purchases ? purchases.c : 0,
+      conversion_rate: clicks && clicks.c > 0 ? Math.round((purchases.c / clicks.c) * 1000) / 10 : 0,
+      pending_earnings: Math.round(Number(pending.s) * 100) / 100,
+      paid_earnings: Math.round(Number(paid.s) * 100) / 100,
+      lifetime_earnings: Math.round(lifetime * 100) / 100,
       commission_rate: "30%",
       payout_note: "Payouts run monthly via Selar mobile money (MVP: manual review)."
     });
@@ -855,6 +875,22 @@ async function saveOnboarding(request, env, user) {
   return json({ onboarding: row });
 }
 
+// Anonymous referral click: count one per ref code per day so stats stay honest.
+async function refVisit(request, env) {
+  const body = await readJson(request);
+  const ref = cleanText(body.ref, 24).toUpperCase();
+  if (!ref) return json({ error: "ref required" }, 400);
+  const seen = await env.DB.prepare(
+    "SELECT id FROM softlife_referrals WHERE ref_code = ? AND status = 'clicked' AND created_at >= datetime('now', '-1 day') LIMIT 1"
+  ).bind(ref).first();
+  if (!seen) {
+    await env.DB.prepare(
+      "INSERT INTO softlife_referrals (ref_code, email, status) VALUES (?, ?, 'clicked')"
+    ).bind(ref, null).run();
+  }
+  return json({ ok: true });
+}
+
 async function recordEvent(request, env, user) {
   const body = await readJson(request);
   const event = String(body.event || "").trim();
@@ -1192,12 +1228,22 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
     const rows = await env.DB.prepare(
       "SELECT id, ref_code, email, status, created_at FROM softlife_referrals ORDER BY id DESC LIMIT 100"
     ).all();
-    return json({ referrals: rows.results || [] });
+    const stats = await env.DB.prepare(
+      `SELECT r.ref_code, u.name AS affiliate_name, u.email AS affiliate_email,
+         SUM(CASE WHEN r.status = 'clicked' THEN 1 ELSE 0 END) AS clicks,
+         SUM(CASE WHEN r.status IN ('signed_up','purchased') THEN 1 ELSE 0 END) AS signups,
+         (SELECT COUNT(*) FROM softlife_purchases p WHERE p.ref_code = r.ref_code) AS purchases,
+         (SELECT COALESCE(SUM(e.amount), 0) FROM softlife_affiliate_earnings e WHERE e.ref_code = r.ref_code) AS earnings
+       FROM softlife_referrals r
+       LEFT JOIN softlife_users u ON u.ref_code = r.ref_code
+       GROUP BY r.ref_code ORDER BY earnings DESC, clicks DESC LIMIT 50`
+    ).all();
+    return json({ referrals: rows.results || [], stats: stats.results || [] });
   }
 
   if (path === "/api/admin/purchases" && request.method === "GET") {
     const rows = await env.DB.prepare(
-      "SELECT id, order_id, email, tier, amount, currency, provider, created_at FROM softlife_purchases ORDER BY id DESC LIMIT 100"
+      "SELECT id, order_id, email, tier, amount, currency, provider, ref_code, created_at FROM softlife_purchases ORDER BY id DESC LIMIT 100"
     ).all();
     return json({ purchases: rows.results || [] });
   }
@@ -1472,7 +1518,7 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
     if (!member) return json({ error: "not found" }, 404);
     const [onb, purchases, timeline, signalsRows, stageRow, notes] = await env.DB.batch([
       env.DB.prepare("SELECT * FROM softlife_onboarding WHERE user_id = ?").bind(uid),
-      env.DB.prepare("SELECT id, order_id, tier, amount, currency, provider, created_at FROM softlife_purchases WHERE lower(email) = lower(?) ORDER BY id DESC").bind(member.email),
+      env.DB.prepare("SELECT id, order_id, tier, amount, currency, provider, ref_code, created_at FROM softlife_purchases WHERE lower(email) = lower(?) ORDER BY id DESC").bind(member.email),
       env.DB.prepare("SELECT event, path, meta, created_at FROM softlife_events WHERE user_id = ? ORDER BY id DESC LIMIT 25").bind(uid),
       env.DB.prepare(`SELECT
         (SELECT COUNT(*) FROM softlife_tasks WHERE user_id = ?1 AND done = 1) AS tasksDone,
@@ -1689,13 +1735,30 @@ async function applyPurchase(env, body, origin, source = "webhook") {
     if (!amount && body.price != null) amount = payhip ? Number(body.price) / 100 : Number(body.price);
     const currency = String(body.currency || "").toUpperCase() || null;
     const provider = String(body.provider || (payhip ? "payhip" : "selar")).slice(0, 40);
-    await env.DB.prepare(
-      "INSERT INTO softlife_purchases (order_id, email, tier, amount, currency, provider, raw) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    ).bind(orderId, email, tier, amount, currency, provider, JSON.stringify(body).slice(0, 4000)).run();
 
-    const user = await env.DB.prepare("SELECT id FROM softlife_users WHERE email = ?").bind(email).first();
-    if (user) {
-      await env.DB.prepare("UPDATE softlife_users SET tier = ? WHERE id = ?").bind(tier, user.id).run();
+    // Attribution: if the buyer was referred, the affiliate gets credit.
+    const buyer = await env.DB.prepare("SELECT id, referred_by FROM softlife_users WHERE email = ?").bind(email).first();
+    const refCode = String(buyer && buyer.referred_by ? buyer.referred_by : (body.ref || "")).trim().toUpperCase().slice(0, 24) || null;
+    const insertResult = await env.DB.prepare(
+      "INSERT INTO softlife_purchases (order_id, email, tier, amount, currency, provider, ref_code, raw) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(orderId, email, tier, amount, currency, provider, refCode, JSON.stringify(body).slice(0, 4000)).run();
+    const purchaseId = insertResult.meta && insertResult.meta.last_row_id;
+
+    if (refCode && Number(amount) > 0) {
+      // Credit the affiliate: 30% of the sale, pending until you pay it out.
+      const affiliate = await env.DB.prepare("SELECT id FROM softlife_users WHERE ref_code = ?").bind(refCode).first();
+      if (affiliate) {
+        await env.DB.prepare(
+          "INSERT INTO softlife_affiliate_earnings (ref_code, purchase_id, email, amount, currency, rate) VALUES (?, ?, ?, ?, ?, 0.30)"
+        ).bind(refCode, purchaseId, email, Math.round(Number(amount) * 0.30 * 100) / 100, currency).run();
+        await env.DB.prepare(
+          "UPDATE softlife_referrals SET status = 'purchased' WHERE ref_code = ? AND lower(email) = ? AND status != 'purchased'"
+        ).bind(refCode, email).run();
+      }
+    }
+
+    if (buyer) {
+      await env.DB.prepare("UPDATE softlife_users SET tier = ? WHERE id = ?").bind(tier, buyer.id).run();
       await env.DB.prepare(
         "UPDATE softlife_purchase_claims SET completed_at = datetime('now') WHERE email = ? AND completed_at IS NULL"
       ).bind(email).run();

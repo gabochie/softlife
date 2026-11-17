@@ -25,9 +25,24 @@ CREATE TABLE IF NOT EXISTS softlife_purchases (
   amount REAL,
   currency TEXT,
   provider TEXT NOT NULL DEFAULT 'selar',
+  ref_code TEXT,
   raw TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS softlife_affiliate_earnings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ref_code TEXT NOT NULL,
+  purchase_id INTEGER NOT NULL REFERENCES softlife_purchases(id),
+  email TEXT,
+  amount REAL NOT NULL DEFAULT 0,
+  currency TEXT,
+  rate REAL NOT NULL DEFAULT 0.30,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_softlife_purchases_refcode ON softlife_purchases(ref_code);
+CREATE INDEX IF NOT EXISTS idx_softlife_affearn_code ON softlife_affiliate_earnings(ref_code);
 
 CREATE TABLE IF NOT EXISTS softlife_sessions (
   token_hash TEXT PRIMARY KEY,

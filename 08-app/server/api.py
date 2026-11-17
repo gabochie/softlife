@@ -410,15 +410,33 @@ def _process_purchase(conn: sqlite3.Connection, data: dict, base_url: str = "") 
     amount = data.get("amount") if isinstance(data.get("amount"), (int, float)) else None
     currency = str(data.get("currency") or "").upper()[:8]
     provider = str(data.get("provider") or "selar")[:40]
-    conn.execute(
-        "INSERT INTO purchases (order_id, email, tier, amount, currency, provider) VALUES (?,?,?,?,?,?)",
-        (order_id, email, tier, amount, currency, provider),
+    # Attribution: if the buyer was referred, the affiliate gets credit.
+    buyer = conn.execute(
+        "SELECT id, referred_by FROM users WHERE lower(email) = ?", (email,)
+    ).fetchone()
+    ref_code = str(
+        (buyer["referred_by"] if buyer and buyer["referred_by"] else "") or data.get("ref") or ""
+    ).strip().upper()[:24] or None
+    cur = conn.execute(
+        "INSERT INTO purchases (order_id, email, tier, amount, currency, provider, ref_code) VALUES (?,?,?,?,?,?,?)",
+        (order_id, email, tier, amount, currency, provider, ref_code),
     )
+    purchase_id = cur.lastrowid
+    if ref_code and isinstance(amount, (int, float)) and amount > 0:
+        affiliate = conn.execute("SELECT id FROM users WHERE ref_code = ?", (ref_code,)).fetchone()
+        if affiliate:
+            conn.execute(
+                "INSERT INTO affiliate_earnings (ref_code, purchase_id, email, amount, currency, rate) VALUES (?,?,?,?,?,0.30)",
+                (ref_code, purchase_id, email, round(float(amount) * 0.30, 2), currency),
+            )
+            conn.execute(
+                "UPDATE referrals SET status = 'purchased' WHERE ref_code = ? AND lower(email) = ? AND status != 'purchased'",
+                (ref_code, email),
+            )
     upgraded = False
     claim_token = None
-    user = conn.execute("SELECT id FROM users WHERE lower(email) = ?", (email,)).fetchone()
-    if user:
-        conn.execute("UPDATE users SET tier = ? WHERE id = ?", (tier, user["id"]))
+    if buyer:
+        conn.execute("UPDATE users SET tier = ? WHERE id = ?", (tier, buyer["id"]))
         # They now have an account: any pending access claim for this email is satisfied.
         conn.execute("UPDATE purchase_claims SET completed_at = datetime('now') WHERE lower(email) = ? AND completed_at IS NULL", (email,))
         upgraded = True
@@ -653,18 +671,35 @@ class Handler(SimpleHTTPRequestHandler):
             if not user:
                 return self._json({"error": "unauthorized"}, 401)
             conn = db()
+            code = user["ref_code"]
             clicks = conn.execute(
-                "SELECT COUNT(*) c FROM referrals WHERE ref_code = ?", (user["ref_code"],)
+                "SELECT COUNT(*) c FROM referrals WHERE ref_code = ? AND status = 'clicked'", (code,)
             ).fetchone()["c"]
             signups = conn.execute(
-                "SELECT COUNT(*) c FROM referrals WHERE ref_code = ? AND status = 'signed_up'",
-                (user["ref_code"],),
+                "SELECT COUNT(*) c FROM referrals WHERE ref_code = ? AND status IN ('signed_up','purchased')",
+                (code,),
             ).fetchone()["c"]
+            purchases = conn.execute(
+                "SELECT COUNT(*) c FROM purchases WHERE ref_code = ?", (code,)
+            ).fetchone()["c"]
+            pending = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) s FROM affiliate_earnings WHERE ref_code = ? AND status = 'pending'",
+                (code,),
+            ).fetchone()["s"]
+            paid = conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) s FROM affiliate_earnings WHERE ref_code = ? AND status = 'paid'",
+                (code,),
+            ).fetchone()["s"]
             conn.close()
             return self._json({
-                "ref_code": user["ref_code"],
+                "ref_code": code,
                 "clicks": clicks,
                 "signups": signups,
+                "purchases": purchases,
+                "conversion_rate": round((purchases / clicks) * 1000) / 10 if clicks else 0,
+                "pending_earnings": round(pending, 2),
+                "paid_earnings": round(paid, 2),
+                "lifetime_earnings": round(pending + paid, 2),
                 "commission_rate": "30%",
                 "payout_note": "Payouts run monthly via Selar mobile money (MVP: manual review).",
             })
@@ -782,12 +817,21 @@ class Handler(SimpleHTTPRequestHandler):
             rows = conn.execute(
                 "SELECT id, ref_code, email, status, created_at FROM referrals ORDER BY id DESC LIMIT 100"
             ).fetchall()
+            stats = conn.execute(
+                "SELECT r.ref_code, u.name AS affiliate_name, u.email AS affiliate_email,"
+                " SUM(CASE WHEN r.status = 'clicked' THEN 1 ELSE 0 END) AS clicks,"
+                " SUM(CASE WHEN r.status IN ('signed_up','purchased') THEN 1 ELSE 0 END) AS signups,"
+                " (SELECT COUNT(*) FROM purchases p WHERE p.ref_code = r.ref_code) AS purchases,"
+                " (SELECT COALESCE(SUM(e.amount), 0) FROM affiliate_earnings e WHERE e.ref_code = r.ref_code) AS earnings"
+                " FROM referrals r LEFT JOIN users u ON u.ref_code = r.ref_code"
+                " GROUP BY r.ref_code ORDER BY earnings DESC, clicks DESC LIMIT 50"
+            ).fetchall()
             conn.close()
-            return self._json({"referrals": [dict(r) for r in rows]})
+            return self._json({"referrals": [dict(r) for r in rows], "stats": [dict(s) for s in stats]})
 
         if route == "/api/admin/purchases":
             rows = conn.execute(
-                "SELECT id, order_id, email, tier, amount, currency, provider, created_at "
+                "SELECT id, order_id, email, tier, amount, currency, provider, ref_code, created_at "
                 "FROM purchases ORDER BY id DESC LIMIT 100"
             ).fetchall()
             conn.close()
@@ -1297,6 +1341,34 @@ class Handler(SimpleHTTPRequestHandler):
             conn = db()
             _log_track(conn, event, path, clean_meta)
             conn.commit()
+            conn.close()
+            return self._json({"ok": True})
+
+        # Public: anonymous referral clicks must count before any account exists.
+        # One row per ref code per day so click stats stay honest.
+        if route == "/api/ref-visit":
+            ref = clean_text(data.get("ref"), 24).upper()
+            if not ref:
+                return self._json({"error": "ref required"}, 400)
+            ip = self._client_ip()
+            if not _track_allow(ip):
+                conn = db()
+                _log_security(conn, "track_rate_limited", ip=ip)
+                conn.commit()
+                conn.close()
+                return self._json({"error": "slow down"}, 429)
+            conn = db()
+            seen = conn.execute(
+                "SELECT 1 FROM referrals WHERE ref_code = ? AND status = 'clicked' "
+                "AND created_at >= datetime('now', '-1 day') LIMIT 1",
+                (ref,),
+            ).fetchone()
+            if not seen:
+                conn.execute(
+                    "INSERT INTO referrals (ref_code, email, status) VALUES (?, NULL, 'clicked')",
+                    (ref,),
+                )
+                conn.commit()
             conn.close()
             return self._json({"ok": True})
 

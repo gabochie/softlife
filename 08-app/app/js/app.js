@@ -4,10 +4,23 @@ const App = {
 
   async boot() {
     this.captureAcquisition();
+    this.recordRefVisit();
     window.addEventListener('hashchange', () => this.route());
     try { this.conf = { ...this.conf, ...(await API.config()) }; } catch (e) { /* defaults are safe */ }
     this.route();
     this.cookieBanner();
+  },
+
+  // Real affiliate click tracking: one visit per ref code per browser session.
+  recordRefVisit() {
+    const ref = this.refCode();
+    if (!ref) return;
+    try {
+      const key = 'sl_ref_visit_' + ref;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, String(Date.now()));
+    } catch (e) { return; }
+    API.refVisit(ref);
   },
 
   // Lightweight cookie notice: essential session cookie + first-party analytics only.
@@ -1211,7 +1224,11 @@ const App = {
         </div>`}
         ${r === null ? `<div class="card" id="sec-referrals">${denied}</div>` : `
         <div class="card" id="sec-referrals">
-          <span class="tag">Referrals</span><h3>Recent referral events</h3>
+          <span class="tag">Referrals</span><h3>Affiliate performance</h3>
+          ${(r.stats || []).length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Affiliate</th><th>Clicks</th><th>Signups</th><th>Sales</th><th>Earnings</th></tr></thead><tbody>
+            ${r.stats.map((row) => `<tr><td><b>${esc(row.ref_code)}</b></td><td><small>${esc(row.affiliate_name || row.affiliate_email || '—')}</small></td><td>${row.clicks}</td><td>${row.signups}</td><td>${row.purchases}</td><td><b>${row.earnings}</b></td></tr>`).join('')}
+          </tbody></table></div>` : '<p class="note">No affiliate activity yet.</p>'}
+          <p class="note" style="margin-top:10px"><small>Recent referral events</small></p>
           ${r.referrals.length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Email</th><th>Status</th><th>Date</th></tr></thead><tbody>
             ${r.referrals.map((row) => `<tr><td><b>${esc(row.ref_code)}</b></td><td><small>${esc(row.email || '—')}</small></td><td>${esc(row.status)}</td><td><small>${esc(row.created_at)}</small></td></tr>`).join('')}
           </tbody></table></div>` : '<p class="note">No referral events yet. Share links will appear here.</p>'}
@@ -1869,7 +1886,7 @@ const App = {
   async viewAffiliate(me) {
     const $m = document.getElementById('member');
     $m.innerHTML = `<div class="wrap"><div class="dash-head">
-      <div><h1 class="hi">Your affiliate link</h1><p class="note">Share it. Earn <b>30%</b> on referred Complete bundle sales.</p></div></div>
+      <div><h1 class="hi">Your affiliate link</h1><p class="note">Share it. Earn <b>30%</b> of every referred Complete bundle sale.</p></div></div>
       <div class="ref-card">
         <code id="reflink">${location.origin}/?ref=${me.ref_code}</code>
         <button class="btn dark" id="copyRef">Copy link</button>
@@ -1878,8 +1895,8 @@ const App = {
       <div class="card how">
         <span class="tag">How it works</span>
         <p>1 · Share your link — on WhatsApp, TikTok, your email list, anywhere.<br>
-           2 · Your friend lands on the free trial (intro + Chapter 1).<br>
-           3 · They buy the Complete bundle — you earn 30%, paid through the checkout provider on its payout schedule.</p>
+           2 · Your friend lands on the free trial (intro + Chapter 1). The visit is counted the moment they open the page.<br>
+           3 · If they sign up, you see it here. If they buy the Complete bundle, <b>30% is credited to your balance automatically</b> — paid out monthly.</p>
       </div></div>`;
     document.getElementById('copyRef').addEventListener('click', async () => {
       const linkEl = document.getElementById('reflink');
@@ -1907,9 +1924,12 @@ const App = {
     try {
       const s = await API.affiliate();
       document.getElementById('refStats').innerHTML = `
-        <div class="stat"><b>${s.clicks}</b><small>Visits from your link</small></div>
+        <div class="stat"><b>${s.clicks}</b><small>Link visits</small></div>
         <div class="stat"><b>${s.signups}</b><small>Free accounts</small></div>
-        <div class="stat"><b>${s.commission_rate}</b><small>Your commission</small></div>`;
+        <div class="stat"><b>${s.purchases}</b><small>Sales</small></div>
+        <div class="stat"><b>${s.conversion_rate}%</b><small>Visit → sale</small></div>
+        <div class="stat"><b>$${s.pending_earnings}</b><small>Pending earnings</small></div>
+        <div class="stat"><b>$${s.lifetime_earnings}</b><small>Lifetime earnings</small></div>`;
     } catch (e) { document.getElementById('refStats').innerHTML = `<p class="note">${esc(e.message)}</p>`; }
   },
 
