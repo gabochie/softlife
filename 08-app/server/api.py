@@ -10,6 +10,7 @@ Seed:  demo account demo@softlife.app / demo1234 + the 16-step launch checklist
 """
 import base64
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -75,7 +76,7 @@ EVENT_NAMES = {
     "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
     "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
     "task_added", "task_completed", "audio_play", "audio_complete", "page_view", "checkout_click",
-    "password_reset_requested", "password_reset_completed",
+    "password_reset_requested", "password_reset_completed", "password_changed",
 }
 
 LAUNCH_TASKS = [
@@ -343,6 +344,45 @@ except Exception:
     BLOG_POSTS = []
 
 
+def _mainstack_normalize(data: dict) -> dict:
+    """Extract a purchase from a Mainstack webhook payload.
+
+    Mainstack publishes no payload spec, so read the usual field names across
+    the top level and a data/payload wrapper."""
+    def at(path: str):
+        v = data
+        for key in path.split("."):
+            if not isinstance(v, dict) or key not in v:
+                return None
+            v = v[key]
+        return v
+
+    def first(*vals):
+        for v in vals:
+            s = "" if v is None else str(v)
+            if s.strip():
+                return s.strip()
+        return ""
+
+    wrapper = data.get("data") if isinstance(data.get("data"), dict) else (
+        data.get("payload") if isinstance(data.get("payload"), dict) else {})
+    email = first(data.get("email"), data.get("customer_email"), data.get("buyer_email"),
+                  (data.get("customer") or {}).get("email") if isinstance(data.get("customer"), dict) else "",
+                  wrapper.get("email"), wrapper.get("customer_email")).lower()
+    order_id = first(at("reference"), at("transaction_id"), at("order_id"), at("tx_ref"),
+                     wrapper.get("reference"), wrapper.get("order_id"), at("id")) or None
+    subunits = at("amount_subunits") or at("amount_in_kobo") or wrapper.get("amount_subunits")
+    try:
+        amount = float(subunits) / 100 if subunits else float(first(at("amount"), at("total"), wrapper.get("amount")) or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+    currency = first(at("currency"), wrapper.get("currency")).upper() or None
+    items = data.get("items") if isinstance(data.get("items"), list) else []
+    product = first(at("product.name"), at("product_name"), wrapper.get("product_name"),
+                    at("item_name"), items[0].get("name") if items and isinstance(items[0], dict) else "")
+    return {"email": email, "order_id": order_id, "amount": amount, "currency": currency, "product": product}
+
+
 def _process_purchase(conn: sqlite3.Connection, data: dict, base_url: str = "") -> tuple[str, dict]:
     """Validate + record a purchase payload and upgrade the buyer's tier.
 
@@ -577,6 +617,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "checkoutUrl": os.environ.get("CHECKOUT_URL", ""),
                 "selarUrl": os.environ.get("SELAR_CHECKOUT_URL", os.environ.get("CHECKOUT_URL", "")),
                 "payhipUrl": os.environ.get("PAYHIP_CHECKOUT_URL", ""),
+                "mainstackUrl": os.environ.get("MAINSTACK_CHECKOUT_URL", ""),
                 "country": os.environ.get("CF_COUNTRY", ""),
                 "supportEmail": os.environ.get("SUPPORT_EMAIL", "admin@gabochie.com"),
                 "freeAudio": sorted(FREE_AUDIO),
@@ -1113,6 +1154,63 @@ class Handler(SimpleHTTPRequestHandler):
             finally:
                 conn.close()
 
+        if route == "/api/webhooks/mainstack":
+            raw = None  # body was already parsed as JSON by self._body()
+            ms_secret = os.environ.get("MAINSTACK_WEBHOOK_SECRET", "")
+            provided = (self.headers.get("Authorization", "")[7:] or self.headers.get("X-Webhook-Secret", "")).strip()
+            ok = False
+            if ms_secret:
+                if secrets.compare_digest((self.headers.get("verif-hash") or "").encode(), ms_secret.encode()):
+                    ok = True
+                else:
+                    for header, algo in (("x-mainstack-signature", "sha512"), ("x-mainstack-signature-512", "sha512"),
+                                         ("x-mainstack-signature-256", "sha256")):
+                        given = self.headers.get(header, "").lower()
+                        if not given:
+                            continue
+                        expected = hmac.new(ms_secret.encode(), json.dumps(data, separators=(",", ":")).encode(), algo).hexdigest()
+                        if secrets.compare_digest(given.encode(), expected.encode()):
+                            ok = True
+                            break
+            else:
+                ok = bool(WEBHOOK_SECRET and provided and secrets.compare_digest(provided.encode(), WEBHOOK_SECRET.encode()))
+            if not ok:
+                conn = db()
+                _log_webhook(conn, "rejected", data, None, str(data.get("email") or ""))
+                _log_security(conn, "webhook_rejected", email=str(data.get("email") or ""), ip=self._client_ip(),
+                              detail="source=mainstack")
+                conn.commit()
+                conn.close()
+                return self._json({"error": "unauthorized"}, 401)
+            norm = _mainstack_normalize(data)
+            event = str(data.get("event") or data.get("type") or "")
+            if event and "refund" in event.lower():
+                conn = db()
+                _log_webhook(conn, "ignored", data, norm["order_id"], norm["email"], error="refund event - not a sale")
+                conn.commit()
+                conn.close()
+                return self._json({"ok": True, "received": True, "ignored": True})
+            if norm["product"] and not re.search(r"soft\s*life", norm["product"], re.I):
+                conn = db()
+                _log_webhook(conn, "ignored", data, norm["order_id"], norm["email"], error=f"other product: {norm['product'][:80]}")
+                conn.commit()
+                conn.close()
+                return self._json({"ok": True, "received": True, "ignored": True})
+            conn = db()
+            try:
+                payload = {k: v for k, v in norm.items() if k != "product" and v is not None}
+                payload["provider"] = "mainstack"
+                status, response = _process_purchase(conn, payload, self._origin())
+                conn.commit()
+                return self._json(response, 200 if status != "invalid" else 400)
+            except Exception as exc:
+                conn.rollback()
+                _log_webhook(conn, "failed", data, norm["order_id"], norm["email"], error=str(exc)[:500])
+                conn.commit()
+                return self._json({"error": "webhook processing failed"}, 500)
+            finally:
+                conn.close()
+
         if route == "/api/track":
             event = clean_text(data.get("event"), 60)
             if event not in ("page_view", "checkout_click") or event not in EVENT_NAMES:
@@ -1567,6 +1665,25 @@ class Handler(SimpleHTTPRequestHandler):
         user = self._user()
         if not user:
             return self._json({"error": "unauthorized"}, 401)
+
+        if route == "/api/change-password":
+            current = str(data.get("current_password") or "")
+            new = str(data.get("new_password") or "")
+            if len(new) < 8:
+                return self._json({"error": "New password needs at least 8 characters."}, 400)
+            if _hash(current, user["salt"]) != user["password_hash"]:
+                conn = db()
+                _log_security(conn, "password_change_failed", email=user["email"], ip=self._client_ip())
+                conn.commit()
+                conn.close()
+                return self._json({"error": "Your current password is wrong."}, 401)
+            salt = secrets.token_hex(8)
+            conn = db()
+            conn.execute("UPDATE users SET password_hash = ?, salt = ? WHERE id = ?", (_hash(new, salt), salt, user["id"]))
+            log_event(conn, user["id"], "password_changed", "/account", {})
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True})
 
         if route == "/api/audio-token":
             token = secrets.token_hex(24)

@@ -21,6 +21,7 @@ const API = {
   signin(body) { return this.request('/signin', { method: 'POST', body }); },
   forgotPassword(body) { return this.request('/forgot-password', { method: 'POST', body }); },
   resetPassword(body) { return this.request('/reset-password', { method: 'POST', body }); },
+  changePassword(body) { return this.request('/change-password', { method: 'POST', body }); },
   signout() { return this.request('/signout', { method: 'POST' }); },
   me() { return this.request('/me'); },
   onboarding() { return this.request('/onboarding'); },

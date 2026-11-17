@@ -149,6 +149,7 @@ const App = {
               <div class="footer-social" aria-label="Follow Soft Life">
                 <a href="https://www.instagram.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Instagram">Instagram</a>
                 <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+                <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
                 <a href="https://www.facebook.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Facebook">Facebook</a>
               </div>
             </div>
@@ -504,10 +505,12 @@ const App = {
     const support = this.conf.supportEmail || 'admin@gabochie.com';
     const selar = this.conf.selarUrl || this.conf.checkoutUrl || '';
     const payhip = this.conf.payhipUrl || '';
+    const mainstack = this.conf.mainstackUrl || '';
     const ref = me && me.ref_code ? me.ref_code : '';
     const withRef = (url) => url + (ref ? (url.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref) : '');
     const providers = [
       { id: 'selar', label: 'Selar', region: 'Africa', url: selar, note: 'Mobile money, bank transfer and cards where supported.' },
+      { id: 'mainstack', label: 'Mainstack', region: 'Africa — global cards too', url: mainstack, note: 'Cards, USSD and bank transfer.' },
       { id: 'payhip', label: 'Payhip', region: 'North America & rest of world', url: payhip, note: 'Cards and PayPal.' }
     ].filter((p) => p.url);
     const africa = new Set(['DZ','AO','BJ','BW','BF','BI','CM','CV','CF','TD','KM','CG','CD','CI','DJ','EG','GQ','ER','SZ','ET','GA','GM','GH','GN','GW','KE','LS','LR','LY','MG','MW','ML','MR','MU','MA','MZ','NA','NE','NG','RW','ST','SN','SC','SL','SO','ZA','SS','SD','TZ','TG','TN','UG','ZM','ZW']);
@@ -526,8 +529,8 @@ const App = {
             <p class="lede"><b>$19.99</b> founding price · <s>$29.99</s> regular</p>
             <p class="note">One payment. Access to your app library while we operate the service, including updates we release.</p>
             <ul class="check-list">
-              <li>The Soft Life System eBook (PDF + EPUB)</li>
-              <li>The full 3.8-hour read-aloud — all 15 chapters</li>
+              <li>The complete book as a read-aloud library — all 15 chapters in the app</li>
+              <li>The full 3.8-hour listen — narrated, playable in the app</li>
               <li>The 90-day launch plan, worksheets and monthly review ritual</li>
               <li>Updates we release to the app library</li>
             </ul>
@@ -1820,7 +1823,7 @@ const App = {
       </div>
       <div class="upsell">
         <b>Unlock the full 3.8-hour read-aloud</b>
-        <p class="note">Get the Complete bundle — eBook (PDF + EPUB), all 15 chapters, worksheets and the monthly review ritual — and every chapter plays here, offline-ready. <b>$19.99 founding</b> (regular $29.99).</p>
+        <p class="note">Get the Complete bundle — the full book and all 15 chapters in your in-app library, worksheets and the monthly review ritual — every chapter plays here, offline-ready. <b>$19.99 founding</b> (regular $29.99).</p>
         <a class="btn gold" href="#/checkout">Get the Complete bundle — $19.99 →</a>
       </div>` : ''}
     </div>`;
@@ -1902,6 +1905,16 @@ const App = {
         <a class="btn ghost" href="#/onboarding">${o && o.completed_at ? 'Edit profile' : 'Complete profile'} →</a>
       </div>
       <div class="card">
+        <span class="tag">Settings</span>
+        <h3>Change password</h3>
+        <form id="pwForm">
+          <label>Current password<input name="current" type="password" autocomplete="current-password" required></label>
+          <label>New password<input name="next" type="password" autocomplete="new-password" placeholder="At least 8 characters" required minlength="8"></label>
+          <button class="btn ghost" type="submit">Update password</button>
+        </form>
+        <p class="note">Forgotten it instead? <a href="/#/forgot">Use the reset flow</a> — you get an email link.</p>
+      </div>
+      <div class="card">
         <h3>Session</h3>
         <button class="btn dark" id="logout">Log out</button>
         <p class="note">This device only. Signing out clears your token.</p>
@@ -1911,6 +1924,28 @@ const App = {
       try { await API.signout(); } catch (e) { /* token may be stale */ }
       Store.clear();
       location.hash = '#/';
+    });
+    document.getElementById('pwForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      const btn = f.querySelector('button');
+      btn.disabled = true; btn.textContent = 'One moment…';
+      try {
+        await API.changePassword({ current_password: f.current.value, new_password: f.next.value });
+        f.reset();
+        const ok = document.createElement('div');
+        ok.className = 'notice';
+        ok.textContent = 'Password updated.';
+        f.prepend(ok);
+        setTimeout(() => ok.remove(), 4000);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Update password';
+        const box = document.createElement('div');
+        box.className = 'form-error';
+        box.textContent = err.message;
+        f.prepend(box);
+      }
     });
   }
 };

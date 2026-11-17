@@ -45,7 +45,7 @@ const EVENT_NAMES = new Set([
   "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
   "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
   "task_added", "task_completed", "audio_play", "checkout_click",
-  "password_reset_requested", "password_reset_completed"
+  "password_reset_requested", "password_reset_completed", "password_changed"
 ]);
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -122,6 +122,7 @@ async function handleApi(request, env, url, ctx) {
       checkoutUrl: env.CHECKOUT_URL || "",
       selarUrl: env.SELAR_CHECKOUT_URL || env.CHECKOUT_URL || "",
       payhipUrl: env.PAYHIP_CHECKOUT_URL || "",
+      mainstackUrl: env.MAINSTACK_CHECKOUT_URL || "",
       country: (request.cf && request.cf.country) || "",
       supportEmail: env.SUPPORT_EMAIL || "admin@gabochie.com",
       freeAudio: [...FREE_AUDIO],
@@ -150,6 +151,7 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/signin" && request.method === "POST") return signin(request, env);
   if (path === "/api/forgot-password" && request.method === "POST") return forgotPassword(request, env);
   if (path === "/api/reset-password" && request.method === "POST") return resetPassword(request, env);
+  if (path === "/api/webhooks/mainstack" && request.method === "POST") return mainstackWebhook(request, env, ctx);
   if (path === "/api/signout" && request.method === "POST") return signout(request, env);
   if (path === "/api/claim/preview" && request.method === "POST") return claimPreview(request, env);
   if (path === "/api/claim/complete" && request.method === "POST") return claimComplete(request, env);
@@ -159,6 +161,7 @@ async function handleApi(request, env, url, ctx) {
 
   if (path === "/api/audio-token" && request.method === "POST") return createAudioToken(env, user);
   if (path === "/api/me" && request.method === "GET") return json(publicUser(user));
+  if (path === "/api/change-password" && request.method === "POST") return changePassword(request, env, user);
 
   if (path === "/api/onboarding" && request.method === "GET") {
     return json({ onboarding: await loadOnboarding(env, user.id) });
@@ -361,6 +364,125 @@ async function resetPassword(request, env) {
   ).bind(passwordHash, salt, row.user_id).run();
   await env.DB.prepare("DELETE FROM softlife_password_resets WHERE user_id = ?").bind(row.user_id).run();
   await logEvent(env, row.user_id, "password_reset_completed", "/reset", {});
+  return json({ ok: true });
+}
+
+async function hmacHex(secret, message, hash) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function mainstackAt(obj, path) {
+  return path.split(".").reduce((v, k) => (v == null || v[k] === undefined ? undefined : v[k]), obj);
+}
+
+function mainstackNormalize(body) {
+  const d = body.data || body.payload || {};
+  const first = (...vals) => {
+    for (const v of vals) {
+      const s = v == null ? "" : String(v);
+      if (s.trim()) return s.trim();
+    }
+    return "";
+  };
+  const email = first(purchaseBodyEmail(body), purchaseBodyEmail(d)).toLowerCase();
+  const orderId = first(
+    mainstackAt(body, "reference"), mainstackAt(body, "transaction_id"), mainstackAt(body, "order_id"),
+    mainstackAt(body, "tx_ref"), mainstackAt(d, "reference"), mainstackAt(d, "order_id"),
+    mainstackAt(body, "id")
+  ) || null;
+  const subunits = Number(mainstackAt(body, "amount_subunits") ?? mainstackAt(body, "amount_in_kobo")
+    ?? mainstackAt(d, "amount_subunits"));
+  const amount = Number.isFinite(subunits) && subunits
+    ? subunits / 100
+    : Number(first(mainstackAt(body, "amount"), mainstackAt(body, "total"), mainstackAt(d, "amount")) || 0);
+  const currency = first(mainstackAt(body, "currency"), mainstackAt(d, "currency")).toUpperCase() || null;
+  const product = first(
+    mainstackAt(body, "product.name"), mainstackAt(body, "product_name"),
+    mainstackAt(d, "product.name"), mainstackAt(body, "item_name"),
+    Array.isArray(body.items) && body.items[0] ? body.items[0].name : ""
+  );
+  return { email, orderId, amount, currency, product };
+}
+
+async function mainstackWebhook(request, env, ctx) {
+  const url = new URL(request.url);
+  const raw = await request.text();
+  let body = {};
+  try { body = JSON.parse(raw); } catch (exc) { /* non-JSON body -> invalid email downstream */ }
+  const secret = env.MAINSTACK_WEBHOOK_SECRET || "";
+  const provided = bearerToken(request) || request.headers.get("X-Webhook-Secret")
+    || url.searchParams.get("secret") || url.searchParams.get("key") || "";
+  const reject = async () => {
+    await logWebhook(env, "rejected", body, null, String((body && purchaseBodyEmail(body)) || ""));
+    await logSecurity(env, "webhook_rejected", "", clientIp(request), "source=mainstack");
+    return json({ error: "unauthorized" }, 401);
+  };
+  // Mainstack publishes no payload spec and no fixed signature header name, so
+  // accept any of the schemes Nigerian processors use: verif-hash equality
+  // (Flutterwave-style) or an HMAC-SHA512/SHA256 body signature.
+  let ok = false;
+  if (secret) {
+    const verifHash = request.headers.get("verif-hash") || "";
+    if (verifHash && safeEqual(verifHash, secret)) ok = true;
+    if (!ok) {
+      for (const header of ["x-mainstack-signature", "x-mainstack-signature-512", "x-mainstack-signature-256"]) {
+        const given = request.headers.get(header);
+        if (!given) continue;
+        const algo = header.endsWith("256") ? "SHA-256" : "SHA-512";
+        const expected = await hmacHex(secret, raw, algo);
+        if (safeEqual(String(given).toLowerCase(), expected)) { ok = true; break; }
+      }
+    }
+  } else {
+    // No Mainstack secret configured yet: fall back to the shared webhook secret.
+    const generic = env.PURCHASE_WEBHOOK_SECRET || "";
+    ok = Boolean(generic && provided && safeEqual(provided, generic));
+  }
+  if (!ok) return reject();
+
+  const { email, orderId, amount, currency, product } = mainstackNormalize(body);
+  const event = String(body.event || body.type || "");
+  if (event && /refund/i.test(event)) {
+    await logWebhook(env, "ignored", body, orderId, email, "refund event - not a sale");
+    return json({ ok: true, received: true, ignored: true });
+  }
+  // Same product filter as the Selar/Zapier path: never mint Soft Life access
+  // for a buyer of the other product.
+  if (product && !/soft\s*life/i.test(product)) {
+    await logWebhook(env, "ignored", body, orderId, email, `other product: ${product.slice(0, 80)}`);
+    return json({ ok: true, received: true, ignored: true });
+  }
+  const purchase = { email, order_id: orderId, amount, currency, provider: "mainstack", product: product || undefined };
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(Promise.resolve().then(() => applyPurchase(env, purchase, url.origin))
+      .then((r) => console.error("mainstack purchase:", r.status, orderId || email))
+      .catch((err) => console.error("mainstack apply failed:", err)));
+    return json({ ok: true, received: true });
+  }
+  const result = await applyPurchase(env, purchase, url.origin);
+  if (result.status === "failed") return json({ error: "webhook processing failed" }, 500);
+  return json(result.response, result.status === "invalid" ? 400 : 200);
+}
+
+async function changePassword(request, env, user) {
+  const body = await readJson(request);
+  const current = String(body.current_password || "");
+  const next = String(body.new_password || "");
+  if (next.length < 8) return json({ error: "New password needs at least 8 characters." }, 400);
+  if ((await hashPassword(current, user.salt)) !== user.password_hash) {
+    await logSecurity(env, "password_change_failed", user.email, clientIp(request));
+    return json({ error: "Your current password is wrong." }, 401);
+  }
+  const salt = randomHex(8);
+  const passwordHash = await hashPassword(next, salt);
+  await env.DB.prepare(
+    "UPDATE softlife_users SET password_hash = ?, salt = ? WHERE id = ?"
+  ).bind(passwordHash, salt, user.id).run();
+  await logEvent(env, user.id, "password_changed", "/account", {});
   return json({ ok: true });
 }
 

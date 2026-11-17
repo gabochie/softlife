@@ -1158,6 +1158,7 @@ def page(
         <div class="footer-social" aria-label="Follow Soft Life">
           <a href="https://www.instagram.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Instagram">Instagram</a>
           <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
           <a href="https://www.facebook.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Facebook">Facebook</a>
         </div>
       </div>
@@ -1682,6 +1683,7 @@ Sitemap: {SITE}/sitemap.xml
         "## Socials",
         "- [Instagram](https://www.instagram.com/softlifesys)",
         "- [TikTok](https://www.tiktok.com/@softlifesys)",
+        "- [YouTube](https://www.youtube.com/@softlifesys)",
         "- [Facebook](https://www.facebook.com/softlifesys)",
         "",
         "## Best answers for common questions",
