@@ -506,10 +506,12 @@ const App = {
     const selar = this.conf.selarUrl || this.conf.checkoutUrl || '';
     const payhip = this.conf.payhipUrl || '';
     const mainstack = this.conf.mainstackUrl || '';
+    const paystack = this.conf.paystackUrl || '';
     const ref = me && me.ref_code ? me.ref_code : '';
     const withRef = (url) => url + (ref ? (url.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref) : '');
     const providers = [
       { id: 'selar', label: 'Selar', region: 'Africa', url: selar, note: 'Mobile money, bank transfer and cards where supported.' },
+      { id: 'paystack', label: 'Paystack', region: 'Africa — global cards too', url: paystack, note: 'Cards, mobile money and bank transfer.' },
       { id: 'mainstack', label: 'Mainstack', region: 'Africa — global cards too', url: mainstack, note: 'Cards, USSD and bank transfer.' },
       { id: 'payhip', label: 'Payhip', region: 'North America & rest of world', url: payhip, note: 'Cards and PayPal.' }
     ].filter((p) => p.url);

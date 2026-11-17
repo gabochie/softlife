@@ -31,7 +31,9 @@ CHECKOUT_URL = ""
 SELAR_CHECKOUT_URL = ""
 PAYHIP_CHECKOUT_URL = ""
 MAINSTACK_CHECKOUT_URL = ""
+PAYSTACK_CHECKOUT_URL = ""
 # MAINSTACK_WEBHOOK_SECRET is a secret (wrangler secret put), not a var.
+# PAYSTACK_SECRET_KEY is a secret (wrangler secret put), not a var.
 SUPPORT_EMAIL = "admin@gabochie.com"
 ADMIN_SESSION_HOURS = "12"
 EMAIL_FROM_NAME = "The Soft Life System"

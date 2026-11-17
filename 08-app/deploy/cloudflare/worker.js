@@ -123,6 +123,7 @@ async function handleApi(request, env, url, ctx) {
       selarUrl: env.SELAR_CHECKOUT_URL || env.CHECKOUT_URL || "",
       payhipUrl: env.PAYHIP_CHECKOUT_URL || "",
       mainstackUrl: env.MAINSTACK_CHECKOUT_URL || "",
+      paystackUrl: env.PAYSTACK_CHECKOUT_URL || "",
       country: (request.cf && request.cf.country) || "",
       supportEmail: env.SUPPORT_EMAIL || "admin@gabochie.com",
       freeAudio: [...FREE_AUDIO],
@@ -152,6 +153,7 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/forgot-password" && request.method === "POST") return forgotPassword(request, env);
   if (path === "/api/reset-password" && request.method === "POST") return resetPassword(request, env);
   if (path === "/api/webhooks/mainstack" && request.method === "POST") return mainstackWebhook(request, env, ctx);
+  if (path === "/api/webhooks/paystack" && request.method === "POST") return paystackWebhook(request, env, ctx);
   if (path === "/api/signout" && request.method === "POST") return signout(request, env);
   if (path === "/api/claim/preview" && request.method === "POST") return claimPreview(request, env);
   if (path === "/api/claim/complete" && request.method === "POST") return claimComplete(request, env);
@@ -461,6 +463,63 @@ async function mainstackWebhook(request, env, ctx) {
     ctx.waitUntil(Promise.resolve().then(() => applyPurchase(env, purchase, url.origin))
       .then((r) => console.error("mainstack purchase:", r.status, orderId || email))
       .catch((err) => console.error("mainstack apply failed:", err)));
+    return json({ ok: true, received: true });
+  }
+  const result = await applyPurchase(env, purchase, url.origin);
+  if (result.status === "failed") return json({ error: "webhook processing failed" }, 500);
+  return json(result.response, result.status === "invalid" ? 400 : 200);
+}
+
+// Paystack signs its webhook POSTs with HMAC-SHA512 of the raw body using the
+// account secret key, in the x-paystack-signature header.
+async function paystackWebhook(request, env, ctx) {
+  const raw = await request.text();
+  let body = {};
+  try { body = JSON.parse(raw); } catch (exc) { /* non-JSON -> rejected below */ }
+  const url = new URL(request.url);
+  const reject = async () => {
+    await logWebhook(env, "rejected", body, null, String((body.data && body.data.customer && body.data.customer.email) || ""));
+    await logSecurity(env, "webhook_rejected", "", clientIp(request), "source=paystack");
+    return json({ error: "unauthorized" }, 401);
+  };
+  const secret = env.PAYSTACK_SECRET_KEY || "";
+  const given = String(request.headers.get("x-paystack-signature") || "").toLowerCase();
+  if (!secret || !given) return reject();
+  if (!safeEqual(given, await hmacHex(secret, raw, "SHA-512"))) return reject();
+
+  const event = String(body.event || "");
+  const d = body.data || {};
+  const email = String((d.customer && d.customer.email) || d.email || "").toLowerCase();
+  const orderId = String(d.reference || "").slice(0, 120) || null;
+  if (event && /refund/i.test(event)) {
+    await logWebhook(env, "ignored", body, orderId, email, "refund event - not a sale");
+    return json({ ok: true, received: true, ignored: true });
+  }
+  if (event && !/^charge\.success$/i.test(event)) {
+    await logWebhook(env, "ignored", body, orderId, email, `unhandled event: ${event.slice(0, 60)}`);
+    return json({ ok: true, received: true, ignored: true });
+  }
+  // Product filter: payment pages and metadata may carry a product name; only
+  // Soft Life purchases mint access (protects other Paystack projects).
+  const product = String(
+    (d.metadata && (d.metadata.product_name || d.metadata.product)) ||
+    d.product_name || (Array.isArray(d.custom_fields) && d.custom_fields.map((f) => f.value).find((v) => v)) || ""
+  );
+  if (product && !/soft\s*life/i.test(product)) {
+    await logWebhook(env, "ignored", body, orderId, email, `other product: ${product.slice(0, 80)}`);
+    return json({ ok: true, received: true, ignored: true });
+  }
+  const subunits = Number(d.amount);
+  const amount = Number.isFinite(subunits) && subunits ? subunits / 100 : 0;
+  const purchase = {
+    email, order_id: orderId, amount,
+    currency: String(d.currency || "").toUpperCase() || null,
+    provider: "paystack", product: product || undefined
+  };
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(Promise.resolve().then(() => applyPurchase(env, purchase, url.origin))
+      .then((r) => console.error("paystack purchase:", r.status, orderId || email))
+      .catch((err) => console.error("paystack apply failed:", err)));
     return json({ ok: true, received: true });
   }
   const result = await applyPurchase(env, purchase, url.origin);

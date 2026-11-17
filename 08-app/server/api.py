@@ -618,6 +618,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "selarUrl": os.environ.get("SELAR_CHECKOUT_URL", os.environ.get("CHECKOUT_URL", "")),
                 "payhipUrl": os.environ.get("PAYHIP_CHECKOUT_URL", ""),
                 "mainstackUrl": os.environ.get("MAINSTACK_CHECKOUT_URL", ""),
+                "paystackUrl": os.environ.get("PAYSTACK_CHECKOUT_URL", ""),
                 "country": os.environ.get("CF_COUNTRY", ""),
                 "supportEmail": os.environ.get("SUPPORT_EMAIL", "admin@gabochie.com"),
                 "freeAudio": sorted(FREE_AUDIO),
@@ -1206,6 +1207,66 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as exc:
                 conn.rollback()
                 _log_webhook(conn, "failed", data, norm["order_id"], norm["email"], error=str(exc)[:500])
+                conn.commit()
+                return self._json({"error": "webhook processing failed"}, 500)
+            finally:
+                conn.close()
+
+        if route == "/api/webhooks/paystack":
+            ps_secret = os.environ.get("PAYSTACK_SECRET_KEY", "")
+            given = (self.headers.get("x-paystack-signature") or "").lower()
+            if not ps_secret or not given:
+                conn = db()
+                _log_webhook(conn, "rejected", data, None, str(((data.get("data") or {}).get("customer") or {}).get("email") or ""))
+                _log_security(conn, "webhook_rejected", email="", ip=self._client_ip(), detail="source=paystack")
+                conn.commit()
+                conn.close()
+                return self._json({"error": "unauthorized"}, 401)
+            expected = hmac.new(ps_secret.encode(), json.dumps(data, separators=(",", ":")).encode(), "sha512").hexdigest()
+            if not secrets.compare_digest(given.encode(), expected.encode()):
+                conn = db()
+                _log_webhook(conn, "rejected", data, None, str(((data.get("data") or {}).get("customer") or {}).get("email") or ""))
+                _log_security(conn, "webhook_rejected", email="", ip=self._client_ip(), detail="source=paystack")
+                conn.commit()
+                conn.close()
+                return self._json({"error": "unauthorized"}, 401)
+            d = data.get("data") or {}
+            email = str((d.get("customer") or {}).get("email") or d.get("email") or "").lower()
+            order_id = str(d.get("reference") or "")[:120] or None
+            event = str(data.get("event") or "")
+            ignore_reason = None
+            if event and "refund" in event.lower():
+                ignore_reason = "refund event - not a sale"
+            elif event and event.lower() != "charge.success":
+                ignore_reason = f"unhandled event: {event[:60]}"
+            else:
+                meta = d.get("metadata") or {}
+                product = str(meta.get("product_name") or meta.get("product") or d.get("product_name") or "")
+                if product and not re.search(r"soft\s*life", product, re.I):
+                    ignore_reason = f"other product: {product[:80]}"
+            if ignore_reason:
+                conn = db()
+                _log_webhook(conn, "ignored", data, order_id, email, error=ignore_reason)
+                conn.commit()
+                conn.close()
+                return self._json({"ok": True, "received": True, "ignored": True})
+            try:
+                amount = float(d.get("amount")) / 100 if d.get("amount") else 0.0
+            except (TypeError, ValueError):
+                amount = 0.0
+            payload = {
+                "email": email, "order_id": order_id, "amount": amount,
+                "currency": str(d.get("currency") or "").upper() or None,
+                "provider": "paystack",
+            }
+            conn = db()
+            try:
+                status, response = _process_purchase(conn, payload, self._origin())
+                conn.commit()
+                return self._json(response, 200 if status != "invalid" else 400)
+            except Exception as exc:
+                conn.rollback()
+                _log_webhook(conn, "failed", data, order_id, email, error=str(exc)[:500])
                 conn.commit()
                 return self._json({"error": "webhook processing failed"}, 500)
             finally:
