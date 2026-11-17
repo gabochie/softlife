@@ -69,7 +69,10 @@ const API = {
 
   webhookLog() { return this.request('/admin/webhooks', { admin: true }); },
   webhookReplay(id) { return this.request('/admin/webhooks/replay', { method: 'POST', body: { id }, admin: true }); },
-  adminClaims() { return this.request('/admin/claims', { admin: true }); }
+  adminClaims() { return this.request('/admin/claims', { admin: true }); },
+  adminEmail() { return this.request('/admin/email', { admin: true }); },
+  adminSendCampaign(body) { return this.request('/admin/email/campaigns', { method: 'POST', body, admin: true }); },
+  adminRunSequences() { return this.request('/admin/email/sequences', { method: 'POST', admin: true }); }
 };
 
 class ApiError extends Error {

@@ -11,6 +11,7 @@ Seed:  demo account demo@softlife.app / demo1234 + the 16-step launch checklist
 import base64
 import hashlib
 import hmac
+import html as _html_mod
 import json
 import os
 import re
@@ -63,6 +64,7 @@ ADMIN_CAPS = {
     "team": {"superadmin"},
     "webhooks": {"superadmin", "sales"},
     "security": {"superadmin"},
+    "email": {"superadmin", "sales"},
 }
 ONBOARDING_CHOICES = {
     "business_stage": {"idea", "early", "growing", "established", "other"},
@@ -281,21 +283,25 @@ def _reset_email_html(link: str) -> str:
     )
 
 
-def _send_email(conn: sqlite3.Connection, to_email: str, subject: str, html: str, kind: str) -> None:
+def _send_email(conn: sqlite3.Connection, to_email: str, subject: str, html: str, kind: str,
+                text: str = "") -> bool:
     """Send via the Brevo API when BREVO_API_KEY is set; always log the attempt.
     Never raises: email failures must not break the webhook."""
     status, error = ("queued_local" if not BREVO_API_KEY else "failed", "")
     if BREVO_API_KEY:
         try:
+            payload = {
+                "sender": {"email": BREVO_SENDER, "name": "The Soft Life System"},
+                "to": [{"email": to_email}],
+                "replyTo": {"email": BREVO_SENDER},
+                "subject": subject,
+                "htmlContent": html,
+            }
+            if text:
+                payload["textContent"] = text
             req = urllib.request.Request(
                 "https://api.brevo.com/v3/smtp/email",
-                data=json.dumps({
-                    "sender": {"email": BREVO_SENDER, "name": "The Soft Life System"},
-                    "to": [{"email": to_email}],
-                    "replyTo": {"email": BREVO_SENDER},
-                    "subject": subject,
-                    "htmlContent": html,
-                }).encode(),
+                data=json.dumps(payload).encode(),
                 headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json", "Accept": "application/json"},
                 method="POST",
             )
@@ -310,6 +316,126 @@ def _send_email(conn: sqlite3.Connection, to_email: str, subject: str, html: str
         )
     except sqlite3.Error:
         pass
+    return status == "sent"
+
+
+def _escape_html(value: str) -> str:
+    return _html_mod.escape(str(value), quote=False)
+
+
+def _unsub_footer(token: str, origin: str) -> str:
+    return ('<p style="font-size:12px;color:#6d5f7a;">You receive this because you have a Soft Life account. '
+            f'<a href="{origin}/api/unsubscribe?token={token}" style="color:#6d5f7a;">Unsubscribe</a></p>')
+
+
+def _email_shell(title: str, body_html: str) -> str:
+    return ('<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px;color:#2a0f4a;">'
+            f'<h2 style="color:#5d2189;margin:0 0 12px;">{_escape_html(title)}</h2>'
+            f'<div style="font-size:15px;line-height:1.6;">{body_html}</div>'
+            '<p style="font-size:12px;color:#6d5f7a;margin-top:28px;">The Soft Life System · Gabochie Books</p></div>')
+
+
+def _welcome_email(env_site_url: str, user: sqlite3.Row, day: int) -> dict:
+    origin = env_site_url or "http://127.0.0.1:8100"
+    first = (user["name"] or "friend").split(" ")[0]
+    if day == 1:
+        return {
+            "subject": f"{first}, your first chapter is waiting",
+            "html": _email_shell("Day 1 — start the 90 days",
+                '<p>You created your Soft Life account yesterday — and the first chapter is the most important one.</p>'
+                + '<p><b>Start with the Hustle Hangover Checklist</b> in your dashboard. It takes 10 minutes and it will show you exactly where your time actually goes.</p>'
+                + f'<p>Log in any time: <a href="{origin}/#/dashboard">{origin}/#/dashboard</a></p>'
+                + '<p style="font-style:italic;">The soft life isn\'t a luxury. It\'s a design — and you\'ve started.</p>')
+            + _unsub_footer(user["unsub_token"], origin),
+            "text": "Day 1 - start the 90 days. Your first task: the Hustle Hangover Checklist (10 minutes). Log in: " + origin + "/#/dashboard",
+        }
+    return {
+        "subject": "Two days in — the Four Audits",
+        "html": _email_shell("Day 3 — see your real picture",
+            '<p>By now the hustle hangover should look familiar. The next step is the <b>Four Audits</b>: Time, Money, Energy, Joy.</p>'
+            + '<p>Score all eight dimensions of your life with the Soft Life Scorecard in your dashboard. Most people find two or three dimensions are carrying everything — that\'s the architecture problem this system fixes.</p>'
+            + f'<p><a href="{origin}/#/tasks">Open your tasks</a></p>')
+        + _unsub_footer(user["unsub_token"], origin),
+        "text": "Day 3 - complete the Four Audits (Time, Money, Energy, Joy) and score your Soft Life Scorecard.",
+    }
+
+
+def _upsell_email(env_site_url: str, env_selar_url: str, user: sqlite3.Row) -> dict:
+    origin = env_site_url or "http://127.0.0.1:8100"
+    checkout = env_selar_url or os.environ.get("CHECKOUT_URL") or ""
+    first = (user["name"] or "friend").split(" ")[0]
+    return {
+        "subject": f"{first}, chapters 2-15 are waiting",
+        "html": _email_shell("You've seen the free chapters. Here's the rest.",
+            '<p>The intro and Chapter 1 show you the problem. <b>Chapters 2–15 build the actual system:</b> the SOFT Method, the One-Offer Principle, the Delivery Machine, the 15-Hour Week Blueprint and the full 90-Day Launch Plan.</p>'
+            + '<p>Everything is in the app — the complete eBook, all 15 chapters as audio, and every worksheet. One purchase, no subscription.</p>'
+            + (f'<p><a href="{checkout}">Get the Complete bundle</a></p>' if checkout else '')
+            + '<p style="font-size:12px;color:#6d5f7a;">Founding price stays open while the first cohort is in.</p>')
+        + _unsub_footer(user["unsub_token"], origin),
+        "text": "Chapters 2-15 are waiting: the SOFT Method, the One-Offer Principle, the 15-Hour Week Blueprint and the 90-Day Launch Plan. One purchase, no subscription." + (f" Get it: {checkout}" if checkout else ""),
+    }
+
+
+def _winback_email(env_site_url: str, user: sqlite3.Row) -> dict:
+    origin = env_site_url or "http://127.0.0.1:8100"
+    first = (user["name"] or "friend").split(" ")[0]
+    return {
+        "subject": f"{first}, your system has been waiting",
+        "html": _email_shell("It's been a couple of weeks",
+            '<p>Your dashboard keeps everything where you left it — your tasks, your scorecard, your audio.</p>'
+            + '<p>Pick the one task you can finish in 10 minutes today. Momentum beats motivation.</p>'
+            + f'<p><a href="{origin}/#/dashboard">Back to your dashboard</a></p>')
+        + _unsub_footer(user["unsub_token"], origin),
+        "text": "It's been a couple of weeks. Your dashboard keeps everything where you left it. Pick one 10-minute task today: " + origin + "/#/dashboard",
+    }
+
+
+def _send_sequence(conn: sqlite3.Connection, origin: str, kind: str, limit: int, query: str, build) -> dict:
+    rows = conn.execute(query + " LIMIT ?", (limit,)).fetchall()
+    sent = 0
+    for user in rows:
+        if not user["email"]:
+            continue
+        token = user["unsub_token"]
+        if not token:
+            token = secrets.token_hex(16)
+            conn.execute("UPDATE users SET unsub_token = ? WHERE id = ?", (token, user["id"]))
+        built = build(user)
+        if _send_email(conn, user["email"], built["subject"], built["html"], kind, built["text"]):
+            sent += 1
+    return {"candidates": len(rows), "sent": sent}
+
+
+def _run_email_sequences(conn: sqlite3.Connection, origin: str = "") -> dict:
+    site = SITE_URL or origin
+    selar = os.environ.get("SELAR_CHECKOUT_URL", "") or os.environ.get("CHECKOUT_URL", "")
+    out = {}
+    out["welcome_d1"] = _send_sequence(conn, site, "welcome_d1", 50,
+        ("SELECT id, email, name, unsub_token FROM users"
+         " WHERE tier = 'free' AND marketing_consent = 1"
+         " AND created_at >= datetime('now', '-2 days') AND created_at <= datetime('now', '-1 day')"
+         " AND NOT EXISTS (SELECT 1 FROM email_log l WHERE l.to_email = users.email AND l.kind = 'welcome_d1')"),
+        lambda u: _welcome_email(site, u, 1))
+    out["welcome_d3"] = _send_sequence(conn, site, "welcome_d3", 50,
+        ("SELECT id, email, name, unsub_token FROM users"
+         " WHERE tier = 'free' AND marketing_consent = 1"
+         " AND created_at >= datetime('now', '-4 days') AND created_at <= datetime('now', '-3 days')"
+         " AND NOT EXISTS (SELECT 1 FROM email_log l WHERE l.to_email = users.email AND l.kind = 'welcome_d3')"),
+        lambda u: _welcome_email(site, u, 3))
+    out["upsell"] = _send_sequence(conn, site, "upsell", 50,
+        ("SELECT id, email, name, unsub_token FROM users"
+         " WHERE tier = 'free' AND marketing_consent = 1"
+         " AND created_at <= datetime('now', '-5 days')"
+         " AND NOT EXISTS (SELECT 1 FROM purchases p WHERE lower(p.email) = lower(users.email))"
+         " AND NOT EXISTS (SELECT 1 FROM email_log l WHERE l.to_email = users.email AND l.kind = 'upsell')"),
+        lambda u: _upsell_email(site, selar, u))
+    out["winback"] = _send_sequence(conn, site, "winback", 50,
+        ("SELECT id, email, name, unsub_token FROM users"
+         " WHERE marketing_consent = 1 AND created_at <= datetime('now', '-14 days')"
+         " AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = users.id AND s.created_at >= datetime('now', '-14 days'))"
+         " AND NOT EXISTS (SELECT 1 FROM email_log l WHERE l.to_email = users.email AND l.kind = 'winback' AND l.created_at >= datetime('now', '-30 days'))"),
+        lambda u: _winback_email(site, u))
+    return out
 
 
 def _log_track(conn: sqlite3.Connection, event: str, path: str, meta: dict) -> None:
@@ -537,6 +663,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _html(self, html: str, status: int = 200) -> None:
+        body = html.encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def _body(self) -> dict:
         length = int(self.headers.get("Content-Length") or 0)
         if not length:
@@ -628,6 +763,45 @@ class Handler(SimpleHTTPRequestHandler):
         route = self.path.split("?")[0]
         if route == "/api/health":
             return self._json({"ok": True, "service": "softlife", "time": datetime.now(timezone.utc).isoformat()})
+        if route == "/api/email-cron":
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            provided = qs.get("key", [""])[0]
+            if not WEBHOOK_SECRET or not secrets.compare_digest(provided, WEBHOOK_SECRET):
+                return self._json({"error": "unauthorized"}, 401)
+            conn = db()
+            summary = _run_email_sequences(conn, self._origin())
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True, "summary": summary})
+        if route == "/api/unsubscribe":
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            token = clean_text(qs.get("token", [""])[0], 64)
+            title, msg = ("Invalid link",
+                          "This unsubscribe link is missing its token. If you want to stop marketing emails, reply to any email and we'll opt you out.")
+            code = 400
+            if token:
+                conn = db()
+                row = conn.execute("SELECT id FROM users WHERE unsub_token = ?", (token,)).fetchone()
+                conn.close()
+                if row:
+                    conn = db()
+                    conn.execute("UPDATE users SET marketing_consent = 0 WHERE id = ?", (row["id"],))
+                    conn.commit()
+                    conn.close()
+                    title, msg, code = ("You're unsubscribed",
+                                        "You won't receive any more marketing emails from The Soft Life System. "
+                                        "Your account and any purchased access are untouched - you'll still get essential emails like password resets and purchase confirmations.",
+                                        200)
+                else:
+                    title, msg, code = ("Invalid link",
+                                        "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.",
+                                        200)
+                    code = 400
+            html = ('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+                    '<title>' + title + '</title><style>body{font-family:Georgia,serif;background:#faf7f2;color:#2a0f4a;display:grid;place-items:center;min-height:100vh}'
+                    'div{text-align:center;max-width:420px;padding:24px}h1{color:#5d2189;font-size:1.5rem}p{color:#6d5f7a;line-height:1.6}</style></head>'
+                    '<body><div><h1>' + title + '</h1><p>' + msg + '</p></div></body></html>')
+            return self._html(html, code)
         if route == "/api/config":
             host = self.headers.get("Host") or "127.0.0.1:8100"
             return self._json({
@@ -746,6 +920,8 @@ class Handler(SimpleHTTPRequestHandler):
             return "users"
         if route == "/api/admin/referrals":
             return "referrals"
+        if route.startswith("/api/admin/email"):
+            return "email"
         if route == "/api/admin/purchases":
             return "purchases"
         if route == "/api/admin/onboarding":
@@ -790,6 +966,24 @@ class Handler(SimpleHTTPRequestHandler):
             }
             conn.close()
             return self._json(out)
+
+        if route == "/api/admin/email":
+            seg_all = conn.execute("SELECT COUNT(*) c FROM users WHERE marketing_consent = 1").fetchone()["c"]
+            seg_free = conn.execute("SELECT COUNT(*) c FROM users WHERE tier = 'free' AND marketing_consent = 1").fetchone()["c"]
+            seg_paid = conn.execute("SELECT COUNT(*) c FROM users WHERE tier != 'free' AND marketing_consent = 1").fetchone()["c"]
+            seg_inactive = conn.execute(
+                "SELECT COUNT(*) c FROM users WHERE marketing_consent = 1 AND NOT EXISTS"
+                " (SELECT 1 FROM sessions s WHERE s.user_id = users.id AND s.created_at >= datetime('now', '-14 days'))"
+            ).fetchone()["c"]
+            campaigns = [dict(r) for r in conn.execute(
+                "SELECT id, subject, segment, recipients, sent, failed, created_at FROM email_campaigns ORDER BY id DESC LIMIT 20"
+            ).fetchall()]
+            log = [dict(r) for r in conn.execute(
+                "SELECT to_email, subject, kind, status, error, created_at FROM email_log ORDER BY id DESC LIMIT 30"
+            ).fetchall()]
+            conn.close()
+            return self._json({"segments": {"all": seg_all, "free": seg_free, "paid": seg_paid, "inactive": seg_inactive},
+                               "campaigns": campaigns, "log": log})
 
         if route == "/api/admin/users":
             q = param("q", "").strip()
@@ -1392,9 +1586,11 @@ class Handler(SimpleHTTPRequestHandler):
                 (email,),
             ).fetchone()
             tier = paid["tier"] if paid else "free"
+            consent = 0 if data.get("marketing_consent") == 0 else 1
+            unsub_token = secrets.token_hex(16)
             cur = conn.execute(
-                "INSERT INTO users (email, name, password_hash, salt, tier, ref_code, referred_by) VALUES (?,?,?,?,?,?,?)",
-                (email, name or email.split("@")[0].title(), _hash(password, salt), salt, tier, ref_code, ref or None),
+                "INSERT INTO users (email, name, password_hash, salt, tier, ref_code, referred_by, marketing_consent, unsub_token) VALUES (?,?,?,?,?,?,?,?,?)",
+                (email, name or email.split("@")[0].title(), _hash(password, salt), salt, tier, ref_code, ref or None, consent, unsub_token),
             )
             uid = cur.lastrowid
             if paid:
@@ -1691,9 +1887,67 @@ class Handler(SimpleHTTPRequestHandler):
                 team_active = re.match(r"^/api/admin/team/(\d+)/active$", route)
                 team_role = re.match(r"^/api/admin/team/(\d+)/role$", route)
                 webhook_replay = re.match(r"^/api/admin/webhooks/replay$", route)
-                if not any([crm_stage, crm_note, team_add, team_active, team_role, webhook_replay]):
+                email_campaign = re.match(r"^/api/admin/email/campaigns$", route)
+                email_sequences = re.match(r"^/api/admin/email/sequences$", route)
+                if not any([crm_stage, crm_note, team_add, team_active, team_role, webhook_replay,
+                            email_campaign, email_sequences]):
                     return self._json({"error": "not found"}, 404)
                 conn = db()
+                if email_campaign:
+                    subject = clean_text(data.get("subject") or "", 120)
+                    segment = data.get("segment") or ""
+                    body_text = str(data.get("body") or "").strip()
+                    if not subject or segment not in ("all", "free", "paid", "inactive") or len(body_text) < 20:
+                        conn.close()
+                        return self._json({"error": "subject, valid segment and a message of at least 20 characters are required"}, 400)
+                    esc = (body_text[:8000].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+                    body_html = "".join("<p>" + p.replace("\n", "<br>") + "</p>" for p in re.split(r"\n{2,}", esc))
+                    where = {
+                        "all": "marketing_consent = 1",
+                        "free": "tier = 'free' AND marketing_consent = 1",
+                        "paid": "tier != 'free' AND marketing_consent = 1",
+                        "inactive": ("marketing_consent = 1 AND NOT EXISTS (SELECT 1 FROM sessions s"
+                                     " WHERE s.user_id = users.id AND s.created_at >= datetime('now', '-14 days'))"),
+                    }[segment]
+                    people = conn.execute(
+                        f"SELECT id, email, unsub_token FROM users WHERE {where}"
+                    ).fetchall()
+                    people = [p for p in people if p["email"]]
+                    if not people:
+                        conn.close()
+                        return self._json({"error": "no recipients in that segment"}, 400)
+                    origin = self._origin()
+                    cur = conn.execute(
+                        "INSERT INTO email_campaigns (subject, segment, body_html, body_text, recipients, created_by)"
+                        " VALUES (?,?,?,?,?,?)",
+                        (subject, segment, body_html, body_text[:8000], len(people), auth[1]),
+                    )
+                    campaign_id = cur.lastrowid
+                    sent = failed = 0
+                    for p in people:
+                        token = p["unsub_token"]
+                        if not token:
+                            token = secrets.token_hex(16)
+                            conn.execute("UPDATE users SET unsub_token = ? WHERE id = ?", (token, p["id"]))
+                        html = ('<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px;color:#2a0f4a;">'
+                                f'<h2 style="color:#5d2189;margin:0 0 12px;">{_escape_html(subject)}</h2>'
+                                f'<div style="font-size:15px;line-height:1.6;">{body_html}</div>'
+                                '<p style="font-size:12px;color:#6d5f7a;margin-top:28px;">You receive this because you have a Soft Life account. '
+                                f'<a href="{origin}/api/unsubscribe?token={token}" style="color:#6d5f7a;">Unsubscribe</a></p>'
+                                '<p style="font-size:12px;color:#6d5f7a;">The Soft Life System · Gabochie Books</p></div>')
+                        if _send_email(conn, p["email"], subject, html, f"campaign:{campaign_id}", body_text[:8000]):
+                            sent += 1
+                        else:
+                            failed += 1
+                    conn.execute("UPDATE email_campaigns SET sent = ?, failed = ? WHERE id = ?", (sent, failed, campaign_id))
+                    conn.commit()
+                    conn.close()
+                    return self._json({"ok": True, "campaign_id": campaign_id, "recipients": len(people), "sent": sent, "failed": failed})
+                if email_sequences:
+                    summary = _run_email_sequences(conn, self._origin())
+                    conn.commit()
+                    conn.close()
+                    return self._json({"ok": True, "summary": summary})
                 if webhook_replay:
                     try:
                         wid = int(data.get("id") or 0)

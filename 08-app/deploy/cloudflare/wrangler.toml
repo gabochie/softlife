@@ -25,6 +25,10 @@ enabled = true
 pattern = "soft.gabochie.com"
 custom_domain = true
 
+# cron: daily email sequences (welcome drips, upsell, win-back) at 07:00 UTC.
+[triggers]
+crons = ["0 7 * * *"]
+
 [vars]
 SITE_URL = "https://soft.gabochie.com"
 CHECKOUT_URL = ""

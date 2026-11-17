@@ -20,7 +20,8 @@ const ADMIN_CAPS = {
   audio: new Set(["superadmin", "sales", "support", "content"]),
   team: new Set(["superadmin"]),
   webhooks: new Set(["superadmin", "sales"]),
-  security: new Set(["superadmin"])
+  security: new Set(["superadmin"]),
+  email: new Set(["superadmin", "sales"])
 };
 // Blog registry mirrors tools/build_blog.py POSTS (slug -> title).
 const BLOG_POSTS = [
@@ -80,6 +81,16 @@ const LAUNCH_TASKS = [
 ];
 
 export default {
+  async scheduled(event, env, ctx) {
+    // Daily email engine: welcome drips, upsell, win-back. Runs at 07:00 UTC.
+    try {
+      const summary = await runEmailSequences(env);
+      console.log("softlife email sequences", summary);
+    } catch (err) {
+      console.error("softlife email sequences failed", err);
+    }
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) {
@@ -159,6 +170,19 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/claim/complete" && request.method === "POST") return claimComplete(request, env);
   // Public: anonymous referral clicks must count before any account exists.
   if (path === "/api/ref-visit" && request.method === "POST") return refVisit(request, env);
+  // Public: one-click marketing opt-out from any campaign footer link.
+  if (path === "/api/unsubscribe" && request.method === "GET") return unsubscribe(request, env);
+  // Cron fallback: free plan has no spare cron trigger slots; an external
+  // scheduler (cron-job.org) hits this daily with the webhook secret.
+  if (path === "/api/email-cron" && request.method === "GET") {
+    const cronUrl = new URL(request.url);
+    const key = cronUrl.searchParams.get("key") || "";
+    if (!env.PURCHASE_WEBHOOK_SECRET || !safeEqual(key, env.PURCHASE_WEBHOOK_SECRET)) {
+      return json({ error: "unauthorized" }, 401);
+    }
+    const summary = await runEmailSequences(env);
+    return json({ ok: true, summary });
+  }
 
   const user = await currentUser(request, env);
   if (!user) return json({ error: "unauthorized" }, 401);
@@ -271,13 +295,15 @@ async function signup(request, env) {
   const salt = randomHex(8);
   const passwordHash = await hashPassword(password, salt);
   const refCode = "SL" + randomHex(3).toUpperCase();
+  const consent = body.marketing_consent === 0 ? 0 : 1;
+  const unsubToken = randomHex(16);
   const purchase = await env.DB.prepare(
     "SELECT tier FROM softlife_purchases WHERE email = ? ORDER BY id DESC LIMIT 1"
   ).bind(email).first();
   const tier = purchase && purchase.tier ? purchase.tier : "free";
   const inserted = await env.DB.prepare(
-    "INSERT INTO softlife_users (email, name, password_hash, salt, tier, ref_code, referred_by) VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(email, name || email.split("@")[0].replace(/\b\w/g, (c) => c.toUpperCase()), passwordHash, salt, tier, refCode, ref || null).run();
+    "INSERT INTO softlife_users (email, name, password_hash, salt, tier, ref_code, referred_by, marketing_consent, unsub_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(email, name || email.split("@")[0].replace(/\b\w/g, (c) => c.toUpperCase()), passwordHash, salt, tier, refCode, ref || null, consent, unsubToken).run();
 
   const userId = inserted.meta.last_row_id;
   // Buyer signed up after paying: close any pending access claim for this email.
@@ -875,9 +901,33 @@ async function saveOnboarding(request, env, user) {
   return json({ onboarding: row });
 }
 
+// One-click marketing opt-out: linked from every campaign footer.
+async function unsubscribe(request, env) {
+  const url = new URL(request.url);
+  const token = cleanText(url.searchParams.get("token") || "", 64);
+  const page = (title, msg) => new Response(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>' + title + '</title><style>body{font-family:Georgia,serif;background:#faf7f2;color:#2a0f4a;display:grid;place-items:center;min-height:100vh}div{text-align:center;max-width:420px;padding:24px}h1{color:#5d2189;font-size:1.5rem}p{color:#6d5f7a;line-height:1.6}</style></head>'
+    + '<body><div><h1>' + title + '</h1><p>' + msg + '</p></div></body></html>',
+    { status: token ? 200 : 400, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }
+  );
+  if (!token) {
+    return page("Invalid link", "This unsubscribe link is missing its token. If you want to stop marketing emails, reply to any email and we'll opt you out.");
+  }
+  const row = await env.DB.prepare(
+    "SELECT id FROM softlife_users WHERE unsub_token = ?"
+  ).bind(token).first();
+  if (!row) {
+    return page("Invalid link", "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.");
+  }
+  await env.DB.prepare(
+    "UPDATE softlife_users SET marketing_consent = 0 WHERE id = ?"
+  ).bind(row.id).run();
+  return page("You're unsubscribed", "You won't receive any more marketing emails from The Soft Life System. Your account and any purchased access are untouched — you'll still get essential emails like password resets and purchase confirmations.");
+}
+
 // Anonymous referral click: count one per ref code per day so stats stay honest.
-async function refVisit(request, env) {
-  const body = await readJson(request);
+async function refVisit(request, env) {  const body = await readJson(request);
   const ref = cleanText(body.ref, 24).toUpperCase();
   if (!ref) return json({ error: "ref required" }, 400);
   const seen = await env.DB.prepare(
@@ -1046,6 +1096,7 @@ function capForRoute(path) {
   if (path === "/api/admin/overview") return "overview";
   if (path === "/api/admin/users") return "users";
   if (path === "/api/admin/referrals") return "referrals";
+  if (path.startsWith("/api/admin/email")) return "email";
   if (path === "/api/admin/purchases") return "purchases";
   if (path === "/api/admin/onboarding") return "onboarding";
   if (path === "/api/admin/audio") return "audio";
@@ -1180,6 +1231,73 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
       audio: { uploaded, count: uploaded.length, expected: AUDIO_SLUGS.length },
       generatedAt: new Date().toISOString()
     });
+  }
+
+  if (path === "/api/admin/email" && request.method === "GET") {
+    const [segAll, segFree, segPaid, segInactive, campaigns, log] = await env.DB.batch([
+      env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_users WHERE marketing_consent = 1"),
+      env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_users WHERE tier = 'free' AND marketing_consent = 1"),
+      env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_users WHERE tier != 'free' AND marketing_consent = 1"),
+      env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_users WHERE marketing_consent = 1 AND NOT EXISTS (SELECT 1 FROM softlife_sessions s WHERE s.user_id = softlife_users.id AND s.created_at >= datetime('now', '-14 days'))"),
+      env.DB.prepare("SELECT id, subject, segment, recipients, sent, failed, created_at FROM softlife_email_campaigns ORDER BY id DESC LIMIT 20"),
+      env.DB.prepare("SELECT to_email, subject, kind, status, error, created_at FROM softlife_email_log ORDER BY id DESC LIMIT 30")
+    ]);
+    return json({
+      segments: { all: countValue(segAll), free: countValue(segFree), paid: countValue(segPaid), inactive: countValue(segInactive) },
+      campaigns: campaigns.results || [],
+      log: log.results || []
+    });
+  }
+
+  if (path === "/api/admin/email/campaigns" && request.method === "POST") {
+    const body = await readJson(request);
+    const subject = cleanText(body.subject, 120);
+    const segment = ["all", "free", "paid", "inactive"].includes(body.segment) ? body.segment : "";
+    const bodyText = String(body.body || "").trim();
+    if (!subject || !segment || bodyText.length < 20) {
+      return json({ error: "subject, valid segment and a message of at least 20 characters are required" }, 400);
+    }
+    // Plain textarea -> simple HTML: escape everything, paragraphs + line breaks.
+    const escHtml = cleanText(bodyText, 8000)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .split(/\n{2,}/).map((p) => "<p>" + p.replace(/\n/g, "<br>") + "</p>").join("");
+    const where = {
+      all: "marketing_consent = 1",
+      free: "tier = 'free' AND marketing_consent = 1",
+      paid: "tier != 'free' AND marketing_consent = 1",
+      inactive: "marketing_consent = 1 AND NOT EXISTS (SELECT 1 FROM softlife_sessions s WHERE s.user_id = softlife_users.id AND s.created_at >= datetime('now', '-14 days'))"
+    }[segment];
+    const recipients = await env.DB.prepare(
+      "SELECT id, email, name, unsub_token FROM softlife_users WHERE " + where
+    ).all();
+    const people = (recipients.results || []).filter((r) => r.email);
+    if (!people.length) return json({ error: "no recipients in that segment" }, 400);
+    const inserted = await env.DB.prepare(
+      "INSERT INTO softlife_email_campaigns (subject, segment, body_html, body_text, recipients, created_by) VALUES (?, ?, ?, ?, ?, ?)"
+    ).bind(subject, segment, escHtml, bodyText.slice(0, 8000), people.length, admin ? admin.role : "superadmin").run();
+    const campaignId = inserted.meta.last_row_id;
+    let sent = 0, failed = 0;
+    for (const person of people) {
+      let token = person.unsub_token;
+      if (!token) {
+        token = randomHex(16);
+        await env.DB.prepare("UPDATE softlife_users SET unsub_token = ? WHERE id = ?").bind(token, person.id).run();
+      }
+      const html = emailShell(subject, escHtml
+        + '<p style="font-size:12px;color:#6d5f7a;">You receive this because you have a Soft Life account. '
+        + '<a href="' + url.origin + '/api/unsubscribe?token=' + token + '" style="color:#6d5f7a;">Unsubscribe</a></p>');
+      const ok = await sendPurchaseEmail(env, person.email, subject, html, bodyText.slice(0, 8000), "campaign:" + campaignId);
+      if (ok) sent++; else failed++;
+    }
+    await env.DB.prepare(
+      "UPDATE softlife_email_campaigns SET sent = ?, failed = ? WHERE id = ?"
+    ).bind(sent, failed, campaignId).run();
+    return json({ ok: true, campaign_id: campaignId, recipients: people.length, sent, failed });
+  }
+
+  if (path === "/api/admin/email/sequences" && request.method === "POST") {
+    const summary = await runEmailSequences(env);
+    return json({ ok: true, summary });
   }
 
   if (path === "/api/admin/users" && request.method === "GET") {
@@ -1863,6 +1981,117 @@ function purchaseConfirmationText() {
   ].join("\n");
 }
 
+// ---- Automated email sequences (cron-driven; also triggerable from admin) ----
+const SEQUENCE_LIMIT = 50;
+
+async function runEmailSequences(env) {
+  const out = {};
+  out.welcome_d1 = await sendSequence(env, "welcome_d1", 50,
+    `SELECT id, email, name, unsub_token FROM softlife_users
+     WHERE tier = 'free' AND marketing_consent = 1
+       AND created_at >= datetime('now', '-2 days') AND created_at <= datetime('now', '-1 day')
+       AND NOT EXISTS (SELECT 1 FROM softlife_email_log l WHERE l.to_email = softlife_users.email AND l.kind = 'welcome_d1')`,
+    (env, u) => welcomeEmail(env, u, 1));
+  out.welcome_d3 = await sendSequence(env, "welcome_d3", 50,
+    `SELECT id, email, name, unsub_token FROM softlife_users
+     WHERE tier = 'free' AND marketing_consent = 1
+       AND created_at >= datetime('now', '-4 days') AND created_at <= datetime('now', '-3 days')
+       AND NOT EXISTS (SELECT 1 FROM softlife_email_log l WHERE l.to_email = softlife_users.email AND l.kind = 'welcome_d3')`,
+    (env, u) => welcomeEmail(env, u, 3));
+  out.upsell = await sendSequence(env, "upsell", SEQUENCE_LIMIT,
+    `SELECT id, email, name, unsub_token FROM softlife_users
+     WHERE tier = 'free' AND marketing_consent = 1
+       AND created_at <= datetime('now', '-5 days')
+       AND NOT EXISTS (SELECT 1 FROM softlife_purchases p WHERE lower(p.email) = lower(softlife_users.email))
+       AND NOT EXISTS (SELECT 1 FROM softlife_email_log l WHERE l.to_email = softlife_users.email AND l.kind = 'upsell')`,
+    upsellEmail);
+  out.winback = await sendSequence(env, "winback", SEQUENCE_LIMIT,
+    `SELECT id, email, name, unsub_token FROM softlife_users
+     WHERE marketing_consent = 1 AND created_at <= datetime('now', '-14 days')
+       AND NOT EXISTS (SELECT 1 FROM softlife_sessions s WHERE s.user_id = softlife_users.id AND s.created_at >= datetime('now', '-14 days'))
+       AND NOT EXISTS (SELECT 1 FROM softlife_email_log l WHERE l.to_email = softlife_users.email AND l.kind = 'winback' AND l.created_at >= datetime('now', '-30 days'))`,
+    winbackEmail);
+  return out;
+}
+
+async function sendSequence(env, kind, limit, query, template) {
+  const rows = await env.DB.prepare(query + " LIMIT " + limit).all();
+  const people = (rows.results || []).filter((r) => r.email);
+  let sent = 0;
+  for (const person of people) {
+    let token = person.unsub_token;
+    if (!token) {
+      token = randomHex(16);
+      await env.DB.prepare("UPDATE softlife_users SET unsub_token = ? WHERE id = ?").bind(token, person.id).run();
+    }
+    const built = template(env, person);
+    const ok = await sendPurchaseEmail(env, person.email, built.subject, built.html, built.text, kind);
+    if (ok) sent++;
+  }
+  return { candidates: people.length, sent };
+}
+
+function unsubFooter(token, origin) {
+  return '<p style="font-size:12px;color:#6d5f7a;">You receive this because you have a Soft Life account. '
+    + '<a href="' + origin + '/api/unsubscribe?token=' + token + '" style="color:#6d5f7a;">Unsubscribe</a></p>';
+}
+
+function welcomeEmail(env, user, day) {
+  const origin = env.SITE_URL || "https://soft.gabochie.com";
+  const first = (user.name || "friend").split(" ")[0];
+  if (day === 1) {
+    return {
+      subject: first + ", your first chapter is waiting",
+      html: emailShell("Day 1 — start the 90 days",
+        '<p>You created your Soft Life account yesterday — and the first chapter is the most important one.</p>'
+        + '<p><b>Start with the Hustle Hangover Checklist</b> in your dashboard. It takes 10 minutes and it will show you exactly where your time actually goes.</p>'
+        + '<p>Log in any time: <a href="' + origin + '/#/dashboard">' + origin + '/#/dashboard</a></p>'
+        + '<p style="font-style:italic;">The soft life isn\'t a luxury. It\'s a design — and you\'ve started.</p>')
+      + unsubFooter(user.unsub_token, origin),
+      text: "Day 1 - start the 90 days. Your first task: the Hustle Hangover Checklist (10 minutes). Log in: " + origin + "/#/dashboard"
+    };
+  }
+  return {
+    subject: "Two days in — the Four Audits",
+    html: emailShell("Day 3 — see your real picture",
+      '<p>By now the hustle hangover should look familiar. The next step is the <b>Four Audits</b>: Time, Money, Energy, Joy.</p>'
+      + '<p>Score all eight dimensions of your life with the Soft Life Scorecard in your dashboard. Most people find two or three dimensions are carrying everything — that\'s the architecture problem this system fixes.</p>'
+      + '<p><a href="' + origin + '/#/tasks">Open your tasks</a></p>')
+    + unsubFooter(user.unsub_token, origin),
+    text: "Day 3 - complete the Four Audits (Time, Money, Energy, Joy) and score your Soft Life Scorecard."
+  };
+}
+
+function upsellEmail(env, user) {
+  const origin = env.SITE_URL || "https://soft.gabochie.com";
+  const checkout = env.SELAR_CHECKOUT_URL || env.CHECKOUT_URL || "";
+  const first = (user.name || "friend").split(" ")[0];
+  return {
+    subject: first + ", chapters 2-15 are waiting",
+    html: emailShell("You\'ve seen the free chapters. Here\'s the rest.",
+      '<p>The intro and Chapter 1 show you the problem. <b>Chapters 2–15 build the actual system:</b> the SOFT Method, the One-Offer Principle, the Delivery Machine, the 15-Hour Week Blueprint and the full 90-Day Launch Plan.</p>'
+      + '<p>Everything is in the app — the complete eBook, all 15 chapters as audio, and every worksheet. One purchase, no subscription.</p>'
+      + (checkout ? '<p><a href="' + checkout + '">Get the Complete bundle</a></p>' : '')
+      + '<p style="font-size:12px;color:#6d5f7a;">Founding price stays open while the first cohort is in.</p>')
+    + unsubFooter(user.unsub_token, origin),
+    text: "Chapters 2-15 are waiting: the SOFT Method, the One-Offer Principle, the 15-Hour Week Blueprint and the 90-Day Launch Plan. One purchase, no subscription." + (checkout ? " Get it: " + checkout : "")
+  };
+}
+
+function winbackEmail(env, user) {
+  const origin = env.SITE_URL || "https://soft.gabochie.com";
+  const first = (user.name || "friend").split(" ")[0];
+  return {
+    subject: first + ", your system has been waiting",
+    html: emailShell("It\'s been a couple of weeks",
+      '<p>Your dashboard keeps everything where you left it — your tasks, your scorecard, your audio.</p>'
+      + '<p>Pick the one task you can finish in 10 minutes today. Momentum beats motivation.</p>'
+      + '<p><a href="' + origin + '/#/dashboard">Back to your dashboard</a></p>')
+    + unsubFooter(user.unsub_token, origin),
+    text: "It's been a couple of weeks. Your dashboard keeps everything where you left it. Pick one 10-minute task today: " + origin + "/#/dashboard"
+  };
+}
+
 async function sendPurchaseEmail(env, toEmail, subject, html, text, kind) {
   // Best-effort transactional email via Brevo (ex-Sendinblue). Never throws:
   // the webhook must not fail because the mail provider hiccuped. Every
@@ -1909,6 +2138,7 @@ async function sendPurchaseEmail(env, toEmail, subject, html, text, kind) {
   } catch (exc) {
     // Logging must never break the webhook either.
   }
+  return status === "sent";
 }
 
 function countValue(result) {

@@ -888,7 +888,7 @@ const App = {
     const safe = (p) => p.catch(() => null);
     const isSuper = (Store.adminRole() || 'superadmin') === 'superadmin';
     try {
-      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims] = await Promise.all([
+      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims, email] = await Promise.all([
         safe(API.adminOverview()),
         safe(API.adminUsers(q)),
         safe(API.adminAudio()),
@@ -904,10 +904,11 @@ const App = {
         (isSuper || Store.adminRole() === 'sales') ? safe(API.webhookLog()) : Promise.resolve(null),
         safe(API.analyticsContent()),
         isSuper ? safe(API.securityOverview()) : Promise.resolve(null),
-        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminClaims()) : Promise.resolve(null)
+        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminClaims()) : Promise.resolve(null),
+        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminEmail()) : Promise.resolve(null)
       ]);
       const analytics = { overview: anOv, audio: anAu, tasks: anTasks, onboarding: anOnb, engagement: anEn, content: anCt };
-      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims);
+      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email);
       this.bindAdmin();
       this.refreshAdminSpy();
       this.renderAdminCharts(analytics);
@@ -1069,7 +1070,7 @@ const App = {
     return `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
   },
 
-  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null) {
+  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null, email = null) {
     const missing = a?.missing || [];
     const profiles = ob?.onboarding || [];
     const optedIn = profiles.filter((row) => row.whatsapp_consent);
@@ -1234,6 +1235,42 @@ const App = {
           </tbody></table></div>` : '<p class="note">No referral events yet. Share links will appear here.</p>'}
         </div>`}
       </div>
+
+        ${email === null ? '' : `
+        <div class="card" id="sec-email">
+          <div class="admin-toolbar">
+            <div><span class="tag">Email</span><h3>Campaigns</h3>
+            <p class="note">Write once, send to a segment via Brevo. Every marketing email carries an unsubscribe link; members who opt out are excluded automatically.</p></div>
+          </div>
+          <div class="grid3" style="margin-bottom:14px">
+            <div class="stat"><b>${email.segments.all}</b><small>Subscribed (all)</small></div>
+            <div class="stat"><b>${email.segments.free}</b><small>Free members</small></div>
+            <div class="stat"><b>${email.segments.paid}</b><small>Paid members</small></div>
+            <div class="stat"><b>${email.segments.inactive}</b><small>Inactive 14+ days</small></div>
+            <div class="stat"><b>${(email.campaigns || []).length}</b><small>Campaigns sent</small></div>
+          </div>
+          <form id="campaignForm" style="display:grid;gap:10px;max-width:640px">
+            <input name="subject" type="text" placeholder="Subject line" required aria-label="Campaign subject" style="padding:10px;border:1px solid #c9b8e8;border-radius:8px;font-family:inherit">
+            <div class="btns" style="gap:8px">
+              ${['all', 'free', 'paid', 'inactive'].map((sgm, idx) => `
+                <label style="font-size:.85rem"><input type="radio" name="segment" value="${sgm}" ${idx === 0 ? 'checked' : ''}> ${sgm}</label>`).join('')}
+            </div>
+            <textarea name="body" rows="7" placeholder="Your message. Blank line = new paragraph. Plain text is fine." required aria-label="Campaign body" style="padding:10px;border:1px solid #c9b8e8;border-radius:8px;font-family:inherit;resize:vertical"></textarea>
+            <div class="btns">
+              <button class="btn dark" type="submit">Send campaign</button>
+              <button class="btn" type="button" id="runSequences">Run automated sequences now</button>
+            </div>
+            <p class="note" id="campaignMsg"></p>
+          </form>
+          ${(email.campaigns || []).length ? `<p class="note" style="margin-top:14px"><small>Recent campaigns</small></p>
+          <div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Subject</th><th>Segment</th><th>Sent</th><th>Failed</th></tr></thead><tbody>
+            ${email.campaigns.map((c) => `<tr><td><small>${esc(c.created_at)}</small></td><td>${esc(c.subject)}</td><td>${esc(c.segment)}</td><td>${c.sent}</td><td>${c.failed}</td></tr>`).join('')}
+          </tbody></table></div>` : ''}
+          ${(email.log || []).length ? `<p class="note" style="margin-top:14px"><small>Recent email log</small></p>
+          <div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>To</th><th>Subject</th><th>Kind</th><th>Status</th></tr></thead><tbody>
+            ${email.log.map((l) => `<tr><td><small>${esc(l.created_at)}</small></td><td><small>${esc(l.to_email)}</small></td><td><small>${esc(l.subject)}</small></td><td><small>${esc(l.kind)}</small></td><td>${esc(l.status)}</td></tr>`).join('')}
+          </tbody></table></div>` : ''}
+        </div>`}
 
       ${Array.isArray(team && team.staff) ? `
       <div class="card" id="sec-team">
@@ -1401,6 +1438,38 @@ const App = {
     });
     document.querySelectorAll('[data-crm]').forEach((btn) => {
       btn.addEventListener('click', () => this.openCrm(btn.dataset.crm));
+    });
+    const campaignForm = document.getElementById('campaignForm');
+    if (campaignForm) campaignForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = campaignForm.querySelector('button[type="submit"]');
+      const msg = document.getElementById('campaignMsg');
+      const fd = new FormData(campaignForm);
+      btn.disabled = true;
+      if (msg) msg.textContent = 'Sending…';
+      try {
+        const out = await API.adminSendCampaign({ subject: fd.get('subject'), segment: fd.get('segment'), body: fd.get('body') });
+        if (msg) msg.textContent = `Sent to ${out.sent}/${out.recipients} members${out.failed ? ' (' + out.failed + ' failed)' : ''}.`;
+        await this.loadAdmin();
+      } catch (err) {
+        if (msg) msg.textContent = err.message;
+        btn.disabled = false;
+      }
+    });
+    const runSeq = document.getElementById('runSequences');
+    if (runSeq) runSeq.addEventListener('click', async () => {
+      runSeq.disabled = true;
+      const msg = document.getElementById('campaignMsg');
+      if (msg) msg.textContent = 'Running sequences…';
+      try {
+        const out = await API.adminRunSequences();
+        const s = out.summary || {};
+        const parts = Object.keys(s).map((k) => `${k}: ${s[k].sent}/${s[k].candidates}`);
+        if (msg) msg.textContent = 'Sequences done — ' + parts.join(' · ');
+      } catch (err) {
+        if (msg) msg.textContent = err.message;
+      }
+      runSeq.disabled = false;
     });
     const teamAdd = document.getElementById('teamAddForm');
     if (teamAdd) teamAdd.addEventListener('submit', async (e) => {
