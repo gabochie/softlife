@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free One-Offer Clarity Worksheet — The Soft Life System</title>
+<meta name="description" content="Find the one offer that replaces the ten you're juggling — and the price that makes you profitable at 15 hours a week.">
+<link rel="icon" href="/favicon.ico">
+<style>
+  :root { --purple:#2e0048; --purple2:#5d2189; --gold:#f0c000; --cream:#faf7f2; --ink:#2a0f4a; --muted:#6d5f7a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Segoe UI,Arial,sans-serif; color:var(--ink); background:var(--cream); line-height:1.55; }
+  header { background:var(--purple); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  header img { height:38px; width:auto; }
+  header a { color:#fff; font-size:14px; text-decoration:none; border:1px solid rgba(255,255,255,.4); padding:7px 13px; border-radius:8px; }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 18px 70px; }
+  .tag { display:inline-block; background:#efe4f4; color:var(--purple2); font-size:11px; font-weight:700; letter-spacing:.12em; padding:6px 10px; border-radius:99px; text-transform:uppercase; }
+  h1 { font-family:Georgia,serif; font-size:clamp(30px,5vw,44px); line-height:1.15; margin:14px 0 10px; color:var(--purple); }
+  .lede { font-size:18px; color:var(--muted); max-width:640px; margin:0 0 8px; }
+  .intro { background:#fff; border:1px solid #e8e0ea; border-radius:14px; padding:18px 22px; margin:26px 0; font-size:15px; }
+  .step { background:#fff; border:1px solid #e8e0ea; border-radius:14px; padding:20px 22px; margin:18px 0; }
+  .step h2 { font-family:Georgia,serif; font-size:22px; margin:0 0 4px; color:var(--purple); }
+  .step p { margin:0 0 14px; color:var(--muted); font-size:14px; }
+  .offer-row { display:grid; grid-template-columns:2fr 80px 80px 80px; gap:8px; align-items:center; margin:8px 0; }
+  .offer-row input { padding:10px 8px; border:1px solid #cfc2d5; border-radius:8px; font-size:14px; font-family:inherit; }
+  .offer-row input[type=text] { padding:10px 12px; }
+  .offer-head { display:grid; grid-template-columns:2fr 80px 80px 80px; gap:8px; font-size:11px; font-weight:700; color:var(--purple2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+  .pick-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:8px; align-items:center; margin:8px 0; }
+  .pick-row input { padding:10px 8px; border:1px solid #cfc2d5; border-radius:8px; font-size:14px; font-family:inherit; }
+  .pick-row input[type=text] { padding:10px 12px; }
+  .btn { display:block; width:100%; background:var(--gold); color:#241032; border:0; border-radius:10px; padding:14px 18px; font-size:17px; font-weight:800; cursor:pointer; font-family:inherit; margin-top:16px; }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+  .result-box { display:none; background:var(--purple); color:#fff; border-radius:16px; padding:26px; margin:26px 0; }
+  .result-box.show { display:block; }
+  .result-box h2 { font-family:Georgia,serif; margin:0 0 8px; color:var(--gold); }
+  .result-box p { color:#e8dceb; margin:6px 0; }
+  form { background:#fff; border:1px solid #e8e0ea; border-radius:14px; padding:22px; display:none; }
+  form.show { display:block; }
+  label { display:block; font-weight:600; font-size:14px; margin:14px 0 6px; }
+  input[type=text], input[type=email] { width:100%; padding:12px 13px; border:1px solid #cfc2d5; border-radius:9px; font-size:16px; font-family:inherit; }
+  .check { display:flex; gap:10px; align-items:flex-start; font-size:13px; font-weight:400; color:var(--muted); margin:18px 0; }
+  .check input { margin-top:3px; width:17px; height:17px; flex:none; }
+  .err { color:#a4262c; font-size:14px; margin-top:12px; display:none; }
+  .fine { color:var(--muted); font-size:12px; margin-top:14px; }
+  .hp { position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  footer { text-align:center; color:var(--muted); font-size:13px; padding:0 18px 40px; }
+  footer a { color:var(--purple2); }
+  @media (max-width:600px){ .offer-row,.offer-head,.pick-row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="/assets/logo-softlife-header.png" alt="The Soft Life System">
+  <a href="/">Back to the app</a>
+</header>
+<div class="wrap">
+  <span class="tag">Free · 30 minutes</span>
+  <h1>The One-Offer Clarity Worksheet</h1>
+  <p class="lede">Find the one offer that replaces the ten you're juggling — and the price that makes you profitable at 15 hours a week.</p>
+  <div class="intro">You don't have a marketing problem. You have an offer problem. Ten services, twelve packages, three price points — and a calendar that owns you. This worksheet gets you there in 30 minutes.</div>
+
+  <div class="step">
+    <h2>Part 1 — The Audit (what you're actually selling)</h2>
+    <p>List every offer you currently have. Include freebies, one-offs, retainers, packages.</p>
+    <div class="offer-head"><span>Offer name</span><span>Price</span><span>Hours/delivery</span><span>Revenue (90d)</span></div>
+    <div id="offers"></div>
+  </div>
+
+  <div class="step">
+    <h2>Part 2 — The One-Offer Filter</h2>
+    <p>Circle the offer that wins on all three: Profit, Joy, Proof.</p>
+    <div class="pick-row" style="font-size:11px;font-weight:700;color:var(--purple2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">
+      <span>Offer name</span><span>Profit (1-5)</span><span>Joy (1-5)</span><span>Proof (1-5)</span>
+    </div>
+    <div id="picks"></div>
+  </div>
+
+  <div class="step">
+    <h2>Part 3 — The Premium Price</h2>
+    <p>What is the single result your best client got? How long did it take? What would that result be worth to them?</p>
+    <label>Single result your best client got</label>
+    <input id="result" type="text" placeholder="e.g. Launched their first product in 30 days" maxlength="200">
+    <label>How long did it take (hours)?</label>
+    <input id="resultHours" type="number" min="0" max="1000" placeholder="e.g. 10" style="width:120px">
+    <label>What would that result be worth to them (money, time, peace of mind)?</label>
+    <input id="resultValue" type="number" min="0" placeholder="e.g. 5000" style="width:160px">
+    <label>Your premium price</label>
+    <input id="premiumPrice" type="number" min="0" placeholder="e.g. 500" style="width:160px">
+  </div>
+
+  <div class="step">
+    <h2>Part 4 — The Kill List</h2>
+    <p>Everything else goes. Write down what you're killing.</p>
+    <textarea id="killList" rows="4" style="width:100%;padding:12px;border:1px solid #cfc2d5;border-radius:8px;font-size:15px;font-family:inherit" placeholder="List the offers you're killing..."></textarea>
+  </div>
+
+  <div class="result-box" id="preview">
+    <h2>Your clarity report is ready</h2>
+    <div class="scoreline" id="previewScore"></div>
+    <p id="previewText"></p>
+    <p style="color:var(--gold);">Add your email below and we'll send your full clarity report.</p>
+  </div>
+
+  <form id="form" novalidate>
+    <h2 style="font-family:Georgia,serif;color:var(--purple);margin:0 0 6px;">Email me my clarity report</h2>
+    <p style="color:var(--muted);font-size:14px;margin:0;">Your private report page stays yours — print it or save it as a PDF.</p>
+    <label for="name">First name</label>
+    <input id="name" name="name" type="text" autocomplete="given-name" placeholder="Your name" maxlength="80">
+    <label for="email">Email address</label>
+    <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="120" required>
+    <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+    <label class="check"><input id="consent" type="checkbox"><span>Yes, email me my clarity report and occasional useful emails from The Soft Life System. I can unsubscribe any time. <a href="/legal/privacy/">Privacy policy</a>.</span></label>
+    <button class="btn" id="send" type="submit">Send my report →</button>
+    <div class="err" id="err"></div>
+    <p class="fine">We save your answers only to create this report. No downloads, no spam.</p>
+  </form>
+</div>
+<footer>The Soft Life System · Gabochie Books · <a href="https://soft.gabochie.com">soft.gabochie.com</a></footer>
+<script>
+const answers = { offers: [], picks: [], result: "", resultHours: 0, resultValue: 0, premiumPrice: 0, killList: "" };
+const offersDiv = document.getElementById("offers");
+for (let i = 0; i < 5; i++) {
+  answers.offers.push({ name: "", price: 0, hours: 0, revenue: 0 });
+  const row = document.createElement("div");
+  row.className = "offer-row";
+  row.innerHTML = `<input type="text" placeholder="Offer ${i+1}" data-idx="${i}" data-field="name">
+    <input type="number" min="0" placeholder="Price" data-idx="${i}" data-field="price">
+    <input type="number" min="0" placeholder="Hours" data-idx="${i}" data-field="hours">
+    <input type="number" min="0" placeholder="Revenue" data-idx="${i}" data-field="revenue">`;
+  row.querySelectorAll("input").forEach(el => el.addEventListener("change", (e) => {
+    const idx = +e.target.dataset.idx; const field = e.target.dataset.field;
+    if (field === "name") answers.offers[idx].name = e.target.value;
+    else answers.offers[idx][field] = +e.target.value || 0;
+    update();
+  }));
+  offersDiv.appendChild(row);
+}
+const picksDiv = document.getElementById("picks");
+for (let i = 0; i < 5; i++) {
+  answers.picks.push({ name: "", profit: 0, joy: 0, proof: 0 });
+  const row = document.createElement("div");
+  row.className = "pick-row";
+  row.innerHTML = `<input type="text" placeholder="Offer ${i+1}" data-idx="${i}" data-field="name">
+    <input type="number" min="1" max="5" placeholder="1-5" data-idx="${i}" data-field="profit">
+    <input type="number" min="1" max="5" placeholder="1-5" data-idx="${i}" data-field="joy">
+    <input type="number" min="1" max="5" placeholder="1-5" data-idx="${i}" data-field="proof">`;
+  row.querySelectorAll("input").forEach(el => el.addEventListener("change", (e) => {
+    const idx = +e.target.dataset.idx; const field = e.target.dataset.field;
+    if (field === "name") answers.picks[idx].name = e.target.value;
+    else answers.picks[idx][field] = +e.target.value || 0;
+    update();
+  }));
+  picksDiv.appendChild(row);
+}
+["result","resultHours","resultValue","premiumPrice"].forEach(id => {
+  document.getElementById(id).addEventListener("change", (e) => {
+    if (id === "result") answers.result = e.target.value;
+    else if (id === "resultHours") answers.resultHours = +e.target.value || 0;
+    else if (id === "resultValue") answers.resultValue = +e.target.value || 0;
+    else if (id === "premiumPrice") answers.premiumPrice = +e.target.value || 0;
+    update();
+  });
+});
+document.getElementById("killList").addEventListener("change", (e) => { answers.killList = e.target.value; });
+function update() {
+  const filled = answers.offers.filter(o => o.name.trim());
+  const rates = filled.map(o => ({ name: o.name, rate: o.hours > 0 ? Math.round(o.price / o.hours * 100) / 100 : 0 }));
+  const best = rates.length ? rates.reduce((a, b) => b.rate > a.rate ? b : a) : null;
+  const totalRev = filled.reduce((s, o) => s + o.revenue, 0);
+  document.getElementById("previewScore").textContent = filled.length + " offers mapped";
+  document.getElementById("previewText").textContent = best
+    ? "Highest effective rate: " + best.name + " at " + best.rate + "/hr. Total 90-day revenue: " + totalRev + "."
+    : "Fill in your offers above to see your clarity report.";
+  if (filled.length > 0) {
+    document.getElementById("preview").classList.add("show");
+    document.getElementById("form").classList.add("show");
+  }
+}
+document.getElementById("form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const err = document.getElementById("err");
+  const btn = document.getElementById("send");
+  err.style.display = "none";
+  const email = document.getElementById("email").value.trim();
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) { err.textContent = "Please enter a valid email address."; err.style.display = "block"; return; }
+  if (!document.getElementById("consent").checked) { err.textContent = "Please tick the consent box so we can email your report."; err.style.display = "block"; return; }
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const res = await fetch("/api/lead/clarity", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: document.getElementById("name").value.trim(),
+        email, consent: document.getElementById("consent").checked,
+        website: document.getElementById("website").value,
+        answers: answers
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+    if (window.slTrack) window.slTrack('generate_lead', { method: 'clarity' });
+    if (data.url) location.href = data.url;
+  } catch (e) {
+    btn.disabled = false; btn.textContent = "Send my report →";
+    err.textContent = e.message; err.style.display = "block";
+  }
+});
+</script>
+</body>
+</html>

@@ -251,6 +251,8 @@ async function handleApi(request, env, url, ctx) {
   // Public: interactive lead magnets. Results are saved, then emailed to the
   // prospect as a private printable link (no attachment/deliverability issues).
   if (path === "/api/lead/scorecard" && request.method === "POST") return scorecardSubmit(request, env);
+  if (path === "/api/lead/audit" && request.method === "POST") return auditSubmit(request, env);
+  if (path === "/api/lead/clarity" && request.method === "POST") return claritySubmit(request, env);
   if (path === "/api/lead/result" && request.method === "GET") return leadResult(request, env);
   // Cron fallback: free plan has no spare cron trigger slots; an external
   // scheduler (cron-job.org) hits this daily with the webhook secret.
@@ -2424,6 +2426,170 @@ async function scorecardSubmit(request, env) {
       .map((d) => d.label).join(" and ") + ". Open your printable report: " + link;
   const emailed = await sendPurchaseEmail(env, email, "Your Soft Life Scorecard is ready 🧭",
     leadEmailHtml(link, result, name, unsubToken, origin), text, "lead_scorecard");
+  return json({ ok: true, token, url: link, emailed });
+}
+
+// ---------- Interactive lead magnet: 15-Hour Workweek Audit ----------
+function auditResult(activities) {
+  const total = activities.reduce((s, a) => s + (Number(a.hours) || 0), 0);
+  const lowValue = activities.filter((a) => a.worth !== "yes").reduce((s, a) => s + (Number(a.hours) || 0), 0);
+  const lowPct = total ? Math.round((lowValue / total) * 100) : 0;
+  const top = [...activities].sort((a, b) => (Number(b.hours) || 0) - (Number(a.hours) || 0))[0] || { name: "", hours: 0 };
+  const filters = activities.map((a, i) => ({ name: a.name, action: a.filter || "keep" }));
+  const eliminated = filters.filter((f) => f.action === "eliminate").length;
+  const automated = filters.filter((f) => f.action === "automate").length;
+  const templated = filters.filter((f) => f.action === "template").length;
+  const delegated = filters.filter((f) => f.action === "delegate").length;
+  const kept = filters.filter((f) => f.action === "keep").length;
+  const reclaimable = activities.filter((a) => a.filter && a.filter !== "keep").reduce((s, a) => s + (Number(a.hours) || 0), 0);
+  let bandLabel, bandText;
+  if (total >= 50) { bandLabel = "The employee, not the founder"; bandText = "You're not running a business — you're running a job with extra steps. Nothing is deletable because everything feels urgent. The fix is upstream: fewer offers, fewer clients, clearer boundaries."; }
+  else if (total >= 35) { bandLabel = "The busy founder"; bandText = "Revenue is real and so is the exhaustion. You have 15-20 hours of real work buried inside 40+ hours of noise. The Transfer Ladder will find them."; }
+  else if (total >= 20) { bandLabel = "Almost there"; bandText = "You're close. A few eliminations and one delegation will get you to 15 hours of real work."; }
+  else { bandLabel = "Already soft"; bandText = "You've already designed your week well. Protect it — most people lose it the moment they scale."; }
+  const insights = [];
+  if (lowPct >= 60) insights.push(lowPct + "% of your week is low-value work. That's not a time problem — it's an offer problem. You're serving too many people with too many things.");
+  if (top.hours >= 15) insights.push("Your biggest time sink is " + top.name + " at " + top.hours + " hours/week. That single task is eating a third of your week.");
+  if (activities.some((a) => a.worth === "no" && a.hours >= 5)) insights.push("You have tasks you rated 'not worth it' that still consume hours. Those are the first to eliminate — no one will notice.");
+  if (kept >= 4) insights.push("You marked " + kept + " activities as 'keep'. Be ruthless — deep work should be 15 hours max. Everything else is noise.");
+  if (insights.length === 0) insights.push("Your week is reasonably well-structured. Focus on the 3 tasks with the highest hours and apply the Transfer Ladder.");
+  const actions = [
+    "Eliminate " + eliminated + " task(s), automate " + automated + ", template " + templated + ", delegate " + delegated + ". That's " + reclaimable + " reclaimable hours.",
+    "Block 3 hours of deep work tomorrow morning. Phone in another room. Treat it like a client appointment with your future self.",
+    "Re-audit in 14 days. If your total hasn't dropped by at least 10 hours, you're not killing enough."
+  ];
+  return {
+    totalHours: total, lowValuePct: lowPct, topSink: top.name, topSinkHours: top.hours,
+    bandLabel, bandText, insights, actions, activities: activities.map((a) => ({ name: a.name, hours: a.hours, worth: a.worth, action: a.filter || "keep" })),
+    breakdown: { eliminated, automated, templated, delegated, kept, reclaimable }
+  };
+}
+
+function auditEmailHtml(link, result, name, unsubToken, origin) {
+  return emailShell(
+    "Your 15-Hour Workweek Audit is ready ⏱",
+    "<p>" + escHtml(name) + ", you mapped your week. Here is your personal audit.</p>"
+    + "<p><b>" + result.totalHours + " hours/week — " + escHtml(result.bandLabel) + ".</b> " + escHtml(result.bandText) + "</p>"
+    + "<p>" + result.lowValuePct + "% of your week is low-value work. Biggest time sink: " + escHtml(result.topSink) + " (" + result.topSinkHours + "h).</p>"
+    + '<p><a href="' + link + '" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;">Open my printable audit →</a></p>'
+    + '<p style="font-size:13px;">Or paste this link into your browser:<br><code>' + link + '</code></p>'
+    + '<p style="font-size:13px;color:#6d5f7a;">The page has a Print / Save as PDF button. This is your private copy — keep the link.</p>'
+    + unsubFooter(unsubToken, origin)
+  );
+}
+
+async function auditSubmit(request, env) {
+  const body = await readJson(request);
+  if (cleanText(body.website, 60)) return json({ ok: true, token: "", url: "" });
+  const email = cleanText(body.email, 120).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: "Enter a valid email address." }, 400);
+  if (body.consent !== true && body.consent !== 1 && body.consent !== "1") return json({ error: "Please tick the consent box so we can email your report." }, 400);
+  const name = cleanText(body.name, 80) || email.split("@")[0];
+  const raw = body.answers;
+  if (!raw || !Array.isArray(raw.activities) || raw.activities.length < 3) return json({ error: "Map at least 3 activities." }, 400);
+  const activities = raw.activities.map((a) => ({
+    name: cleanText(a.name, 80) || "Activity",
+    hours: Math.max(0, Math.min(168, Number(a.hours) || 0)),
+    worth: ["yes", "sort of", "no"].includes(a.worth) ? a.worth : "sort of",
+    filter: ["keep", "eliminate", "automate", "template", "delegate"].includes(a.filter) ? a.filter : "keep"
+  }));
+  const ip = clientIp(request);
+  try {
+    const recent = await env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_lead_submissions WHERE email = ? AND created_at >= datetime('now','-60 seconds')").bind(email).first();
+    if (countValue(recent) > 0) return json({ error: "That report was just created. Check your inbox." }, 429);
+  } catch (exc) { console.error("lead rate-limit check failed", exc); }
+  const result = auditResult(activities);
+  const token = randomHex(16);
+  const unsubToken = randomHex(16);
+  try {
+    await env.DB.prepare(
+      "INSERT INTO softlife_lead_submissions (token, magnet, email, name, answers, result, consent, consent_version, unsub_token, ip) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)"
+    ).bind(token, "audit", email, name, JSON.stringify({ activities }), JSON.stringify(result), CONSENT_VERSION, unsubToken, ip.slice(0, 64)).run();
+  } catch (exc) {
+    console.error("lead submission insert failed", exc);
+    return json({ error: "We couldn't save your result. Please try again." }, 500);
+  }
+  const origin = env.SITE_URL || SITE_URL;
+  const link = origin + "/tools/audit-result.html?t=" + token;
+  const text = name + ", you mapped " + result.totalHours + " hours/week. " + result.lowValuePct + "% is low-value work. Biggest time sink: " + result.topSink + " (" + result.topSinkHours + "h). Open your audit: " + link;
+  const emailed = await sendPurchaseEmail(env, email, "Your 15-Hour Workweek Audit is ready ⏱", auditEmailHtml(link, result, name, unsubToken, origin), text, "lead_audit");
+  return json({ ok: true, token, url: link, emailed });
+}
+
+// ---------- Interactive lead magnet: One-Offer Clarity Worksheet ----------
+function clarityResult(offers, picks, result, resultHours, resultValue, premiumPrice, killList) {
+  const filled = offers.filter((o) => (o.name || "").trim());
+  const rates = filled.map((o) => ({ name: o.name, price: Number(o.price) || 0, hours: Number(o.hours) || 0, revenue: Number(o.revenue) || 0, rate: (Number(o.hours) || 0) > 0 ? Math.round((Number(o.price) / Number(o.hours)) * 100) / 100 : 0 }));
+  const best = rates.length ? rates.reduce((a, b) => (b.rate > a.rate ? b : a)) : null;
+  const totalRev = filled.reduce((s, o) => s + (Number(o.revenue) || 0), 0);
+  const floor = resultValue > 0 ? Math.round(resultValue / 10) : 0;
+  const recommended = best ? best.name : "";
+  let bandLabel, bandText;
+  if (filled.length === 0) { bandLabel = "No offers yet"; bandText = "List your offers above to see your clarity report."; }
+  else if (filled.length === 1) { bandLabel = "One offer — good start"; bandText = "You already have focus. Now price it premium and build the machine that delivers it."; }
+  else if (best && best.rate > 0) { bandLabel = "Your one offer: " + best.name; bandText = "Highest effective rate at " + best.rate + "/hr. Everything else on the kill list is noise."; }
+  else { bandLabel = "Calculate your rates"; bandText = "Add price and hours per delivery so we can find your most profitable offer."; }
+  const insights = [];
+  if (filled.length >= 3) insights.push("You listed " + filled.length + " offers. That's a menu, not a business. Menus don't scale; offers do.");
+  if (rates.some((r) => r.rate > 0 && r.rate < 20)) insights.push("At least one offer earns under 20/hr. That offer is costing you money — kill it or reprice it.");
+  if (best) insights.push("Your most profitable offer is " + best.name + " at " + best.rate + "/hr. That's where your energy should go.");
+  if (totalRev > 0) insights.push("Total 90-day revenue across all offers: " + totalRev + ". If one offer dominates, that's your answer.");
+  if (insights.length === 0) insights.push("Fill in price and hours for each offer so we can calculate your effective hourly rates.");
+  const actions = [
+    "Make " + (recommended || "your best offer") + " your single offer. Remove everything else from your website, bio, and pitch.",
+    "Set your premium price at " + (premiumPrice || floor || "your chosen price") + ". Take the value, divide by 10 — that's your floor.",
+    "When a past client asks for the old thing, say: \"I don't offer that anymore — but here's what I do now, and it's better.\""
+  ];
+  return {
+    offers: rates, recommended, totalRevenue: totalRev, floor, bandLabel, bandText, insights, actions,
+    killList: killList || "List the offers you're killing so you can't quietly revive them.",
+    result: result || "", resultHours: resultHours || 0, resultValue: resultValue || 0, premiumPrice: premiumPrice || 0
+  };
+}
+
+function clarityEmailHtml(link, result, name, unsubToken, origin) {
+  return emailShell(
+    "Your One-Offer Clarity Report is ready 🎯",
+    "<p>" + escHtml(name) + ", you found your one offer. Here is your personal report.</p>"
+    + "<p><b>" + escHtml(result.recommended || "Your one offer") + " — " + escHtml(result.bandLabel) + ".</b> " + escHtml(result.bandText) + "</p>"
+    + "<p>" + (result.offers || []).length + " offers mapped. Total 90-day revenue: " + (result.totalRevenue || 0) + ".</p>"
+    + '<p><a href="' + link + '" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:600;">Open my printable report →</a></p>'
+    + '<p style="font-size:13px;">Or paste this link into your browser:<br><code>' + link + '</code></p>'
+    + '<p style="font-size:13px;color:#6d5f7a;">The page has a Print / Save as PDF button. This is your private copy — keep the link.</p>'
+    + unsubFooter(unsubToken, origin)
+  );
+}
+
+async function claritySubmit(request, env) {
+  const body = await readJson(request);
+  if (cleanText(body.website, 60)) return json({ ok: true, token: "", url: "" });
+  const email = cleanText(body.email, 120).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: "Enter a valid email address." }, 400);
+  if (body.consent !== true && body.consent !== 1 && body.consent !== "1") return json({ error: "Please tick the consent box so we can email your report." }, 400);
+  const name = cleanText(body.name, 80) || email.split("@")[0];
+  const a = body.answers || {};
+  const offers = Array.isArray(a.offers) ? a.offers : [];
+  const picks = Array.isArray(a.picks) ? a.picks : [];
+  const ip = clientIp(request);
+  try {
+    const recent = await env.DB.prepare("SELECT COUNT(*) AS c FROM softlife_lead_submissions WHERE email = ? AND created_at >= datetime('now','-60 seconds')").bind(email).first();
+    if (countValue(recent) > 0) return json({ error: "That report was just created. Check your inbox." }, 429);
+  } catch (exc) { console.error("lead rate-limit check failed", exc); }
+  const result = clarityResult(offers, picks, a.result || "", Number(a.resultHours) || 0, Number(a.resultValue) || 0, Number(a.premiumPrice) || 0, cleanText(a.killList, 2000));
+  const token = randomHex(16);
+  const unsubToken = randomHex(16);
+  try {
+    await env.DB.prepare(
+      "INSERT INTO softlife_lead_submissions (token, magnet, email, name, answers, result, consent, consent_version, unsub_token, ip) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)"
+    ).bind(token, "clarity", email, name, JSON.stringify(a), JSON.stringify(result), CONSENT_VERSION, unsubToken, ip.slice(0, 64)).run();
+  } catch (exc) {
+    console.error("lead submission insert failed", exc);
+    return json({ error: "We couldn't save your result. Please try again." }, 500);
+  }
+  const origin = env.SITE_URL || SITE_URL;
+  const link = origin + "/tools/clarity-result.html?t=" + token;
+  const text = name + ", your one offer: " + (result.recommended || "your best offer") + ". " + (result.offers || []).length + " offers mapped. Open your clarity report: " + link;
+  const emailed = await sendPurchaseEmail(env, email, "Your One-Offer Clarity Report is ready 🎯", clarityEmailHtml(link, result, name, unsubToken, origin), text, "lead_clarity");
   return json({ ok: true, token, url: link, emailed });
 }
 
