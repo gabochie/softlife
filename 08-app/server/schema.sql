@@ -271,3 +271,13 @@ CREATE TABLE IF NOT EXISTS lead_submissions (
 CREATE INDEX IF NOT EXISTS idx_lead_token ON lead_submissions(token);
 CREATE INDEX IF NOT EXISTS idx_lead_email_time ON lead_submissions(email, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_unsub ON lead_submissions(unsub_token);
+
+-- Gamification badges (parity with deploy migration 012).
+CREATE TABLE IF NOT EXISTS badges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  badge_key TEXT NOT NULL,
+  earned_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, badge_key)
+);
+CREATE INDEX IF NOT EXISTS idx_badges_user ON badges(user_id);

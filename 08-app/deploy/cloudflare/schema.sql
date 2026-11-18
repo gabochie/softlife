@@ -300,3 +300,13 @@ CREATE INDEX IF NOT EXISTS idx_softlife_lead_email_time ON softlife_lead_submiss
 CREATE INDEX IF NOT EXISTS idx_softlife_lead_ip_time ON softlife_lead_submissions(ip, created_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_softlife_lead_unsub ON softlife_lead_submissions(unsub_token);
 
+-- Gamification badges (see migration 012).
+CREATE TABLE IF NOT EXISTS softlife_badges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES softlife_users(id),
+  badge_key TEXT NOT NULL,
+  earned_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, badge_key)
+);
+CREATE INDEX IF NOT EXISTS idx_softlife_badges_user ON softlife_badges(user_id);
+

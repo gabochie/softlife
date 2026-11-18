@@ -32,6 +32,8 @@ const API = {
   claimPreview(body) { return this.request('/claim/preview', { method: 'POST', body }); },
   claimComplete(body) { return this.request('/claim/complete', { method: 'POST', body }); },
   tasks() { return this.request('/tasks'); },
+  badges() { return this.request('/badges'); },
+  streak() { return this.request('/streak'); },
   addTask(body) { return this.request('/tasks', { method: 'POST', body }); },
   toggleTask(id) { return this.request('/tasks/toggle', { method: 'POST', body: { id } }); },
   affiliate() { return this.request('/affiliate'); },

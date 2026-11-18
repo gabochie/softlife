@@ -133,6 +133,69 @@ export default {
   }
 };
 
+// ---------- Gamification: badges + streaks ----------
+const BADGE_DEFS = [
+  { key: "first_step", label: "First Step", desc: "Completed your first task.", icon: "🌱" },
+  { key: "week1_done", label: "Week 1 Clear", desc: "Completed all Week 1 tasks.", icon: "✅" },
+  { key: "halfway", label: "Halfway There", desc: "Completed 50% of the 90-day plan.", icon: "🏁" },
+  { key: "launch_complete", label: "Launch Complete", desc: "Completed every task in the 90-day plan.", icon: "🎉" },
+  { key: "custom_creator", label: "Own It", desc: "Added your first custom task.", icon: "✏️" },
+  { key: "streak_3", label: "3-Day Streak", desc: "Completed tasks 3 days in a row.", icon: "🔥" },
+  { key: "streak_7", label: "Week Warrior", desc: "Completed tasks 7 days in a row.", icon: "⚡" },
+];
+
+async function awardBadge(env, userId, key) {
+  try {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO softlife_badges (user_id, badge_key) VALUES (?, ?)"
+    ).bind(userId, key).run();
+  } catch (exc) {
+    console.error("badge award failed", exc);
+  }
+}
+
+async function checkBadges(env, userId) {
+  const tasks = await env.DB.prepare(
+    "SELECT week, kind, done FROM softlife_tasks WHERE user_id = ?"
+  ).bind(userId).all();
+  const rows = tasks.results || [];
+  const total = rows.length;
+  const done = rows.filter((t) => t.done === 1).length;
+  const pct = total > 0 ? done / total : 0;
+  const week1Tasks = rows.filter((t) => t.week === 1);
+  const week1Done = week1Tasks.length > 0 && week1Tasks.every((t) => t.done === 1);
+  const hasCustom = rows.some((t) => t.kind === "custom");
+
+  if (done >= 1) await awardBadge(env, userId, "first_step");
+  if (week1Done) await awardBadge(env, userId, "week1_done");
+  if (pct >= 0.5) await awardBadge(env, userId, "halfway");
+  if (total > 0 && done === total) await awardBadge(env, userId, "launch_complete");
+  if (hasCustom) await awardBadge(env, userId, "custom_creator");
+
+  // Streaks: consecutive days with at least one task_completed event.
+  const ev = await env.DB.prepare(
+    "SELECT DISTINCT date(created_at) AS d FROM softlife_events WHERE user_id = ? AND event = 'task_completed' ORDER BY d DESC"
+  ).bind(userId).all();
+  const dates = (ev.results || []).map((r) => r.d).sort().reverse();
+  let streak = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  let cursor = today;
+  for (const d of dates) {
+    if (d === cursor) {
+      streak++;
+      const prev = new Date(cursor);
+      prev.setDate(prev.getDate() - 1);
+      cursor = prev.toISOString().slice(0, 10);
+    } else if (d < cursor) {
+      break;
+    }
+  }
+  if (streak >= 3) await awardBadge(env, userId, "streak_3");
+  if (streak >= 7) await awardBadge(env, userId, "streak_7");
+
+  return { streak };
+}
+
 async function handleApi(request, env, url, ctx) {
   const path = url.pathname.replace(/\/+$/, "");
 
@@ -224,7 +287,11 @@ async function handleApi(request, env, url, ctx) {
     const rows = await env.DB.prepare(
       "SELECT id, title, detail, week, kind, done FROM softlife_tasks WHERE user_id = ? ORDER BY week, id"
     ).bind(user.id).all();
-    return json({ tasks: rows.results || [] });
+    const { streak } = await checkBadges(env, user.id);
+    const badgeRows = await env.DB.prepare(
+      "SELECT badge_key, earned_at FROM softlife_badges WHERE user_id = ? ORDER BY earned_at"
+    ).bind(user.id).all();
+    return json({ tasks: rows.results || [], streak, badges: badgeRows.results || [] });
   }
 
   if (path === "/api/tasks" && request.method === "POST") {
@@ -251,7 +318,35 @@ async function handleApi(request, env, url, ctx) {
     ).bind(id, user.id).first();
     if (!row) return json({ error: "not found" }, 404);
     if (row.done === 1) await logEvent(env, user.id, "task_completed", "/tasks", { task_id: row.id, kind: row.kind });
-    return json({ task: row });
+    const { streak } = await checkBadges(env, user.id);
+    const newBadges = await env.DB.prepare(
+      "SELECT badge_key FROM softlife_badges WHERE user_id = ? ORDER BY earned_at DESC"
+    ).bind(user.id).all();
+    return json({ task: row, streak, badges: (newBadges.results || []).map((b) => b.badge_key) });
+  }
+
+  if (path === "/api/badges" && request.method === "GET") {
+    await checkBadges(env, user.id);
+    const rows = await env.DB.prepare(
+      "SELECT badge_key, earned_at FROM softlife_badges WHERE user_id = ? ORDER BY earned_at"
+    ).bind(user.id).all();
+    return json({ badges: rows.results || [], defs: BADGE_DEFS });
+  }
+
+  if (path === "/api/streak" && request.method === "GET") {
+    const { streak } = await checkBadges(env, user.id);
+    const ev = await env.DB.prepare(
+      "SELECT DISTINCT date(created_at) AS d FROM softlife_events WHERE user_id = ? AND event = 'task_completed' ORDER BY d DESC"
+    ).bind(user.id).all();
+    const dates = (ev.results || []).map((r) => r.d);
+    let longest = 0, cur = 0, prev = null;
+    for (const d of dates.sort()) {
+      if (prev && new Date(d) - new Date(prev) === 86400000) cur++;
+      else cur = 1;
+      if (cur > longest) longest = cur;
+      prev = d;
+    }
+    return json({ current: streak, longest, total_days: dates.length });
   }
 
   if (path === "/api/affiliate" && request.method === "GET") {

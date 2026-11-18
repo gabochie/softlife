@@ -1882,20 +1882,71 @@ const App = {
         <div><h1 class="hi">Your 90-Day Launch</h1><p class="note">From the book, preloaded as tasks. Add your own below.</p></div>
         <div class="progress mini"><span id="tprog" style="width:0%"></span></div>
       </div>
+      <div id="streakBar" class="streak-bar"><p class="note">Loading streak…</p></div>
+      <div id="badgeGrid" class="badge-grid"><p class="note">Loading badges…</p></div>
+      <div id="weekProgress" class="week-progress"></div>
       <div id="taskList" class="task-list"><p class="note">Loading…</p></div>
       <form id="addTask" class="add-task">
         <input name="title" placeholder="Add your own task (e.g. Draft premium offer v2)" required>
         <select name="week" aria-label="Week"><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option><option value="6">Month 2</option><option value="9">Month 3</option></select>
         <button class="btn dark">Add</button>
       </form>
+      <div id="celebration" class="celebration" hidden></div>
     </div>`;
-    const draw = (tasks) => {
+    const draw = (tasks, streak, badges) => {
       const groups = {};
       tasks.forEach((t) => { (groups[t.week] = groups[t.week] || []).push(t); });
       const done = tasks.filter((t) => t.done).length;
       const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
       document.getElementById('tprog').style.width = pct + '%';
-      document.getElementById('taskList').innerHTML = Object.keys(groups).sort((a, b) => a - b).map((w) => `
+
+      // Streak bar
+      const streakEl = document.getElementById('streakBar');
+      const cur = streak?.current || 0;
+      const longest = streak?.longest || 0;
+      streakEl.innerHTML = `<div class="streak-info">
+        <span class="streak-fire">${cur >= 7 ? '⚡' : cur >= 3 ? '🔥' : '✨'}</span>
+        <b>${cur}-day streak</b>
+        <small>Longest: ${longest} days · ${tasks.length - done} tasks left</small>
+      </div>`;
+
+      // Badge grid
+      const earnedKeys = new Set((badges || []).map((b) => b.badge_key));
+      const badgeDefs = (badges && badges.length && badges[0]?.label) ? badges : null;
+      // Use client-side badge defs (mirrors server)
+      const defs = [
+        { key: 'first_step', label: 'First Step', icon: '🌱', desc: 'Complete your first task' },
+        { key: 'week1_done', label: 'Week 1 Clear', icon: '✅', desc: 'Complete all Week 1 tasks' },
+        { key: 'halfway', label: 'Halfway There', icon: '🏁', desc: 'Complete 50% of the plan' },
+        { key: 'launch_complete', label: 'Launch Complete', icon: '🎉', desc: 'Complete every task' },
+        { key: 'custom_creator', label: 'Own It', icon: '✏️', desc: 'Add your first custom task' },
+        { key: 'streak_3', label: '3-Day Streak', icon: '🔥', desc: '3 days in a row' },
+        { key: 'streak_7', label: 'Week Warrior', icon: '⚡', desc: '7 days in a row' },
+      ];
+      document.getElementById('badgeGrid').innerHTML = `<div class="badges">
+        ${defs.map((d) => {
+          const earned = earnedKeys.has(d.key);
+          return `<div class="badge ${earned ? 'earned' : 'locked'}" title="${esc(d.desc)}">
+            <span class="badge-icon">${d.icon}</span>
+            <span class="badge-label">${esc(d.label)}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+      // Per-week progress
+      const weeks = Object.keys(groups).sort((a, b) => a - b);
+      document.getElementById('weekProgress').innerHTML = weeks.map((w) => {
+        const wt = groups[w];
+        const wd = wt.filter((t) => t.done).length;
+        const wp = wt.length ? Math.round(wd / wt.length * 100) : 0;
+        return `<div class="week-prog">
+          <div class="week-prog-head"><span>Week ${w}</span><span>${wd}/${wt.length}</span></div>
+          <div class="progress mini"><span style="width:${wp}%"></span></div>
+        </div>`;
+      }).join('');
+
+      // Task list
+      document.getElementById('taskList').innerHTML = weeks.map((w) => `
         <div class="week-block">
           <div class="week-label">Week ${w}</div>
           ${groups[w].map((t) => `
@@ -1911,8 +1962,31 @@ const App = {
           try { await API.toggleTask(id); this.route(); } catch (e) { alert(e.message); }
         });
       });
+
+      // Celebration when all done
+      const cel = document.getElementById('celebration');
+      if (pct === 100) {
+        cel.hidden = false;
+        cel.innerHTML = `<div class="celebration-inner">
+          <div class="celebration-confetti">🎉</div>
+          <h2>Launch complete!</h2>
+          <p>Every step checked — your business architecture is rebuilt. Time to scale, softly.</p>
+        </div>`;
+        // Fire confetti if available
+        if (window.confetti) {
+          try { window.confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }); } catch (e) { /* ignore */ }
+        }
+      } else {
+        cel.hidden = true;
+        cel.innerHTML = '';
+      }
     };
-    try { draw((await API.tasks()).tasks); } catch (e) { document.getElementById('taskList').innerHTML = `<p class="note">${esc(e.message)}</p>`; }
+    try {
+      const [taskRes, streakRes, badgeRes] = await Promise.all([
+        API.tasks(), API.streak().catch(() => ({ current: 0, longest: 0 })), API.badges().catch(() => ({ badges: [] }))
+      ]);
+      draw(taskRes.tasks || [], streakRes, badgeRes);
+    } catch (e) { document.getElementById('taskList').innerHTML = `<p class="note">${esc(e.message)}</p>`; }
     document.getElementById('addTask').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = e.target;
