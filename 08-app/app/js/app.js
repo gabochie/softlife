@@ -381,6 +381,7 @@ const App = {
         }
         const { token, user } = isSignup ? await API.signup(body) : await API.signin(body);
         Store.token(token); Store.user(user);
+        if (isSignup && window.slTrack) window.slTrack('sign_up', { method: 'email' });
         location.hash = isSignup ? '#/onboarding' : '#/dashboard';
       } catch (err) {
         btn.disabled = false;
@@ -529,6 +530,14 @@ const App = {
           return;
         }
         Store.token(res.token); Store.user(res.user);
+        if (window.slTrack) {
+          window.slTrack('purchase', {
+            currency: preview.currency || 'USD',
+            value: preview.amount || 19.99,
+            transaction_id: preview.order_id || ''
+          });
+          window.slTrack('claim_redeemed', { tier: preview.tier || 'complete' });
+        }
         location.hash = '#/onboarding';
       } catch (err) {
         btn.disabled = false; btn.textContent = 'Unlock my system →';

@@ -621,7 +621,16 @@ async function claimPreview(request, env) {
   if (token) {
     const claim = await validClaim(env, token);
     if (!claim) return json({ error: "This access link is invalid, already used, or expired." }, 404);
-    return json({ email: claim.email, tier: claim.tier });
+    const purchase = await env.DB.prepare(
+      "SELECT tier, amount, currency FROM softlife_purchases WHERE lower(email) = ? AND order_id = ? LIMIT 1"
+    ).bind(claim.email.toLowerCase(), claim.order_id).first();
+    return json({
+      email: claim.email,
+      tier: claim.tier,
+      order_id: claim.order_id,
+      amount: purchase ? (purchase.amount || 19.99) : 19.99,
+      currency: purchase ? (purchase.currency || "USD") : "USD"
+    });
   }
   // Manual verify: buyer enters the email they paid with and their order ID
   // (shown on the Selar/Paystack receipt). Both must match a recorded purchase.
@@ -635,7 +644,7 @@ async function claimPreview(request, env) {
   ).bind(email, orderId).first();
   if (claimed) return json({ error: "This purchase is already unlocked. Please sign in instead." }, 400);
   const purchase = await env.DB.prepare(
-    "SELECT tier FROM softlife_purchases WHERE lower(email) = ? AND order_id = ? LIMIT 1"
+    "SELECT tier, amount, currency FROM softlife_purchases WHERE lower(email) = ? AND order_id = ? LIMIT 1"
   ).bind(email, orderId).first();
   if (!purchase) {
     await logSecurity(env, "claim_manual_miss", email, clientIp(request), `order_id=${orderId}`);
@@ -654,7 +663,14 @@ async function claimPreview(request, env) {
     claim = { token: newToken };
   }
   await logSecurity(env, "claim_manual_verified", email, clientIp(request), `order_id=${orderId}`);
-  return json({ email, tier: purchase.tier, token: claim.token });
+  return json({
+    email,
+    tier: purchase.tier,
+    token: claim.token,
+    order_id: orderId,
+    amount: purchase.amount || 19.99,
+    currency: purchase.currency || "USD"
+  });
 }
 
 async function claimComplete(request, env) {

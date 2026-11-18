@@ -187,6 +187,7 @@ document.getElementById("form").addEventListener("submit", async (ev) => {
     });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+    if (window.slTrack) window.slTrack('generate_lead', { method: 'scorecard', lead_source: 'soft_life_scorecard' });
     if (data.url) location.href = data.url;
     else { btn.disabled = false; btn.textContent = "Send my report →"; err.textContent = "Done — check your inbox."; err.style.display = "block"; }
   } catch (e) {
