@@ -77,7 +77,7 @@ const JSON_HEADERS = {
 const LAUNCH_TASKS = [
   [1, "Complete the Hustle Hangover Checklist", "Chapter 1 — face where your time actually goes."],
   [1, "Complete the Four Audits", "Chapter 3 — Time, Money, Energy, Joy."],
-  [1, "Calculate your Soft Life Scorecard", "Chapter 3 — score all eight dimensions."],
+  [1, "Calculate your Soft Life Scorecard", "Chapter 3 — score all eight dimensions. Free tool: /tools/scorecard.html"],
   [1, "Write your one-sentence business", "Chapter 4 — I help [audience] achieve [outcome] through [mechanism]."],
   [1, "Choose one audience, one offer, one outcome", "Chapter 4 — focus beats variety."],
   [2, "Redesign your offer using the Premium Offer Formula", "Chapter 5 — package your genius into premium."],

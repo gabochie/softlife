@@ -1695,6 +1695,11 @@ const App = {
       <div class="grid3">
         <a class="card link" href="#/tasks"><span class="tag">📋 Next up</span><h3>Work your tasks</h3><p>Your 90-day launch plan, one checkmark at a time.</p></a>
         <a class="card link" href="#/listen"><span class="tag">🎧 Keep learning</span><h3>Listen to the system</h3><p>Play the introduction free — members unlock all 15 chapters.</p></a>
+        <a class="card link" href="/tools/scorecard.html"><span class="tag">🧭 Free tool</span><h3>Score your life</h3><p>8 dimensions, 5 minutes — find the two quietly running everything.</p></a>
+      </div>
+      <div class="grid3" style="margin-top:12px">
+        <a class="card link" href="/tools/audit.html"><span class="tag">⏱ Free tool</span><h3>Audit your week</h3><p>Find the 12 hours you're wasting and the 3 tasks to kill.</p></a>
+        <a class="card link" href="/tools/clarity.html"><span class="tag">🎯 Free tool</span><h3>Find your one offer</h3><p>Replace the ten you're juggling with one premium offer.</p></a>
         <a class="card link" href="#/affiliate"><span class="tag">💸 Earn</span><h3>Share your link</h3><p>30% commission on referred Complete bundle sales.</p></a>
       </div>`;
     try {
@@ -1952,7 +1957,7 @@ const App = {
           ${groups[w].map((t) => `
             <div class="task ${t.done ? 'done' : ''} ${t.kind === 'custom' ? 'custom' : ''}" data-id="${t.id}">
               <button class="chk" aria-label="toggle">${t.done ? '✓' : ''}</button>
-              <div><b>${esc(t.title)}</b>${t.detail ? `<small>${esc(t.detail)}</small>` : ''}</div>
+              <div><b>${esc(t.title)}</b>${t.detail ? `<small>${esc(t.detail).replace(/(\/tools\/[a-z-]+\.html)/g, '<a href="$1" style="color:#5d2189;text-decoration:underline">Open tool →</a>')}</small>` : ''}</div>
               ${t.kind === 'custom' ? '<span class="c-tag">yours</span>' : ''}
             </div>`).join('')}
         </div>`).join('');
