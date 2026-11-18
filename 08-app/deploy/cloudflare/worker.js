@@ -628,7 +628,7 @@ async function claimPreview(request, env) {
       email: claim.email,
       tier: claim.tier,
       order_id: claim.order_id,
-      amount: purchase ? (purchase.amount || 19.99) : 19.99,
+      amount: purchase ? (purchase.amount ?? 19.99) : 19.99,
       currency: purchase ? (purchase.currency || "USD") : "USD"
     });
   }
@@ -668,7 +668,7 @@ async function claimPreview(request, env) {
     tier: purchase.tier,
     token: claim.token,
     order_id: orderId,
-    amount: purchase.amount || 19.99,
+    amount: purchase.amount ?? 19.99,
     currency: purchase.currency || "USD"
   });
 }
