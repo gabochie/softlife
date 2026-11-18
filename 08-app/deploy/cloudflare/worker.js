@@ -124,7 +124,11 @@ export default {
     headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     if (url.pathname.startsWith("/assets/") || /\.(png|jpe?g|webp|svg|ico|mp3|woff2?|ttf)$/i.test(url.pathname)) {
       headers.set("Cache-Control", "public, max-age=604800");
-    } else if (/\.(css|js|json|xml|txt)$/i.test(url.pathname)) {
+    } else if (/\.(css|js)$/i.test(url.pathname)) {
+      // Code must revalidate on every load: a deploy is visible immediately,
+      // while the service worker still serves cached code when offline.
+      headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+    } else if (/\.(json|xml|txt)$/i.test(url.pathname)) {
       headers.set("Cache-Control", "public, max-age=3600");
     } else {
       headers.set("Cache-Control", "public, max-age=0, must-revalidate");
