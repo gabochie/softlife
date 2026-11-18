@@ -212,34 +212,35 @@ const App = {
 
   publicTabbar() {
     const view = this.view || '/';
-    const links = [
-      ['/', 'Home', view === '/' || view === '/home'],
-      ['/products/', 'Products', view === '/products'],
-      ['/blog/', 'Blog', view === '/blog'],
-      ['/contact/', 'Contact', view === '/contact'],
-      ['/#/signup', 'Start', ['/signup', '/signin', '/checkout', '/onboarding'].includes(view)]
-    ];
-    return `<nav class="tabbar public-tabbar" aria-label="Quick navigation">
+    const def = window.SL_NAV && window.SL_NAV.surfaces && window.SL_NAV.surfaces.public_bottom;
+    const items = def ? def.items : [];
+    const isActive = (href) => {
+      if (href === '/') return view === '/' || view === '/home';
+      if (href === '/#/signup') return ['/signup', '/signin', '/checkout', '/onboarding'].includes(view);
+      return view === href.replace(/\/$/, '') || view === href;
+    };
+    return `<nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
       <div class="wrap tabs">
-        ${links.map(([href, label, active]) =>
-          `<a href="${href}"${active ? ' class="active" aria-current="page"' : ''}>${label}</a>`).join('')}
+        ${items.map(({ label, href }) =>
+          `<a href="${href}" data-sl-item="${label}"${isActive(href) ? ' class="active" aria-current="page"' : ''}>${label}</a>`).join('')}
       </div>
     </nav>`;
   },
 
   chrome(content, opts = {}) {
     const s = Store.session();
-    const cta = s.token
-      ? `<a class="top-cta" href="#/dashboard">Open app</a>`
-      : `<a class="top-cta" href="#/signup">Start free</a>`;
-    const nav = s.token
-      ? `<a href="#/dashboard">Dashboard</a><a href="#/tasks">Tasks</a><a href="#/listen">Listen</a><a href="#/affiliate">Affiliate</a><a href="/products/">Products</a><a href="/blog/">Blog</a><a href="#/account">Account</a>`
-      : `<a href="#/">Home</a><a href="/products/">Products</a><a href="/consultation/">Consultation</a><a href="/blog/">Blog</a><a href="/contact/">Contact</a><a href="#/signin">Sign in</a>`;
+    const authed = !!s.token;
+    const def = window.SL_NAV && window.SL_NAV.surfaces && window.SL_NAV.surfaces.web_header;
+    const visible = (i) => !i.when || (i.when === 'guest' ? !authed : authed);
+    const items = ((def && def.items) || []).filter(visible);
+    const ctaDef = (authed && def && def.ctaAuth) ? def.ctaAuth : (def && def.cta);
+    const nav = items.map((i) => `<a href="${i.href}" data-sl-item="${i.label}">${i.label}</a>`).join('');
+    const cta = ctaDef ? `<a class="top-cta" href="${ctaDef.href}" data-sl-item="${ctaDef.label}">${ctaDef.label}</a>` : '';
     return `
       <header class="topbar">
         <div class="wrap bar">
           <a class="logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
-          <div class="bar-actions"><nav>${nav}</nav>${cta}</div>
+          <div class="bar-actions"><nav data-sl-surface="web_header">${nav}${cta}</nav></div>
         </div>
       </header>
       ${opts.member ? '' : this.publicTabbar()}
@@ -699,32 +700,25 @@ const App = {
   async viewAdmin($app) {
     const ic = this.icons;
     const role = Store.adminRole() || 'superadmin';
-    const sections = [
-      ['overview', 'Overview', ic.grid],
-      ['analytics', 'Analytics', ic.chart],
-      ['members', 'Members', ic.members],
-      ['audience', 'Audience', ic.audience],
-      ['purchases', 'Purchases', ic.purchases],
-      ['referrals', 'Referrals', ic.share]
-    ];
-    if (role === 'superadmin') sections.push(['team', 'Team', ic.members]);
-    if (role === 'superadmin' || role === 'sales') sections.push(['webhooks', 'Webhooks', ic.purchases]);
-    if (role === 'superadmin') sections.push(['security', 'Security', ic.shield]);
+    const adminDef = window.SL_NAV && window.SL_NAV.surfaces && window.SL_NAV.surfaces.admin_bottom;
+    const sections = (adminDef ? adminDef.items : [])
+      .filter((i) => !i.roles || i.roles.includes(role))
+      .map((i) => [i.id, i.label, ic[i.icon]]);
     const navButtons = sections.map(([id, label, icon], i) =>
-      `<button type="button" class="side-link${i === 0 ? ' active' : ''}" data-target="${id}">${icon}<span>${label}</span></button>`).join('');
+      `<button type="button" class="side-link${i === 0 ? ' active' : ''}" data-target="${id}" data-sl-item="${label}">${icon}<span>${label}</span></button>`).join('');
     const roleLabel = { superadmin: 'Super-admin', sales: 'Sales', support: 'Support', content: 'Content' }[role] || role;
     const initials = role === 'superadmin' ? 'SA' : role.slice(0, 2).toUpperCase();
     $app.innerHTML = `
       <div class="shell">
         <aside class="sidebar">
           <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
-          <nav class="side-nav" aria-label="Admin sections">${navButtons}</nav>
+          <nav class="side-nav" aria-label="Admin sections" data-sl-surface="admin_side">${navButtons}</nav>
           <a class="side-user ${role === 'superadmin' ? 'admin-user' : ''}" href="#/dashboard" aria-label="Back to the member app">
             <span class="dash-avatar sm sa">${initials}</span>
             <span class="side-user-meta"><b>${roleLabel}</b><small>Back to member app →</small></span>
           </a>
         </aside>
-        <nav class="m-tabbar" aria-label="Admin sections">${navButtons}</nav>
+        <nav class="m-tabbar" aria-label="Admin sections" data-sl-surface="admin_bottom">${navButtons}</nav>
         <main class="member shell-main admin-main">
           <header class="admin-head">
             <div>
@@ -1616,16 +1610,11 @@ const App = {
 
   renderShell(path, me, params) {
     const ic = this.icons;
-    const nav = [
-      ['#/dashboard', 'Dashboard', ic.home],
-      ['#/tasks', 'Tasks', ic.tasks],
-      ['#/listen', 'Listen', ic.listen],
-      ['#/affiliate', 'Affiliate', ic.affiliate],
-      ['#/account', 'Account', ic.account]
-    ];
+    const memberDef = window.SL_NAV && window.SL_NAV.surfaces && window.SL_NAV.surfaces.member_bottom;
+    const nav = (memberDef ? memberDef.items : []).map((i) => [i.href, i.label, ic[i.icon]]);
     const active = (p) => (path === p.slice(1)) ? 'active' : '';
     const links = nav.map(([href, label, icon]) =>
-      `<a class="${active(href)}" href="${href}"${active(href) ? ' aria-current="page"' : ''}>${icon}<span>${label}</span></a>`).join('');
+      `<a class="${active(href)}" href="${href}" data-sl-item="${label}"${active(href) ? ' aria-current="page"' : ''}>${icon}<span>${label}</span></a>`).join('');
     const initials = esc((me.name || '?').trim().split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase() || '?');
     const tier = me.tier === 'free' ? 'Free plan' : `${esc(String(me.tier).toUpperCase())} plan`;
     const $app = document.getElementById('app');
@@ -1633,13 +1622,13 @@ const App = {
       <div class="shell">
         <aside class="sidebar">
           <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
-          <nav class="side-nav" aria-label="Member navigation">${links}</nav>
+          <nav class="side-nav" aria-label="Member navigation" data-sl-surface="member_side">${links}</nav>
           <a class="side-user" href="#/account" aria-label="Your account">
             <span class="dash-avatar sm">${initials}</span>
             <span class="side-user-meta"><b>${esc(me.name)}</b><small>${tier}</small></span>
           </a>
         </aside>
-        <nav class="m-tabbar" aria-label="Member navigation">${links}</nav>
+        <nav class="m-tabbar" aria-label="Member navigation" data-sl-surface="member_bottom">${links}</nav>
         <main id="member" class="member shell-main"></main>
       </div>`;
     if (path === '/dashboard') this.viewDashboard(me);
