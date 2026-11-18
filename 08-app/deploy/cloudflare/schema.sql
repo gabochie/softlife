@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS softlife_affiliate_earnings (
   currency TEXT,
   rate REAL NOT NULL DEFAULT 0.30,
   status TEXT NOT NULL DEFAULT 'pending',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_softlife_purchases_refcode ON softlife_purchases(ref_code);
 CREATE INDEX IF NOT EXISTS idx_softlife_affearn_code ON softlife_affiliate_earnings(ref_code);

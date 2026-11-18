@@ -21,7 +21,8 @@ const ADMIN_CAPS = {
   team: new Set(["superadmin"]),
   webhooks: new Set(["superadmin", "sales"]),
   security: new Set(["superadmin"]),
-  email: new Set(["superadmin", "sales"])
+  email: new Set(["superadmin", "sales"]),
+  affiliate_payout: new Set(["superadmin"])
 };
 // Blog registry mirrors tools/build_blog.py POSTS (slug -> title).
 const BLOG_POSTS = [
@@ -1138,6 +1139,7 @@ function capForRoute(path) {
   if (path === "/api/admin/overview") return "overview";
   if (path === "/api/admin/users") return "users";
   if (path === "/api/admin/referrals") return "referrals";
+  if (path === "/api/admin/affiliate/payout") return "affiliate_payout";
   if (path.startsWith("/api/admin/email")) return "email";
   if (path === "/api/admin/purchases") return "purchases";
   if (path === "/api/admin/onboarding") return "onboarding";
@@ -1393,12 +1395,30 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
          SUM(CASE WHEN r.status = 'clicked' THEN 1 ELSE 0 END) AS clicks,
          SUM(CASE WHEN r.status IN ('signed_up','purchased') THEN 1 ELSE 0 END) AS signups,
          (SELECT COUNT(*) FROM softlife_purchases p WHERE p.ref_code = r.ref_code) AS purchases,
-         (SELECT COALESCE(SUM(e.amount), 0) FROM softlife_affiliate_earnings e WHERE e.ref_code = r.ref_code) AS earnings
+         (SELECT COALESCE(SUM(e.amount), 0) FROM softlife_affiliate_earnings e WHERE e.ref_code = r.ref_code) AS earnings,
+          (SELECT COALESCE(SUM(e.amount), 0) FROM softlife_affiliate_earnings e WHERE e.ref_code = r.ref_code AND e.status = 'pending') AS pending_earnings
        FROM softlife_referrals r
        LEFT JOIN softlife_users u ON u.ref_code = r.ref_code
        GROUP BY r.ref_code ORDER BY earnings DESC, clicks DESC LIMIT 50`
     ).all();
     return json({ referrals: rows.results || [], stats: stats.results || [] });
+  }
+
+  // Admin: mark all pending affiliate earnings for a ref_code as paid.
+  if (path === "/api/admin/affiliate/payout" && request.method === "POST") {
+    const body = await readJson(request);
+    const refCode = String(body.ref_code || "").trim().toUpperCase().slice(0, 24);
+    if (!refCode) return json({ error: "ref_code required" }, 400);
+    const pending = await env.DB.prepare(
+      "SELECT COALESCE(SUM(amount), 0) AS s, COUNT(*) AS c FROM softlife_affiliate_earnings WHERE ref_code = ? AND status = 'pending'"
+    ).bind(refCode).first();
+    const total = Math.round(Number(pending.s) * 100) / 100;
+    const count = pending ? pending.c : 0;
+    if (count === 0) return json({ ok: true, paid: 0, total: 0, message: "No pending earnings." });
+    await env.DB.prepare(
+      "UPDATE softlife_affiliate_earnings SET status = 'paid', paid_at = datetime('now') WHERE ref_code = ? AND status = 'pending'"
+    ).bind(refCode).run();
+    return json({ ok: true, paid: count, total, ref_code: refCode });
   }
 
   if (path === "/api/admin/purchases" && request.method === "GET") {
@@ -1914,6 +1934,24 @@ async function applyPurchase(env, body, origin, source = "webhook") {
         await env.DB.prepare(
           "UPDATE softlife_referrals SET status = 'purchased' WHERE ref_code = ? AND lower(email) = ? AND status != 'purchased'"
         ).bind(refCode, email).run();
+        // Notify the affiliate of the sale (best-effort).
+        const affiliateUser = await env.DB.prepare(
+          "SELECT email, name FROM softlife_users WHERE ref_code = ?"
+        ).bind(refCode).first();
+        if (affiliateUser && affiliateUser.email) {
+          const saleCommission = Math.round(Number(amount) * 0.30 * 100) / 100;
+          const affiliateHtml = emailShell(
+            "You earned a commission 🎉",
+            "<p>Hi " + escHtml(affiliateUser.name || "there") + ",</p>"
+            + "<p>Someone you referred just bought the Complete bundle. <b>" + saleCommission + " " + escHtml(currency || "") + "</b> "
+            + "has been credited to your pending balance.</p>"
+            + "<p>Your lifetime earnings and stats are on your affiliate dashboard inside the app.</p>"
+          );
+          const affiliateText = "You earned a commission: " + saleCommission + " " + (currency || "")
+            + " has been credited to your pending balance. Check your affiliate dashboard for details.";
+          await sendPurchaseEmail(env, affiliateUser.email, "You earned a commission 🎉",
+            affiliateHtml, affiliateText, "affiliate_sale");
+        }
       }
     }
 

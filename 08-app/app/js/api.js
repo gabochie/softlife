@@ -44,6 +44,7 @@ const API = {
   adminSetTier(id, tier) { return this.request('/admin/users/' + id + '/tier', { method: 'POST', body: { tier }, admin: true }); },
   adminSetRole(id, role) { return this.request('/admin/users/' + id + '/role', { method: 'POST', body: { role }, admin: true }); },
   adminReferrals() { return this.request('/admin/referrals', { admin: true }); },
+  adminAffiliatePayout(refCode) { return this.request('/admin/affiliate/payout', { method: 'POST', body: { ref_code: refCode }, admin: true }); },
   adminPurchases() { return this.request('/admin/purchases', { admin: true }); },
   adminOnboarding() { return this.request('/admin/onboarding', { admin: true }); },
   adminAudio() { return this.request('/admin/audio', { admin: true }); },

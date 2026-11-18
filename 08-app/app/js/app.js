@@ -44,10 +44,27 @@ const App = {
 
   go(path) { location.hash = path; },
 
+  // 30-day attribution (Phase 2): a visitor who arrives with ?ref=CODE is
+  // attributed to that affiliate for 30 days, even if they sign up later.
   refCode() {
     const params = new URLSearchParams(location.search);
-    const ref = params.get('ref') || sessionStorage.getItem('softlife_ref');
-    if (ref) sessionStorage.setItem('softlife_ref', ref);
+    const fromUrl = params.get('ref');
+    let stored = null;
+    try {
+      const raw = localStorage.getItem('softlife_ref_30d');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.code && parsed.expires && Date.now() < parsed.expires) stored = parsed.code;
+        else localStorage.removeItem('softlife_ref_30d');
+      }
+    } catch (e) { /* ignore */ }
+    const ref = fromUrl || stored || sessionStorage.getItem('softlife_ref') || '';
+    if (ref) {
+      sessionStorage.setItem('softlife_ref', ref);
+      if (fromUrl) {
+        try { localStorage.setItem('softlife_ref_30d', JSON.stringify({ code: ref, expires: Date.now() + 30 * 24 * 60 * 60 * 1000 })); } catch (e) { /* ignore */ }
+      }
+    }
     return ref || '';
   },
 
@@ -1235,8 +1252,8 @@ const App = {
         ${r === null ? `<div class="card" id="sec-referrals">${denied}</div>` : `
         <div class="card" id="sec-referrals">
           <span class="tag">Referrals</span><h3>Affiliate performance</h3>
-          ${(r.stats || []).length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Affiliate</th><th>Clicks</th><th>Signups</th><th>Sales</th><th>Earnings</th></tr></thead><tbody>
-            ${r.stats.map((row) => `<tr><td><b>${esc(row.ref_code)}</b></td><td><small>${esc(row.affiliate_name || row.affiliate_email || '—')}</small></td><td>${row.clicks}</td><td>${row.signups}</td><td>${row.purchases}</td><td><b>${row.earnings}</b></td></tr>`).join('')}
+          ${(r.stats || []).length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Affiliate</th><th>Clicks</th><th>Signups</th><th>Sales</th><th>Earnings</th><th>Pending</th><th>Payout</th></tr></thead><tbody>
+            ${r.stats.map((row) => `<tr><td><b>${esc(row.ref_code)}</b></td><td><small>${esc(row.affiliate_name || row.affiliate_email || '—')}</small></td><td>${row.clicks}</td><td>${row.signups}</td><td>${row.purchases}</td><td><b>${row.earnings}</b></td><td>${row.pending_earnings || 0}</td><td>${Number(row.pending_earnings || 0) > 0 ? `<button class="btn ghost sm" data-payout="${esc(row.ref_code)}" type="button">Mark paid</button>` : '—'}</td></tr>`).join('')}
           </tbody></table></div>` : '<p class="note">No affiliate activity yet.</p>'}
           <p class="note" style="margin-top:10px"><small>Recent referral events</small></p>
           ${r.referrals.length ? `<div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Email</th><th>Status</th><th>Date</th></tr></thead><tbody>
@@ -1447,6 +1464,15 @@ const App = {
     });
     document.querySelectorAll('[data-crm]').forEach((btn) => {
       btn.addEventListener('click', () => this.openCrm(btn.dataset.crm));
+    });
+    document.querySelectorAll('[data-payout]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const code = btn.dataset.payout;
+        if (!confirm('Mark all pending earnings for ' + code + ' as paid?')) return;
+        btn.disabled = true; btn.textContent = 'Paying…';
+        try { const r = await API.adminAffiliatePayout(code); await this.loadAdmin(); alert('Marked ' + r.paid + ' earning(s) as paid (' + r.total + ').'); }
+        catch (err) { alert(err.message); btn.disabled = false; btn.textContent = 'Mark paid'; }
+      });
     });
     const campaignForm = document.getElementById('campaignForm');
     if (campaignForm) campaignForm.addEventListener('submit', async (e) => {
@@ -1975,6 +2001,29 @@ const App = {
         <p>1 · Share your link — on WhatsApp, TikTok, your email list, anywhere.<br>
            2 · Your friend lands on the free trial (intro + Chapter 1). The visit is counted the moment they open the page.<br>
            3 · If they sign up, you see it here. If they buy the Complete bundle, <b>30% is credited to your balance automatically</b> — paid out monthly.</p>
+      </div>
+      <div class="card share-kit">
+        <span class="tag">Share kit</span>
+        <p class="note">Copy a message, paste it where your people are. The link is already in your clipboard after you tap Copy.</p>
+        <div class="share-msgs">
+          <div class="share-msg" data-msg="I just found a system that helps founders build a business that works 15 hours a week. Free trial here: ${location.origin}/?ref=${me.ref_code}">
+            <p>WhatsApp / DM</p>
+            <button class="btn ghost sm" data-copy="msg">Copy message</button>
+          </div>
+          <div class="share-msg" data-msg="Tired of a business that never closes? The Soft Life System is a 90-day plan for founders who want their life back. Free trial: ${location.origin}/?ref=${me.ref_code}">
+            <p>Social post</p>
+            <button class="btn ghost sm" data-copy="msg">Copy message</button>
+          </div>
+          <div class="share-msg" data-msg="Subject: A calmer way to grow your business\\n\\nHey — I've been using The Soft Life System and it's genuinely changed how I work. 15-hour weeks, one premium offer, real structure. Free trial (no card): ${location.origin}/?ref=${me.ref_code}">
+            <p>Email</p>
+            <button class="btn ghost sm" data-copy="msg">Copy message</button>
+          </div>
+        </div>
+        <div class="share-links">
+          <a class="btn ghost sm" href="https://wa.me/?text=${encodeURIComponent('I just found a system that helps founders build a business that works 15 hours a week. Free trial: ' + location.origin + '/?ref=' + me.ref_code)}" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="btn ghost sm" href="https://twitter.com/intent/tweet?text=${encodeURIComponent('Tired of a business that never closes? The Soft Life System is a 90-day plan for founders who want their life back. Free trial: ' + location.origin + '/?ref=' + me.ref_code)}" target="_blank" rel="noopener">X / Twitter</a>
+          <a class="btn ghost sm" href="mailto:?subject=${encodeURIComponent('A calmer way to grow your business')}&body=${encodeURIComponent('Hey — I have been using The Soft Life System and it genuinely changed how I work. Free trial (no card): ' + location.origin + '/?ref=' + me.ref_code)}">Email</a>
+        </div>
       </div></div>`;
     document.getElementById('copyRef').addEventListener('click', async () => {
       const linkEl = document.getElementById('reflink');
@@ -1998,6 +2047,21 @@ const App = {
         const el = document.getElementById('copyRef');
         if (el) el.textContent = 'Copy link';
       }, 1500);
+    });
+    // Share kit: copy the pre-written message (with link) to clipboard.
+    document.querySelectorAll('.share-msg [data-copy="msg"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const msg = btn.closest('.share-msg')?.getAttribute('data-msg') || '';
+        try {
+          await navigator.clipboard.writeText(msg);
+        } catch (e) {
+          const t = document.createElement('textarea');
+          t.value = msg; t.style.position = 'fixed'; t.style.opacity = '0';
+          document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove();
+        }
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => { btn.textContent = 'Copy message'; }, 1500);
+      });
     });
     try {
       const s = await API.affiliate();
