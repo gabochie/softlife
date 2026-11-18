@@ -32,6 +32,18 @@ const BLOG_POSTS = [
   ["ai-agents-soft-life-business", "AI Agents Are Coming for Your Busywork. Build a Business With a Brain, Not More Hustle."]
 ];
 const CONSENT_VERSION = "2026-11-14";
+// Interactive Soft Life Scorecard. The "ten" text and bands mirror the PDF
+// lead magnet so the personalised online report never drifts from it.
+const SCORECARD_DIMENSIONS = [
+  { key: "time", label: "Time", ten: "You work ≤ 20 hrs/week by design, not by accident.", action: "Audit your week: eliminate one recurring task, template one, delegate one." },
+  { key: "money", label: "Money", ten: "Revenue is predictable; you know your number every month.", action: "Set your monthly income number and review it every Monday — predictable revenue starts with a number." },
+  { key: "energy", label: "Energy", ten: "You finish the day with something left. No 3pm crash.", action: "Protect one no-work block and one slow morning before you touch your inbox." },
+  { key: "joy", label: "Joy", ten: "You'd do your best work even if no one paid you.", action: "Pick the work you'd do unpaid and make it the centre of your offer." },
+  { key: "relationships", label: "Relationships", ten: "Family and friends get your best hours, not your leftovers.", action: "Block two protected hours this week for family and friends — best hours, not leftovers." },
+  { key: "health", label: "Health", ten: "Sleep, movement and food are not negotiable.", action: "Make sleep, movement and food non-negotiable for seven days." },
+  { key: "focus", label: "Focus", ten: "One offer, one audience, one channel. No shiny objects.", action: "Pick one offer, one audience, one channel. Nothing else gets a yes this month." },
+  { key: "freedom", label: "Freedom", ten: "You can take a week off without the business breaking.", action: "Document the three tasks only you can do, then hand one to someone else for a week." },
+];
 const SESSION_DAYS = 30;
 const AUDIO_TOKEN_MINUTES = 120;
 const ONBOARDING_CHOICES = {
@@ -172,6 +184,10 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/ref-visit" && request.method === "POST") return refVisit(request, env);
   // Public: one-click marketing opt-out from any campaign footer link.
   if (path === "/api/unsubscribe" && request.method === "GET") return unsubscribe(request, env);
+  // Public: interactive lead magnets. Results are saved, then emailed to the
+  // prospect as a private printable link (no attachment/deliverability issues).
+  if (path === "/api/lead/scorecard" && request.method === "POST") return scorecardSubmit(request, env);
+  if (path === "/api/lead/result" && request.method === "GET") return leadResult(request, env);
   // Cron fallback: free plan has no spare cron trigger slots; an external
   // scheduler (cron-job.org) hits this daily with the webhook secret.
   if (path === "/api/email-cron" && request.method === "GET") {
@@ -918,7 +934,17 @@ async function unsubscribe(request, env) {
     "SELECT id FROM softlife_users WHERE unsub_token = ?"
   ).bind(token).first();
   if (!row) {
-    return page("Invalid link", "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.");
+    // Lead-magnet results have their own consent record, not a user account.
+    const lead = await env.DB.prepare(
+      "SELECT id FROM softlife_lead_submissions WHERE unsub_token = ?"
+    ).bind(token).first();
+    if (!lead) {
+      return page("Invalid link", "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.");
+    }
+    await env.DB.prepare(
+      "UPDATE softlife_lead_submissions SET consent = 0 WHERE id = ?"
+    ).bind(lead.id).run();
+    return page("You're unsubscribed", "You won't receive any more marketing emails from The Soft Life System. Your downloaded result and any account access are untouched.");
   }
   await env.DB.prepare(
     "UPDATE softlife_users SET marketing_consent = 0 WHERE id = ?"
@@ -2139,6 +2165,135 @@ async function sendPurchaseEmail(env, toEmail, subject, html, text, kind) {
     // Logging must never break the webhook either.
   }
   return status === "sent";
+}
+
+// ---------- Interactive lead magnets (free tools) ----------
+
+function escHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function scorecardResult(answers) {
+  const rows = SCORECARD_DIMENSIONS.map((d, i) => ({ ...d, score: answers[i], order: i }));
+  const total = answers.reduce((a, b) => a + b, 0);
+  const sorted = [...rows].sort((a, b) => a.score - b.score || a.order - b.order);
+  const bottom = sorted.slice(0, 2);
+  const top = sorted.slice(-2).reverse();
+  let band;
+  if (total >= 70) band = { label: "Soft life, protected", text: "You're already living the soft life. Use this system to protect it — most people lose it the moment they scale." };
+  else if (total >= 50) band = { label: "The danger zone", text: "You're in the danger zone. Two or three dimensions are carrying everything and the rest are quietly collapsing. Fix the bottom two first." };
+  else if (total >= 30) band = { label: "A job, not a business", text: "You've built a job, not a business. Revenue is real and so is the exhaustion. The architecture needs rebuilding — that's what this system is for." };
+  else band = { label: "The hustle hangover", text: "You're in the hustle hangover. Stop adding. Start subtracting. Today." };
+  const headline = `Your lowest two are ${bottom[0].label} and ${bottom[1].label}. They are not separate problems — they are one architecture problem wearing two costumes.`;
+  const actions = [bottom[0].action, bottom[1].action, "Re-score in 30 days. Fix the architecture, don't push harder on the symptoms."];
+  return {
+    total, band, headline,
+    bottom: bottom.map((d) => d.key),
+    top: top.map((d) => d.key),
+    actions,
+    rows: rows.map(({ key, label, ten, score }) => ({ key, label, ten, score })),
+    focusNote: bottom[0].key === "focus"
+      ? "Nothing else matters until you pick one offer."
+      : bottom[0].key === "time"
+        ? "You don't need a planner — you need to eliminate, automate, template and delegate."
+        : "The fix is upstream — in your offer, your delivery and your week."
+  };
+}
+
+function leadEmailHtml(link, result, name, unsubToken, origin) {
+  const bottomLabels = SCORECARD_DIMENSIONS
+    .filter((d) => result.bottom.includes(d.key)).map((d) => d.label).join(" and ");
+  return emailShell(
+    "Your Soft Life Scorecard is ready 🧭",
+    "<p>" + escHtml(name) + ", you scored your life and business. Here is your personal report.</p>"
+    + `<p><b>${result.total}/80 — ${escHtml(result.band.label)}.</b> ${escHtml(result.band.text)}</p>`
+    + `<p>Your two lowest dimensions are <b>${escHtml(bottomLabels)}</b>.</p>`
+    + '<p><a href="' + link + '" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;'
+    + 'border-radius:10px;text-decoration:none;font-weight:600;">Open my printable report →</a></p>'
+    + '<p style="font-size:13px;">Or paste this link into your browser:<br><code>' + link + '</code></p>'
+    + '<p style="font-size:13px;color:#6d5f7a;">The page has a Print / Save as PDF button. This is your private copy — keep the link.</p>'
+    + unsubFooter(unsubToken, origin)
+  );
+}
+
+async function scorecardSubmit(request, env) {
+  const body = await readJson(request);
+  // Honeypot: bots fill the hidden field; silently accept so they move on.
+  if (cleanText(body.website, 60)) return json({ ok: true, token: "", url: "" });
+  const email = cleanText(body.email, 120).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return json({ error: "Enter a valid email address." }, 400);
+  }
+  if (body.consent !== true && body.consent !== 1 && body.consent !== "1") {
+    return json({ error: "Please tick the consent box so we can email your report." }, 400);
+  }
+  const name = cleanText(body.name, 80) || email.split("@")[0];
+  const raw = body.answers;
+  if (!Array.isArray(raw) || raw.length !== 8) return json({ error: "Score all 8 dimensions." }, 400);
+  const answers = raw.map((v) => {
+    const n = Number(v);
+    return Number.isInteger(n) && n >= 1 && n <= 10 ? n : 0;
+  });
+  if (answers.some((n) => n === 0)) return json({ error: "Each score must be a whole number from 1 to 10." }, 400);
+
+  const ip = clientIp(request);
+  try {
+    const recentEmail = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM softlife_lead_submissions WHERE email = ? AND created_at >= datetime('now','-60 seconds')"
+    ).bind(email).first();
+    if (countValue(recentEmail) > 0) return json({ error: "That report was just created. Check your inbox." }, 429);
+    if (ip) {
+      const recentIp = await env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM softlife_lead_submissions WHERE ip = ? AND created_at >= datetime('now','-60 seconds')"
+      ).bind(ip).first();
+      if (countValue(recentIp) >= 3) return json({ error: "Too many requests. Try again in a minute." }, 429);
+    }
+  } catch (exc) {
+    console.error("lead rate-limit check failed", exc);
+  }
+
+  const result = scorecardResult(answers);
+  const token = randomHex(16);
+  const unsubToken = randomHex(16);
+  try {
+    await env.DB.prepare(
+      "INSERT INTO softlife_lead_submissions (token, magnet, email, name, answers, result, consent, consent_version, unsub_token, ip) "
+      + "VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)"
+    ).bind(token, "scorecard", email, name, JSON.stringify(answers), JSON.stringify(result), CONSENT_VERSION,
+           unsubToken, ip.slice(0, 64)).run();
+  } catch (exc) {
+    console.error("lead submission insert failed", exc);
+    return json({ error: "We couldn't save your result. Please try again." }, 500);
+  }
+
+  const origin = env.SITE_URL || SITE_URL;
+  const link = origin + "/tools/scorecard-result.html?t=" + token;
+  const text = name + ", you scored " + result.total + "/80 — " + result.band.label
+    + ". Your two lowest dimensions: " + SCORECARD_DIMENSIONS.filter((d) => result.bottom.includes(d.key))
+      .map((d) => d.label).join(" and ") + ". Open your printable report: " + link;
+  const emailed = await sendPurchaseEmail(env, email, "Your Soft Life Scorecard is ready 🧭",
+    leadEmailHtml(link, result, name, unsubToken, origin), text, "lead_scorecard");
+  return json({ ok: true, token, url: link, emailed });
+}
+
+async function leadResult(request, env) {
+  const token = String(new URL(request.url).searchParams.get("t") || "").slice(0, 64);
+  if (!/^[a-f0-9]{32}$/.test(token)) return json({ error: "not found" }, 404);
+  const row = await env.DB.prepare(
+    "SELECT magnet, name, answers, result, created_at FROM softlife_lead_submissions WHERE token = ?"
+  ).bind(token).first();
+  if (!row) return json({ error: "not found" }, 404);
+  const res = json({
+    magnet: row.magnet,
+    name: row.name,
+    answers: JSON.parse(row.answers || "[]"),
+    result: JSON.parse(row.result || "{}"),
+    created_at: row.created_at
+  });
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }
 
 function countValue(result) {

@@ -101,6 +101,65 @@ LAUNCH_TASKS = [
 ]
 
 
+# Interactive Soft Life Scorecard — mirrors the PDF lead magnet exactly.
+SCORECARD_DIMENSIONS = [
+    {"key": "time", "label": "Time", "ten": "You work ≤ 20 hrs/week by design, not by accident.", "action": "Audit your week: eliminate one recurring task, template one, delegate one."},
+    {"key": "money", "label": "Money", "ten": "Revenue is predictable; you know your number every month.", "action": "Set your monthly income number and review it every Monday — predictable revenue starts with a number."},
+    {"key": "energy", "label": "Energy", "ten": "You finish the day with something left. No 3pm crash.", "action": "Protect one no-work block and one slow morning before you touch your inbox."},
+    {"key": "joy", "label": "Joy", "ten": "You'd do your best work even if no one paid you.", "action": "Pick the work you'd do unpaid and make it the centre of your offer."},
+    {"key": "relationships", "label": "Relationships", "ten": "Family and friends get your best hours, not your leftovers.", "action": "Block two protected hours this week for family and friends — best hours, not leftovers."},
+    {"key": "health", "label": "Health", "ten": "Sleep, movement and food are not negotiable.", "action": "Make sleep, movement and food non-negotiable for seven days."},
+    {"key": "focus", "label": "Focus", "ten": "One offer, one audience, one channel. No shiny objects.", "action": "Pick one offer, one audience, one channel. Nothing else gets a yes this month."},
+    {"key": "freedom", "label": "Freedom", "ten": "You can take a week off without the business breaking.", "action": "Document the three tasks only you can do, then hand one to someone else for a week."},
+]
+
+
+def scorecard_result(answers: list[int]) -> dict:
+    rows = [{**d, "score": answers[i], "order": i} for i, d in enumerate(SCORECARD_DIMENSIONS)]
+    total = sum(answers)
+    ordered = sorted(rows, key=lambda r: (r["score"], r["order"]))
+    bottom, top = ordered[:2], list(reversed(ordered[-2:]))
+    if total >= 70:
+        band = {"label": "Soft life, protected", "text": "You're already living the soft life. Use this system to protect it — most people lose it the moment they scale."}
+    elif total >= 50:
+        band = {"label": "The danger zone", "text": "You're in the danger zone. Two or three dimensions are carrying everything and the rest are quietly collapsing. Fix the bottom two first."}
+    elif total >= 30:
+        band = {"label": "A job, not a business", "text": "You've built a job, not a business. Revenue is real and so is the exhaustion. The architecture needs rebuilding — that's what this system is for."}
+    else:
+        band = {"label": "The hustle hangover", "text": "You're in the hustle hangover. Stop adding. Start subtracting. Today."}
+    return {
+        "total": total,
+        "band": band,
+        "headline": "Your lowest two are %s and %s. They are not separate problems — they are one architecture problem wearing two costumes." % (bottom[0]["label"], bottom[1]["label"]),
+        "bottom": [d["key"] for d in bottom],
+        "top": [d["key"] for d in top],
+        "actions": [bottom[0]["action"], bottom[1]["action"],
+                    "Re-score in 30 days. Fix the architecture, don't push harder on the symptoms."],
+        "rows": [{"key": d["key"], "label": d["label"], "ten": d["ten"], "score": d["score"]} for d in rows],
+        "focusNote": (
+            "Nothing else matters until you pick one offer." if bottom[0]["key"] == "focus"
+            else "You don't need a planner — you need to eliminate, automate, template and delegate."
+            if bottom[0]["key"] == "time"
+            else "The fix is upstream — in your offer, your delivery and your week."
+        ),
+    }
+
+
+def lead_email_html(link: str, result: dict, name: str, unsub_token: str, origin: str) -> str:
+    labels = [d["label"] for d in SCORECARD_DIMENSIONS if d["key"] in result["bottom"]]
+    return _email_shell(
+        "Your Soft Life Scorecard is ready",
+        "<p>%s, you scored your life and business. Here is your personal report.</p>" % _escape_html(name)
+        + "<p><b>%d/80 — %s.</b> %s</p>" % (result["total"], _escape_html(result["band"]["label"]), _escape_html(result["band"]["text"]))
+        + "<p>Your two lowest dimensions are <b>%s</b>.</p>" % _escape_html(" and ".join(labels))
+        + '<p><a href="%s" style="display:inline-block;background:#5d2189;color:#fff;padding:12px 22px;'
+          'border-radius:10px;text-decoration:none;font-weight:600;">Open my printable report →</a></p>' % link
+        + '<p style="font-size:13px;">Or paste this link into your browser:<br><code>%s</code></p>' % link
+        + '<p style="font-size:13px;color:#6d5f7a;">The page has a Print / Save as PDF button. This is your private copy — keep the link.</p>'
+        + _unsub_footer(unsub_token, origin),
+    )
+
+
 def db() -> sqlite3.Connection:
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -593,9 +652,19 @@ def init_db() -> None:
     conn.executescript((APP / "server" / "schema.sql").read_text())
     _migrate_session_tables(conn)
     _migrate_admin_tables(conn)
+    _migrate_purchase_columns(conn)
     if first:
         _seed(conn)
     conn.close()
+
+
+def _migrate_purchase_columns(conn: sqlite3.Connection) -> None:
+    """Older local DBs predate affiliate attribution on purchases."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(purchases)")}
+    if "ref_code" not in cols:
+        conn.execute("ALTER TABLE purchases ADD COLUMN ref_code TEXT")
+    if "raw" not in cols:
+        conn.execute("ALTER TABLE purchases ADD COLUMN raw TEXT")
 
 
 def _migrate_session_tables(conn: sqlite3.Connection) -> None:
@@ -763,6 +832,23 @@ class Handler(SimpleHTTPRequestHandler):
         route = self.path.split("?")[0]
         if route == "/api/health":
             return self._json({"ok": True, "service": "softlife", "time": datetime.now(timezone.utc).isoformat()})
+        if route == "/api/lead/result":
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            token = (qs.get("t") or [""])[0][:64]
+            if not re.fullmatch(r"[a-f0-9]{32}", token):
+                return self._json({"error": "not found"}, 404)
+            conn = db()
+            row = conn.execute(
+                "SELECT magnet, name, answers, result, created_at FROM lead_submissions WHERE token = ?", (token,)
+            ).fetchone()
+            conn.close()
+            if not row:
+                return self._json({"error": "not found"}, 404)
+            return self._json({
+                "magnet": row["magnet"], "name": row["name"],
+                "answers": json.loads(row["answers"]), "result": json.loads(row["result"]),
+                "created_at": row["created_at"],
+            })
         if route == "/api/email-cron":
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             provided = qs.get("key", [""])[0]
@@ -793,10 +879,21 @@ class Handler(SimpleHTTPRequestHandler):
                                         "Your account and any purchased access are untouched - you'll still get essential emails like password resets and purchase confirmations.",
                                         200)
                 else:
-                    title, msg, code = ("Invalid link",
-                                        "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.",
-                                        200)
-                    code = 400
+                    conn = db()
+                    lead = conn.execute("SELECT id FROM lead_submissions WHERE unsub_token = ?", (token,)).fetchone()
+                    if lead:
+                        conn.execute("UPDATE lead_submissions SET consent = 0 WHERE id = ?", (lead["id"],))
+                        conn.commit()
+                        conn.close()
+                        title, msg, code = ("You're unsubscribed",
+                                            "You won't receive any more marketing emails from The Soft Life System. Your downloaded result is untouched.",
+                                            200)
+                    else:
+                        conn.close()
+                        title, msg, code = ("Invalid link",
+                                            "We couldn't match this unsubscribe link to an account. If you keep receiving emails, reply to any of them and we'll opt you out.",
+                                            200)
+                        code = 400
             html = ('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
                     '<title>' + title + '</title><style>body{font-family:Georgia,serif;background:#faf7f2;color:#2a0f4a;display:grid;place-items:center;min-height:100vh}'
                     'div{text-align:center;max-width:420px;padding:24px}h1{color:#5d2189;font-size:1.5rem}p{color:#6d5f7a;line-height:1.6}</style></head>'
@@ -1367,6 +1464,69 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json({"error": "not found"}, 404)
         route = self.path.split("?")[0]
         data = self._body()
+
+        if route == "/api/lead/scorecard":
+            # Honeypot: bots fill the hidden field; silently accept so they move on.
+            if clean_text(data.get("website"), 60):
+                return self._json({"ok": True, "token": "", "url": ""})
+            email = clean_text(data.get("email"), 120).lower()
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]{2,}", email):
+                return self._json({"error": "Enter a valid email address."}, 400)
+            if data.get("consent") not in (True, 1, "1"):
+                return self._json({"error": "Please tick the consent box so we can email your report."}, 400)
+            name = clean_text(data.get("name"), 80) or email.split("@")[0]
+            raw = data.get("answers")
+            if not isinstance(raw, list) or len(raw) != 8:
+                return self._json({"error": "Score all 8 dimensions."}, 400)
+            answers = []
+            for value in raw:
+                try:
+                    n = int(value)
+                except (TypeError, ValueError):
+                    n = 0
+                if str(value) != str(n) or not 1 <= n <= 10:
+                    return self._json({"error": "Each score must be a whole number from 1 to 10."}, 400)
+                answers.append(n)
+            conn = db()
+            try:
+                recent = conn.execute(
+                    "SELECT COUNT(*) AS c FROM lead_submissions WHERE email = ? AND created_at >= datetime('now','-60 seconds')",
+                    (email,),
+                ).fetchone()["c"]
+                if recent:
+                    conn.close()
+                    return self._json({"error": "That report was just created. Check your inbox."}, 429)
+                ip = self._client_ip()
+                if ip and conn.execute(
+                    "SELECT COUNT(*) AS c FROM lead_submissions WHERE ip = ? AND created_at >= datetime('now','-60 seconds')", (ip,)
+                ).fetchone()["c"] >= 3:
+                    conn.close()
+                    return self._json({"error": "Too many requests. Try again in a minute."}, 429)
+                result = scorecard_result(answers)
+                token = secrets.token_hex(16)
+                unsub_token = secrets.token_hex(16)
+                conn.execute(
+                    "INSERT INTO lead_submissions (token, magnet, email, name, answers, result, consent, consent_version, unsub_token, ip) "
+                    "VALUES (?,?,?,?,?,?,1,?,?,?)",
+                    (token, "scorecard", email, name, json.dumps(answers), json.dumps(result), CONSENT_VERSION,
+                     unsub_token, ip[:64]),
+                )
+                conn.commit()
+            except sqlite3.Error:
+                conn.close()
+                return self._json({"error": "We couldn't save your result. Please try again."}, 500)
+            conn.close()
+            origin = os.environ.get("SITE_URL", self._origin())
+            link = origin.rstrip("/") + "/tools/scorecard-result.html?t=" + token
+            labels = [d["label"] for d in SCORECARD_DIMENSIONS if d["key"] in result["bottom"]]
+            text = "%s, you scored %d/80 — %s. Your two lowest dimensions: %s. Open your printable report: %s" % (
+                name, result["total"], result["band"]["label"], " and ".join(labels), link)
+            conn = db()
+            _send_email(conn, email, "Your Soft Life Scorecard is ready",
+                        lead_email_html(link, result, name, unsub_token, origin), "lead_scorecard", text)
+            conn.commit()
+            conn.close()
+            return self._json({"ok": True, "token": token, "url": link})
 
         if route == "/api/webhooks/purchase":
             if not WEBHOOK_SECRET:

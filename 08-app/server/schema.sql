@@ -128,8 +128,24 @@ CREATE TABLE IF NOT EXISTS purchases (
   amount REAL,
   currency TEXT NOT NULL DEFAULT '',
   provider TEXT NOT NULL DEFAULT '',
+  ref_code TEXT,
+  raw TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Affiliate earnings ledger (parity with deploy softlife_affiliate_earnings).
+CREATE TABLE IF NOT EXISTS affiliate_earnings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ref_code TEXT NOT NULL,
+  purchase_id INTEGER NOT NULL REFERENCES purchases(id),
+  email TEXT,
+  amount REAL NOT NULL DEFAULT 0,
+  currency TEXT,
+  rate REAL NOT NULL DEFAULT 0.30,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_affearn_code ON affiliate_earnings(ref_code);
 
 -- Purchase webhook deliveries: full reconciliation ledger (successes, duplicates, rejects).
 CREATE TABLE IF NOT EXISTS webhook_logs (
@@ -235,3 +251,22 @@ CREATE TABLE IF NOT EXISTS password_resets (
   expires_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pwresets_user ON password_resets(user_id);
+
+-- Interactive lead magnet submissions (parity with deploy migration 010).
+CREATE TABLE IF NOT EXISTS lead_submissions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token TEXT NOT NULL UNIQUE,
+  magnet TEXT NOT NULL,
+  email TEXT NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  answers TEXT NOT NULL,
+  result TEXT NOT NULL,
+  consent INTEGER NOT NULL DEFAULT 1,
+  consent_version TEXT,
+  unsub_token TEXT,
+  ip TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_lead_token ON lead_submissions(token);
+CREATE INDEX IF NOT EXISTS idx_lead_email_time ON lead_submissions(email, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_unsub ON lead_submissions(unsub_token);

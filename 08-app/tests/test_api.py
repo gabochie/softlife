@@ -49,7 +49,7 @@ class AppTests(unittest.TestCase):
             (api.AUDIO_DIR / f"{slug}.mp3").write_bytes(b"ID3fakeaudio" * 20)
         api.init_db()
         api.Handler.log_message = lambda *a, **k: None  # silence request logs
-        cls.httpd = api.HTTPServer(("127.0.0.1", 0), api.Handler)
+        cls.httpd = api.ThreadingHTTPServer(("127.0.0.1", 0), api.Handler)
         cls.client = Client(cls.httpd.server_address[1])
         threading.Thread(target=cls.httpd.serve_forever, daemon=True).start()
 
@@ -70,7 +70,7 @@ class AppTests(unittest.TestCase):
 
     def test_extra_pages_are_static_and_discoverable(self):
         for path, marker in (
-            ("/products/", "PDF implementation toolkits"),
+            ("/products/", "Implementation toolkits"),
             ("/consultation/", "The Soft Life Business Audit"),
         ):
             with urllib.request.urlopen(self.client.base + path, timeout=10) as resp:
@@ -81,6 +81,7 @@ class AppTests(unittest.TestCase):
             sitemap = resp.read().decode()
         self.assertIn("https://soft.gabochie.com/products/", sitemap)
         self.assertIn("https://soft.gabochie.com/consultation/", sitemap)
+        self.assertIn("https://soft.gabochie.com/tools/scorecard.html", sitemap)
 
     # ---------- auth ----------
 
@@ -113,6 +114,7 @@ class AppTests(unittest.TestCase):
         _, referrer = self.req("POST", "/api/signup",
                                {"email": "ref@test.com", "password": "softlife1"})
         code = referrer["user"]["ref_code"]
+        self.req("POST", "/api/ref-visit", {"ref": code})
         status, data = self.req("POST", "/api/signup",
                                 {"email": "friend@test.com", "password": "softlife1", "ref": code})
         self.assertEqual(status, 201)
@@ -385,6 +387,64 @@ class AppTests(unittest.TestCase):
 
     def test_affiliate_requires_auth(self):
         self.assertEqual(self.req("GET", "/api/affiliate")[0], 401)
+
+    # ---------- interactive lead magnet: scorecard ----------
+
+    def test_scorecard_tool_pages_served(self):
+        for path, marker in (("/tools/scorecard.html", "The Soft Life Scorecard"),
+                             ("/tools/scorecard-result.html", "data:image/png;base64")):
+            with urllib.request.urlopen(self.client.base + path, timeout=10) as resp:
+                html = resp.read().decode()
+            self.assertIn(marker, html)
+
+    def test_scorecard_submit_saves_private_report(self):
+        body = {"name": "Amara", "email": "scorecard-a@test.com", "consent": True,
+                "answers": [2, 4, 3, 8, 7, 6, 1, 5]}
+        status, data = self.req("POST", "/api/lead/scorecard", body)
+        self.assertEqual(status, 200, data)
+        self.assertTrue(data["ok"])
+        self.assertRegex(data["token"], r"^[a-f0-9]{32}$")
+        self.assertIn("/tools/scorecard-result.html?t=" + data["token"], data["url"])
+
+        status, report = self.req("GET", "/api/lead/result?t=" + data["token"])
+        self.assertEqual(status, 200)
+        self.assertEqual(report["name"], "Amara")
+        self.assertEqual(report["answers"], body["answers"])
+        self.assertEqual(report["result"]["total"], 36)
+        self.assertEqual(report["result"]["bottom"], ["focus", "time"])
+        self.assertEqual(len(report["result"]["actions"]), 3)
+        self.assertEqual(len(report["result"]["rows"]), 8)
+
+    def test_scorecard_validates_consent_answers_and_rate_limit(self):
+        base = {"name": "Test", "email": "scorecard-b@test.com", "consent": True,
+                "answers": [5, 5, 5, 5, 5, 5, 5, 5]}
+        self.assertEqual(self.req("POST", "/api/lead/scorecard", {**base, "consent": False})[0], 400)
+        self.assertEqual(self.req("POST", "/api/lead/scorecard", {**base, "answers": [5] * 7})[0], 400)
+        self.assertEqual(self.req("POST", "/api/lead/scorecard", {**base, "answers": [11] * 8})[0], 400)
+        self.assertEqual(self.req("POST", "/api/lead/scorecard", {**base, "email": "bad"})[0], 400)
+        self.assertEqual(self.req("GET", "/api/lead/result?t=" + "0" * 32)[0], 404)
+        # honeypot silently accepts without saving
+        status, data = self.req("POST", "/api/lead/scorecard", {**base, "website": "spam.example"})
+        self.assertEqual(status, 200)
+        self.assertEqual(data["token"], "")
+        status, data = self.req("POST", "/api/lead/scorecard", base)
+        self.assertEqual(status, 200)
+        self.assertEqual(self.req("POST", "/api/lead/scorecard", base)[0], 429)
+
+    def test_scorecard_unsubscribe_withdraws_lead_consent(self):
+        status, data = self.req("POST", "/api/lead/scorecard", {
+            "name": "Lead", "email": "scorecard-c@test.com", "consent": True,
+            "answers": [6, 6, 6, 6, 6, 6, 6, 6]})
+        self.assertEqual(status, 200)
+        conn = api.db()
+        row = conn.execute("SELECT unsub_token FROM lead_submissions WHERE token = ?", (data["token"],)).fetchone()
+        conn.close()
+        with urllib.request.urlopen(self.client.base + "/api/unsubscribe?token=" + row["unsub_token"], timeout=10) as resp:
+            self.assertIn("unsubscribed", resp.read().decode().lower())
+        conn = api.db()
+        consent = conn.execute("SELECT consent FROM lead_submissions WHERE token = ?", (data["token"],)).fetchone()["consent"]
+        conn.close()
+        self.assertEqual(consent, 0)
 
 
 if __name__ == "__main__":
