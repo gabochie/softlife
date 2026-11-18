@@ -1,6 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2a0f4a">
@@ -60,10 +90,10 @@
     </div>
   </header>
   <div class="wrap legal-layout">
-    <article class="prose legal-prose"><p><strong>Last updated: November 15, 2026</strong></p>
+    <article class="prose legal-prose"><p><strong>Last updated: November 18, 2026</strong></p>
 <p>This Cookie Policy explains how The Soft Life System uses cookies and similar technologies. It should be read with our <a href="/legal/privacy/">Privacy Policy</a>.</p>
 <h2>The short version</h2>
-<p>We do not use advertising cookies or sell data. The app uses browser storage that is necessary to keep you signed in, remember your progress and understand how you found us. Our hosting and checkout providers may set their own security or payment cookies when you use their services.</p>
+<p>We do not use advertising cookies or sell data. The app uses browser storage that is necessary to keep you signed in and remember your progress, plus Google Analytics cookies to understand how the site is used. Our hosting and checkout providers may set their own security or payment cookies when you use their services.</p>
 <h2>What cookies and local storage are</h2>
 <p>A cookie is a small file a website stores in your browser. Local storage and session storage are similar browser features that can store information without sending it with every request. They are often used to keep a service working.</p>
 <h2>What we use</h2>
@@ -83,12 +113,37 @@
 <li><strong>Cloudflare</strong> for hosting, security and bot protection. Cloudflare may set security cookies such as <code>__cf_bm</code> or <code>cf_clearance</code>.</li>
 <li><strong>Selar</strong> or <strong>Payhip</strong> when you visit their checkout or download pages. Their cookies, payment processing and privacy policies apply on their domains.</li>
 <li><strong>Email and support providers</strong> when you open a link or reply to a service message, according to their own policies.</li>
+<li><strong>Google Analytics 4</strong> for site measurement. It may set <code>_ga</code> and <code>_ga_*</code> cookies on our domain and send usage data to Google. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</li>
 </ul>
 <p>We do not control third-party cookies. Check the provider's policy before paying or downloading.</p>
 <h2>Analytics and advertising</h2>
-<p>We do not currently run advertising pixels or third-party behavioural analytics. If we add non-essential analytics or marketing cookies, we will update this policy and ask for consent where the law requires it.</p>
+<p>We use <strong>Google Analytics 4</strong> to measure how the site is used (pages visited, features used, approximate region and device). This is third-party analytics, but we do not enable Google advertising features, do not run advertising pixels and do not sell data. You can opt out below, and the setting is remembered in your browser.</p>
+<p><button type="button" id="slAnalyticsToggle" class="btn dark">Opt out of analytics</button> <span id="slAnalyticsState"></span></p>
+<script>
+(function () {
+  var key = 'sl_analytics_optout';
+  var label = document.getElementById('slAnalyticsState');
+  var btn = document.getElementById('slAnalyticsToggle');
+  function paint() {
+    var off = false; try { off = !!localStorage.getItem(key); } catch (e) {}
+    if (label) label.textContent = off ? 'Analytics is OFF for this browser.' : 'Analytics is ON for this browser.';
+    if (btn) btn.textContent = off ? 'Turn analytics back on' : 'Opt out of analytics';
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var off = false; try { off = !!localStorage.getItem(key); } catch (e) {}
+    try { if (off) localStorage.removeItem(key); else localStorage.setItem(key, '1'); } catch (e) {}
+    document.cookie.split(';').forEach(function (c) {
+      var n = c.split('=')[0].trim();
+      if (n.indexOf('_ga') === 0) document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    });
+    location.reload();
+  });
+  paint();
+})();
+</script>
 <h2>Managing cookies and storage</h2>
 <p>You can clear or block cookies and site data in your browser settings. Clearing the app's local storage will sign you out and may remove saved preferences. Blocking essential storage may stop the app from working.</p>
+<p>You can also use the opt-out button above, or install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's Analytics opt-out browser add-on</a>.</p>
 <p>On Android, you can clear site data from Chrome settings for <code>soft.gabochie.com</code>. On iPhone or iPad, use Safari's website data settings.</p>
 <h2>Do Not Track</h2>
 <p>Browsers may send a "Do Not Track" signal. There is no common standard for responding to it. We limit non-essential tracking as described above.</p>

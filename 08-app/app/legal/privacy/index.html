@@ -1,6 +1,36 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2a0f4a">
@@ -60,7 +90,7 @@
     </div>
   </header>
   <div class="wrap legal-layout">
-    <article class="prose legal-prose"><p><strong>Last updated: November 17, 2026</strong></p>
+    <article class="prose legal-prose"><p><strong>Last updated: November 18, 2026</strong></p>
 <p>This Privacy Policy explains how Gabochie Books ("we", "us", "our") handles personal information in connection with The Soft Life System website, app and related services.</p>
 <h2>Who we are</h2>
 <p>The Soft Life System is operated by <strong>Gabochie Books</strong>, founded by <strong>Deon ChristoLove</strong>. You can contact us at <strong>admin@gabochie.com</strong> for privacy questions or requests.</p>
@@ -104,7 +134,7 @@
 <p>You can withdraw consent at any time from <strong>Account → Profile &amp; community</strong> in the app, or by emailing <strong>admin@gabochie.com</strong>. Withdrawing consent clears the number from your active profile and creates a withdrawal record. It does not affect your account, purchases or access to the service.</p>
 <h2>Cookies and local storage</h2>
 <p>The app uses browser local storage for your sign-in token, basic profile, referral code and first-touch acquisition details such as UTM campaign tags. These are necessary for the service to work and to understand how people found us. The admin dashboard uses a separate local storage token that is only created after an admin signs in.</p>
-<p>We may use privacy-friendly analytics or error monitoring. If we introduce non-essential cookies, we will ask for consent where required. See our <a href="/legal/cookies/">Cookie Policy</a> for the cookies and browser storage we use.</p>
+<p>We use <strong>Google Analytics 4 (GA4)</strong>, a third-party analytics service provided by Google, to understand which pages and features are used so we can improve the app. GA4 sets cookies such as <code>_ga</code> and <code>_ga_*</code> and sends usage and approximate device data to Google. We do not enable Google advertising features or use the data to build advertising profiles. You can opt out at any time from our <a href="/legal/cookies/">Cookie Policy</a>. We may also use privacy-friendly error monitoring to keep the service reliable.</p>
 <p>We show a small notice on your first visit explaining this. When you tap OK, we record your choice in your browser (local storage) so the notice does not reappear. It is not sent to our servers, and clearing your browser storage will simply bring the notice back.</p>
 <h2>Who we share with</h2>
 <p>We share only what is necessary with service providers who help us run the business, including:</p>

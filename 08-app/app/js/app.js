@@ -32,7 +32,7 @@ const App = {
     const bar = document.createElement('div');
     bar.className = 'cookie-bar';
     bar.innerHTML = `
-      <span>We use essential cookies to keep you signed in, and privacy-friendly, first-party analytics to see what's working. <a href="/legal/cookies/" target="_blank" rel="noopener">Details</a></span>
+      <span>We use essential cookies to keep you signed in, and Google Analytics to see what's working. <a href="/legal/cookies/" target="_blank" rel="noopener">Details</a></span>
       <button class="btn gold" type="button">OK</button>`;
     document.body.appendChild(bar);
     bar.querySelector('button').addEventListener('click', () => {
