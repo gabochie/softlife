@@ -938,6 +938,14 @@ const App = {
         safe(API.adminBlogPosts())
       ]);
       const analytics = { overview: anOv, audio: anAu, tasks: anTasks, onboarding: anOnb, engagement: anEn, content: anCt };
+      const coreDead = [overview, users, audio, purchases, referrals, onboarding].every((x) => x === null);
+      if (coreDead) {
+        // All core data calls failed — almost certainly a stale admin token.
+        // Send the user back to the admin login rather than a broken dashboard.
+        Store.clearAdmin();
+        Store.adminRole(null);
+        return this.admin(document.getElementById('app'));
+      }
       box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email, careers, geo, goals, blogPosts);
       this.bindAdmin();
       this.refreshAdminSpy();
@@ -1381,19 +1389,19 @@ const App = {
       ${geo === null ? '' : `
       <div class="card" id="sec-geo">
         <div class="admin-toolbar">
-          <div><span class="tag">Geo</span><h3>Visitor Geography (by IP)</h3></div>
-          <p class="note">${geo.visits.length} unique IPs in the last 7 days</p>
+          <div><span class="tag">Geo</span><h3>Where visitors come from (30 days, via Cloudflare)</h3></div>
+          <p class="note">${geo.visits.length} countries recorded · privacy-safe (ISO code, no IP storage)</p>
         </div>
         <div class="table-wrap">
           <table class="admin-table">
-            <thead><tr><th>IP</th><th>Visits</th><th>Last Seen</th></tr></thead>
+            <thead><tr><th>Country</th><th>Page views</th><th>Signed-in members</th></tr></thead>
             <tbody>
               ${geo.visits.length ? geo.visits.map((row) => `
               <tr>
-                <td><small>${esc(row.ip)}</small></td>
+                <td><b>${esc(row.country)}</b></td>
                 <td>${row.count}</td>
-                <td><small>${esc(String(row.last_seen).slice(0, 10))}</small></td>
-              </tr>`).join('') : '<tr><td colspan="3" class="note">No visitor data yet.</td></tr>'}
+                <td>${row.members}</td>
+              </tr>`).join('') : '<tr><td colspan="3" class="note">No geo data yet — page views will appear here once tracking ships.</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -1575,7 +1583,7 @@ const App = {
           </table>
         </div>
       </div>` : ''}
-      <p class="note">Generated ${esc(o.generatedAt)}. Role is for future staff access; the admin login remains a separate super-admin session.</p>`;
+      <p class="note">Generated ${o ? esc(o.generatedAt) : '—'}. Role is for future staff access; the admin login remains a separate super-admin session.</p>`;
   },
 
   bindAdmin() {

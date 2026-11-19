@@ -63,7 +63,8 @@ const EVENT_NAMES = new Set([
   "signup", "signin", "onboarding_saved", "onboarding_completed", "onboarding_skipped",
   "whatsapp_consent_granted", "whatsapp_consent_withdrawn",
   "task_added", "task_completed", "audio_play", "checkout_click", "ref_visit",
-  "password_reset_requested", "password_reset_completed", "password_changed"
+  "password_reset_requested", "password_reset_completed", "password_changed",
+  "page_view"
 ]);
 const SECURITY_HEADERS = {
   "X-Content-Type-Options": "nosniff",
@@ -275,6 +276,7 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/unsubscribe" && request.method === "GET") return unsubscribe(request, env);
   // Public: interactive lead magnets. Results are saved, then emailed to the
   // prospect as a private printable link (no attachment/deliverability issues).
+  if (path === "/api/track" && request.method === "POST") return trackEvent(request, env);
   if (path === "/api/lead/scorecard" && request.method === "POST") return scorecardSubmit(request, env);
   if (path === "/api/lead/audit" && request.method === "POST") return auditSubmit(request, env);
   if (path === "/api/lead/clarity" && request.method === "POST") return claritySubmit(request, env);
@@ -1182,21 +1184,45 @@ async function recordEvent(request, env, user) {
   if (!EVENT_NAMES.has(event)) return json({ error: "unknown event" }, 400);
   const path = cleanText(body.path, 200);
   const meta = body.meta && typeof body.meta === "object" && !Array.isArray(body.meta) ? body.meta : {};
-  await logEvent(env, user.id, event, path, meta);
+  const country = (request.cf && request.cf.country) || null;
+  await logEvent(env, user.id, event, path, meta, country);
   return json({ ok: true });
 }
 
-async function logEvent(env, userId, event, path, meta) {
-  if (!userId || !EVENT_NAMES.has(event)) return;
+async function logEvent(env, userId, event, path, meta, country) {
+  if (!EVENT_NAMES.has(event)) return;
   let payload = JSON.stringify(meta || {});
   if (payload.length > 2000) payload = JSON.stringify({ truncated: true });
+  const c = country && /^[A-Z]{2}$/.test(country) ? country : null;
   try {
     await env.DB.prepare(
-      "INSERT INTO softlife_events (user_id, event, path, meta) VALUES (?, ?, ?, ?)"
-    ).bind(userId, event, cleanText(path, 200), payload).run();
+      "INSERT INTO softlife_events (user_id, event, path, meta, country) VALUES (?, ?, ?, ?, ?)"
+    ).bind(userId || null, event, cleanText(path, 200), payload, c).run();
   } catch (err) {
     console.warn("softlife event log failed", event, err);
   }
+}
+
+// Public, anonymous page_view beacon. Records country only (no IP storage).
+// Light rate limiting: one identical event per path per minute per country.
+async function trackEvent(request, env) {
+  const body = await readJson(request);
+  const event = String(body.event || "").trim();
+  if (!EVENT_NAMES.has(event)) return json({ error: "unknown event" }, 400);
+  const path = cleanText(body.path || "/", 200);
+  const country = (request.cf && request.cf.country) || null;
+  const window = new URL(request.url).searchParams.get("t") || "";
+  try {
+    const recent = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM softlife_events WHERE country = ? AND event = ? AND path = ? "
+      + "AND created_at >= datetime('now', '-60 seconds')"
+    ).bind(country, event, path).first();
+    if (recent && recent.c > 200) return json({ ok: true }); // bot shield per country/path
+    await logEvent(env, null, event, path, {}, country);
+  } catch (err) {
+    console.warn("softlife track failed", event, err);
+  }
+  return json({ ok: true });
 }
 
 async function serveAudio(request, env, url, slug) {
@@ -2163,11 +2189,11 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
   // ---------- visitor geography ----------
   if (path === "/api/admin/geo" && request.method === "GET") {
     const rows = await env.DB.prepare(
-      "SELECT ip, COUNT(*) AS c, MAX(created_at) AS last_seen "
-      + "FROM softlife_events WHERE ip IS NOT NULL AND ip != '' "
-      + "GROUP BY ip ORDER BY c DESC LIMIT 50"
+      "SELECT COALESCE(country, '(unknown)') AS country, COUNT(*) AS c, COUNT(DISTINCT user_id) AS members "
+      + "FROM softlife_events WHERE created_at >= datetime('now', '-30 days') "
+      + "GROUP BY country ORDER BY c DESC LIMIT 50"
     ).all();
-    return json({ visits: (rows.results || []).map((r) => ({ ip: r.ip, count: r.c, last_seen: r.last_seen })) });
+    return json({ visits: (rows.results || []).map((r) => ({ country: r.country, count: r.c, members: r.members })) });
   }
 
   // ---------- blog CMS ----------
