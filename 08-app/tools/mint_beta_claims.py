@@ -2,8 +2,8 @@
 """Mint beta-access claim links for Soft Life testers.
 
 Creates rows in softlife_purchase_claims (the exact table buyers' claims live in)
-with tier 'complete', then prints one single-use access link per tester plus a
-ready-to-paste WhatsApp/email invite. Links expire in 30 days (same as paid ones).
+with tier 'free' (trial), then prints one single-use access link per tester plus a
+ready-to-paste WhatsApp/email invite. Beta links expire in 14 days; paid claim links keep 30 days.
 
 Usage:
   python tools/mint_beta_claims.py tools/beta_testers.txt            # production
@@ -61,7 +61,7 @@ def mint_local(testers):
             (t["email"],),
         )
         conn.execute(
-            "INSERT INTO purchase_claims (email, token, order_id, tier) VALUES (?,?,?,'complete')",
+            "INSERT INTO purchase_claims (email, token, order_id, tier) VALUES (?,?,?,'free')",
             (t["email"], t["token"], t["order"]),
         )
     conn.commit()
@@ -77,7 +77,7 @@ def mint_remote(testers):
         t["token"] = secrets.token_hex(16)
         t["order"] = f"BETA-{i:02d}"
         values.append(
-            f"({sql_quote(t['email'])}, {sql_quote(t['token'])}, {sql_quote(t['order'])}, 'complete')"
+            f"({sql_quote(t['email'])}, {sql_quote(t['token'])}, {sql_quote(t['order'])}, 'free')"
         )
     stmts.append(
         "INSERT INTO softlife_purchase_claims (email, token, order_id, tier) VALUES "
@@ -102,15 +102,15 @@ def mint_remote(testers):
 
 INVITE = """Hi {name}!
 
-You're in 🎉 You're one of my first 12 beta testers for The Soft Life System — the app version of the book: a 90-day task plan, audio lessons you can listen to on the move, and everything working toward building your business in about 15 hours a week.
+You're in 🎉 You're one of my first 18 beta testers for The Soft Life System — the app version of the book: a 90-day task plan, audio lessons you can listen to on the move, and everything working toward building your business in about 15 hours a week.
 
-Your access link (works once, expires in 30 days):
+Your access link (works once, valid for 14 days):
 {link}
 
-Tap it, set your password, and the whole system opens up. In exchange I'd love your honest feedback — what's confusing, what's boring, what actually helps. Reply here or email me anytime.
+Tap it, set your password, and the free trial opens up - upgrade only if it proves itself. In exchange I'd love your honest feedback — what's confusing, what's boring, what actually helps. Reply here or email me anytime.
 
 Welcome to the soft life,
-Gideon"""
+Deon ChristoLove"""
 
 
 def print_report(testers, mode):

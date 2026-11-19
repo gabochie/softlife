@@ -711,9 +711,12 @@ async function changePassword(request, env, user) {
 
 async function validClaim(env, token) {
   if (!token) return null;
+  // Beta invitations are deliberately short-lived (14 days) to create real
+  // urgency; paid purchasers keep the 30-day window.
   return env.DB.prepare(
     "SELECT * FROM softlife_purchase_claims WHERE token = ? AND completed_at IS NULL "
-    + "AND created_at >= datetime('now', '-30 days')"
+    + "AND created_at >= datetime('now', CASE WHEN COALESCE(order_id, '') LIKE 'BETA-%' "
+    + "THEN '-14 days' ELSE '-30 days' END)"
   ).bind(token).first();
 }
 
