@@ -914,7 +914,7 @@ const App = {
     const safe = (p) => p.catch(() => null);
     const isSuper = (Store.adminRole() || 'superadmin') === 'superadmin';
     try {
-      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims, email] = await Promise.all([
+      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims, email, careers, geo, goals] = await Promise.all([
         safe(API.adminOverview()),
         safe(API.adminUsers(q)),
         safe(API.adminAudio()),
@@ -931,10 +931,13 @@ const App = {
         safe(API.analyticsContent()),
         isSuper ? safe(API.securityOverview()) : Promise.resolve(null),
         (isSuper || Store.adminRole() === 'sales') ? safe(API.adminClaims()) : Promise.resolve(null),
-        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminEmail()) : Promise.resolve(null)
+        (isSuper || Store.adminRole() === 'sales') ? safe(API.adminEmail()) : Promise.resolve(null),
+        isSuper ? safe(API.adminCareers()) : Promise.resolve(null),
+        isSuper ? safe(API.adminGeo()) : Promise.resolve(null),
+        isSuper ? safe(API.adminGoals()) : Promise.resolve(null)
       ]);
       const analytics = { overview: anOv, audio: anAu, tasks: anTasks, onboarding: anOnb, engagement: anEn, content: anCt };
-      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email);
+      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email, careers, geo, goals);
       this.bindAdmin();
       this.refreshAdminSpy();
       this.renderAdminCharts(analytics);
@@ -1096,12 +1099,17 @@ const App = {
     return `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
   },
 
-  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null, email = null) {
+  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null, email = null, careers = null, geo = null, goals = null) {
     const missing = a?.missing || [];
     const profiles = ob?.onboarding || [];
     const optedIn = profiles.filter((row) => row.whatsapp_consent);
     const denied = '<p class="note">This section is not available for your role.</p>';
     const money = (row) => row.amount == null ? '—' : `${row.currency ? esc(row.currency) + ' ' : ''}${esc(row.amount)}`;
+    const goalProgress = (g, rev) => {
+      if (!g || !rev) return 0;
+      const t = Number(g.target_amount) || 0;
+      return t > 0 ? Math.min(100, Math.round((Number(rev) / t) * 100)) : 0;
+    };
     return `
       <div class="admin-stats" id="sec-overview">
         <div class="stat"><b>${o ? o.users : '—'}</b><small>Members</small></div>
@@ -1298,6 +1306,88 @@ const App = {
           </tbody></table></div>` : ''}
         </div>`}
 
+      ${careers === null ? '' : `
+      <div class="card" id="sec-careers">
+        <div class="admin-toolbar">
+          <div><span class="tag">Careers</span><h3>Job Applications</h3></div>
+          <p class="note">${careers.applications.length} application${careers.applications.length !== 1 ? 's' : ''} received via /careers/</p>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Availability</th><th>Applied</th><th>Message</th></tr></thead>
+            <tbody>
+              ${careers.applications.length ? careers.applications.map((row) => `
+              <tr>
+                <td><b>${esc(row.name)}</b></td>
+                <td><small>${esc(row.email)}</small></td>
+                <td>${esc(row.role)}</td>
+                <td><small>${esc(row.availability || '—')}</small></td>
+                <td><small>${esc(String(row.created_at).slice(0, 10))}</small></td>
+                <td><small>${esc(row.message || '').slice(0, 80)}${esc(row.message || '').length > 80 ? '…' : ''}</small></td>
+              </tr>`).join('') : '<tr><td colspan="6" class="note">No applications yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>`}
+
+      ${geo === null ? '' : `
+      <div class="card" id="sec-geo">
+        <div class="admin-toolbar">
+          <div><span class="tag">Geo</span><h3>Visitor Geography (by IP)</h3></div>
+          <p class="note">${geo.visits.length} unique IPs in the last 7 days</p>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>IP</th><th>Visits</th><th>Last Seen</th></tr></thead>
+            <tbody>
+              ${geo.visits.length ? geo.visits.map((row) => `
+              <tr>
+                <td><small>${esc(row.ip)}</small></td>
+                <td>${row.count}</td>
+                <td><small>${esc(String(row.last_seen).slice(0, 10))}</small></td>
+              </tr>`).join('') : '<tr><td colspan="3" class="note">No visitor data yet.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>`}
+
+      ${goals === null ? '' : `
+      <div class="card" id="sec-goals">
+        <div class="admin-toolbar">
+          <div><span class="tag">Goals</span><h3>Revenue Targets</h3></div>
+          <p class="note">Set monthly revenue targets to reverse-engineer the sales you need.</p>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Period</th><th>Target</th><th>Recorded</th><th>Progress</th><th>Gap</th><th>Set</th></tr></thead>
+            <tbody>
+              ${goals.goals.length ? goals.goals.map((g) => {
+                const recorded = Number(o?.revenue || 0);
+                const pct = goalProgress(g, recorded);
+                const gap = Math.max(0, Number(g.target_amount) - recorded);
+                return `<tr>
+                  <td><b>${esc(g.period)}</b></td>
+                  <td>${esc(g.currency)} ${Number(g.target_amount).toFixed(2)}</td>
+                  <td>${esc(g.currency)} ${recorded.toFixed(2)}</td>
+                  <td>${pct}%</td>
+                  <td>${esc(g.currency)} ${gap.toFixed(2)}</td>
+                  <td><small>${esc(String(g.updated_at || g.created_at).slice(0, 10))}</small></td>
+                </tr>`;
+              }).join('') : '<tr><td colspan="6" class="note">No goals set yet.</td></tr>'}
+            </tbody>
+          </table>
+          <form id="goalForm" style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;max-width:640px;margin-top:12px">
+            <input name="period" type="text" placeholder="YYYY-MM" maxlength="7" aria-label="Period (YYYY-MM)" style="padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit">
+            <input name="target_amount" type="number" placeholder="Target amount" aria-label="Target amount" style="padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit">
+            <select name="target_currency" aria-label="Currency" style="padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit">
+              <option value="USD">USD</option><option value="GHS">GHS</option>
+            </select>
+            <button class="btn dark" type="submit">Set goal</button>
+          </form>
+          <p class="note" id="goalMsg"></p>
+        </div>
+      </div>`}
+
       ${Array.isArray(team && team.staff) ? `
       <div class="card" id="sec-team">
         <div class="admin-toolbar">
@@ -1469,8 +1559,10 @@ const App = {
       btn.addEventListener('click', async () => {
         const code = btn.dataset.payout;
         if (!confirm('Mark all pending earnings for ' + code + ' as paid?')) return;
+        const paymentMethod = prompt('Payment method (bank / MoMo / other):', '');
+        const payoutReference = prompt('Payout reference (optional):', '');
         btn.disabled = true; btn.textContent = 'Paying…';
-        try { const r = await API.adminAffiliatePayout(code); await this.loadAdmin(); alert('Marked ' + r.paid + ' earning(s) as paid (' + r.total + ').'); }
+        try { const r = await API.adminAffiliatePayout(code, paymentMethod || null, payoutReference || null); await this.loadAdmin(); alert('Marked ' + r.paid + ' earning(s) as paid (' + r.total + ').'); }
         catch (err) { alert(err.message); btn.disabled = false; btn.textContent = 'Mark paid'; }
       });
     });
@@ -1535,6 +1627,26 @@ const App = {
           await this.loadAdmin();
         } catch (err) { alert(err.message); btn.disabled = false; }
       });
+    });
+    const goalForm = document.getElementById('goalForm');
+    if (goalForm) goalForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = goalForm.querySelector('button');
+      const msg = document.getElementById('goalMsg');
+      btn.disabled = true;
+      btn.textContent = 'Setting…';
+      try {
+        await API.adminSetGoal({ period: goalForm.period.value, target_amount: Number(goalForm.target_amount.value), target_currency: goalForm.target_currency.value });
+        msg.textContent = 'Goal saved.';
+        msg.style.color = '#0a7a4a';
+        goalForm.reset();
+        await this.loadAdmin();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = '#b42318';
+        btn.disabled = false;
+        btn.textContent = 'Set goal';
+      }
     });
     document.querySelectorAll('[data-webhook-replay]').forEach((btn) => {
       btn.addEventListener('click', async () => {

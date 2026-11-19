@@ -26,6 +26,9 @@
     shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 5 6.2v5.1c0 4.3 2.9 7.6 7 9.2 4.1-1.6 7-4.9 7-9.2V6.2L12 3.5z"/><path d="m9.2 11.8 2 2 3.6-3.9"/></svg>',
     spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l1.7 4.8 4.8 1.7-4.8 1.7L12 16.5l-1.7-4.8L5.5 10l4.8-1.7z"/><path d="M18.5 16.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>',
     arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/></svg>',
+    careers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.47"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    geo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-9-9"/><path d="M12 3v9"/><path d="M5 12h14"/></svg>',
+    goals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8-10-8h9l1-8z"/></svg>',
   },
 
     surfaces: {
@@ -90,7 +93,10 @@
           { id: 'referrals', label: 'Referrals', icon: 'share',     roles: ['superadmin', 'sales', 'support', 'content'] },
           { id: 'team',      label: 'Team',      icon: 'members',   roles: ['superadmin'] },
           { id: 'webhooks',  label: 'Webhooks',  icon: 'purchases', roles: ['superadmin', 'sales'] },
-          { id: 'security',  label: 'Security',  icon: 'shield',    roles: ['superadmin'] }
+          { id: 'security',  label: 'Security',  icon: 'shield',    roles: ['superadmin'] },
+          { id: 'careers',   label: 'Careers',   icon: 'members',   roles: ['superadmin', 'sales', 'support'] },
+          { id: 'geo',       label: 'Geo',       icon: 'audience',  roles: ['superadmin', 'sales', 'support', 'content'] },
+          { id: 'goals',     label: 'Goals',     icon: 'chart',     roles: ['superadmin', 'sales'] }
         ]
       }
     }

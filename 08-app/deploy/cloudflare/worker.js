@@ -22,7 +22,10 @@ const ADMIN_CAPS = {
   webhooks: new Set(["superadmin", "sales"]),
   security: new Set(["superadmin"]),
   email: new Set(["superadmin", "sales"]),
-  affiliate_payout: new Set(["superadmin"])
+  affiliate_payout: new Set(["superadmin"]),
+  careers: new Set(["superadmin", "sales", "support"]),
+  geo: new Set(["superadmin", "sales", "support", "content"]),
+  goals: new Set(["superadmin", "sales"])
 };
 // Blog registry mirrors tools/build_blog.py POSTS (slug -> title).
 const BLOG_POSTS = [
@@ -1315,6 +1318,9 @@ function capForRoute(path) {
   if (path === "/api/admin/purchases") return "purchases";
   if (path === "/api/admin/onboarding") return "onboarding";
   if (path === "/api/admin/audio") return "audio";
+  if (path === "/api/admin/careers") return "careers";
+  if (path === "/api/admin/geo") return "geo";
+  if (path === "/api/admin/goals") return "goals";
   return null;
 }
 
@@ -1580,16 +1586,31 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
     const body = await readJson(request);
     const refCode = String(body.ref_code || "").trim().toUpperCase().slice(0, 24);
     if (!refCode) return json({ error: "ref_code required" }, 400);
+    const paymentMethod = String(body.payment_method || "").trim() || null;
+    const payoutReference = String(body.payout_reference || "").trim() || null;
     const pending = await env.DB.prepare(
-      "SELECT COALESCE(SUM(amount), 0) AS s, COUNT(*) AS c FROM softlife_affiliate_earnings WHERE ref_code = ? AND status = 'pending'"
+      "SELECT COALESCE(SUM(amount), 0) AS s, COUNT(*) AS c, "
+      + "(SELECT name FROM softlife_users WHERE lower(email) = lower(a.email) LIMIT 1) AS affiliate_name, "
+      + "(SELECT email FROM softlife_users WHERE lower(email) = lower(a.email) LIMIT 1) AS affiliate_email "
+      + "FROM softlife_affiliate_earnings a WHERE ref_code = ? AND status = 'pending'"
     ).bind(refCode).first();
     const total = Math.round(Number(pending.s) * 100) / 100;
     const count = pending ? pending.c : 0;
     if (count === 0) return json({ ok: true, paid: 0, total: 0, message: "No pending earnings." });
-    await env.DB.prepare(
-      "UPDATE softlife_affiliate_earnings SET status = 'paid', paid_at = datetime('now') WHERE ref_code = ? AND status = 'pending'"
-    ).bind(refCode).run();
-    return json({ ok: true, paid: count, total, ref_code: refCode });
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE softlife_affiliate_earnings SET status = 'paid', paid_at = datetime('now'), "
+        + "payment_method = COALESCE(?, payment_method), payout_date = datetime('now'), "
+        + "payout_reference = COALESCE(?, payout_reference) WHERE ref_code = ? AND status = 'pending'"
+      ).bind(paymentMethod, payoutReference, refCode),
+      env.DB.prepare(
+        "INSERT INTO softlife_affiliate_payouts (ref_code, affiliate_name, affiliate_email, amount_cents, "
+        + "payment_method, payout_reference, paid_by) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(refCode, pending.affiliate_name, pending.affiliate_email, Math.round(total * 100),
+        paymentMethod, payoutReference, admin.actor || "superadmin")
+    ]);
+    await logSecurity(env, "affiliate_payout", refCode, clientIp(request), `paid ${count} earnings total ${total}`);
+    return json({ ok: true, paid: count, total, ref_code: refCode, payment_method: paymentMethod });
   }
 
   if (path === "/api/admin/purchases" && request.method === "GET") {
@@ -1994,6 +2015,56 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
       return { ...r, claimUrl: `${origin}/#/claim?token=${token}` };
     });
     return json({ pending, completed: countValue(completed), emails: emails.results || [] });
+  }
+
+  // ---------- career applications ----------
+  if (path === "/api/admin/careers" && request.method === "GET") {
+    const rows = await env.DB.prepare(
+      "SELECT id, name, email, role, portfolio, availability, message, consent, ip, created_at "
+      + "FROM softlife_job_applications ORDER BY created_at DESC LIMIT 200"
+    ).all();
+    return json({ applications: rows.results || [] });
+  }
+
+  // ---------- visitor geography ----------
+  if (path === "/api/admin/geo" && request.method === "GET") {
+    const rows = await env.DB.prepare(
+      "SELECT ip, COUNT(*) AS c, MAX(created_at) AS last_seen "
+      + "FROM softlife_events WHERE ip IS NOT NULL AND ip != '' "
+      + "GROUP BY ip ORDER BY c DESC LIMIT 50"
+    ).all();
+    return json({ visits: (rows.results || []).map((r) => ({ ip: r.ip, count: r.c, last_seen: r.last_seen })) });
+  }
+
+  // ---------- financial goals ----------
+  if (path === "/api/admin/goals" && request.method === "GET") {
+    const rows = await env.DB.prepare(
+      "SELECT id, period, target_amount_cents, target_currency, created_at, updated_at "
+      + "FROM softlife_financial_goals ORDER BY period DESC"
+    ).all();
+    return json({ goals: (rows.results || []).map((r) => ({
+      id: r.id,
+      period: r.period,
+      target_amount: r.target_amount_cents / 100,
+      currency: r.target_currency,
+      created_at: r.created_at,
+      updated_at: r.updated_at
+    })) });
+  }
+
+  if (path === "/api/admin/goals" && request.method === "POST") {
+    const body = await readJson(request);
+    const period = String(body.period || "").trim();
+    const target = Number(body.target_amount);
+    const currency = String(body.target_currency || "USD").toUpperCase();
+    if (!period || !/^\d{4}-\d{2}$/.test(period)) return json({ error: "period must be YYYY-MM" }, 400);
+    if (!target || target <= 0) return json({ error: "target_amount must be > 0" }, 400);
+    await env.DB.prepare(
+      "INSERT INTO softlife_financial_goals (period, target_amount_cents, target_currency) VALUES (?, ?, ?) "
+      + "ON CONFLICT(period) DO UPDATE SET target_amount_cents = excluded.target_amount_cents, "
+      + "target_currency = excluded.target_currency, updated_at = datetime('now')"
+    ).bind(period, Math.round(target * 100), currency).run();
+    return json({ ok: true });
   }
 
   return json({ error: "not found" }, 404);

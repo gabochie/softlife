@@ -75,7 +75,19 @@ const API = {
   adminClaims() { return this.request('/admin/claims', { admin: true }); },
   adminEmail() { return this.request('/admin/email', { admin: true }); },
   adminSendCampaign(body) { return this.request('/admin/email/campaigns', { method: 'POST', body, admin: true }); },
-  adminRunSequences() { return this.request('/admin/email/sequences', { method: 'POST', admin: true }); }
+  adminRunSequences() { return this.request('/admin/email/sequences', { method: 'POST', admin: true }); },
+
+  adminCareers() { return this.request('/admin/careers', { admin: true }); },
+  adminGeo() { return this.request('/admin/geo', { admin: true }); },
+  adminGoals() { return this.request('/admin/goals', { admin: true }); },
+  adminSetGoal(body) { return this.request('/admin/goals', { method: 'POST', body, admin: true }); },
+  adminAffiliatePayout(refCode, paymentMethod, payoutReference) {
+    return this.request('/admin/affiliate/payout', {
+      method: 'POST',
+      body: { ref_code: refCode, payment_method: paymentMethod, payout_reference: payoutReference },
+      admin: true
+    });
+  }
 };
 
 class ApiError extends Error {
