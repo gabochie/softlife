@@ -129,6 +129,9 @@ audio{width:100%}
 .tabs{display:flex;gap:2px;overflow-x:auto}
 .tabs a{padding:13px 18px;font-size:.85rem;color:#6d5f7a;text-decoration:none;white-space:nowrap;border-bottom:2.5px solid transparent;border-radius:0}
 .tabs a.active{color:var(--royal);border-color:var(--pink);font-weight:700}
+.tabs a .t-ic{display:inline-flex;align-items:center;vertical-align:middle}
+.tabs a .t-ic svg{width:20px;height:20px;display:block}
+.tabs a.tab-cta{color:var(--pink-deep);font-weight:700}
 .t-ic{margin-right:7px}
 .dash-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:14px;flex-wrap:wrap}
 .hi{font-size:1.55rem;margin-bottom:2px}
@@ -227,6 +230,9 @@ audio{width:100%}
     min-height:48px;padding:9px 4px 7px;font-size:.62rem;font-weight:600;border-bottom:none;
   }
   .tabs a.active{color:var(--pink-deep)}
+  .tabs a .t-ic{display:inline-flex;align-items:center}
+  .tabs a .t-ic svg{width:20px;height:20px;display:block}
+  .tabs a.tab-cta{color:var(--pink-deep);font-weight:700}
   .tabs a.active .t-ic{transform:translateY(-1px) scale(1.12)}
   .t-ic{margin:0;font-size:1.15rem;transition:transform .15s}
   .member{padding-bottom:calc(86px + env(safe-area-inset-bottom))}

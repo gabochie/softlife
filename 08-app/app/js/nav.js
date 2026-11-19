@@ -14,6 +14,7 @@
   }
 
   var path = location.pathname;
+  var ICONS = (window.SL_NAV && window.SL_NAV.icons) || {};
   var authed = false;
   try { authed = !!localStorage.getItem('softlife_token'); } catch (e) {}
 
@@ -28,9 +29,14 @@
   }
 
   function link(item) {
+    var svg = ICONS[item.icon] || '';
+    var classes = [];
+    if (item.cta) classes.push('tab-cta');
     var html = '<a href="' + item.href + '" data-sl-item="' + item.label + '"';
-    if (isActive(item.href)) html += ' aria-current="page"';
-    return html + '>' + item.label + '</a>';
+    if (isActive(item.href)) { classes.push('active'); html += ' aria-current="page"'; }
+    if (classes.length) html += ' class="' + classes.join(' ') + '"';
+    var inner = svg ? '<span class="t-ic">' + svg + '</span><span>' + item.label + '</span>' : item.label;
+    return html + '>' + inner + '</a>';
   }
 
   function links(items) {
