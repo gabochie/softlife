@@ -47,6 +47,7 @@
           { label: 'Home',       href: '/',          icon: 'home' },
           { label: 'Products',   href: '/products/', icon: 'grid' },
           { label: 'Free tools', href: '/tools/',    icon: 'spark' },
+          { label: 'Careers',    href: '/careers/',  icon: 'members' },
           { label: 'Start free', href: '/#/signup',  icon: 'arrow', cta: true }
         ]
       },
@@ -58,7 +59,6 @@
           { label: 'Business Audit', href: '/consultation/' },
           { label: 'Free tools',    href: '/tools/' },
           { label: 'About',         href: '/about/' },
-          { label: 'Careers',       href: '/careers/' },
           { label: 'Careers',       href: '/careers/' },
           { label: 'The Journal',   href: '/blog/' },
           { label: 'RSS feed',      href: '/blog/feed.xml' },

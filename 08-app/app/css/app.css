@@ -679,3 +679,11 @@ audio{width:100%}
 .celebration-confetti { font-size: 3rem; margin-bottom: 8px; }
 .celebration-inner h2 { font-family: Georgia, serif; color: #5d2189; margin: 0 0 6px; }
 .celebration-inner p { color: #6d5f7a; margin: 0; }
+
+/* Secure password generator — attached to new-password fields */
+.pw-gen-label{display:inline-flex;align-items:center;gap:8px;margin:15px 0 6px}
+.pw-gen-label input{width:auto;flex:1;min-width:0}
+.btn-gen{margin:0 0 0 8px;padding:7px 12px;font-size:.82rem;font-weight:700;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:#2a0f4a;cursor:pointer}
+.btn-gen:hover{border-color:var(--pink);background:#fdf2f8}
+.btn-eye{margin:0 0 0 8px;padding:7px 12px;font-size:.82rem;font-weight:700;border-radius:10px;border:1.5px solid var(--line);background:#fff;color:#2a0f4a;cursor:pointer}
+.btn-eye:hover{border-color:var(--pink);background:#fdf2f8}

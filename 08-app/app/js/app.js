@@ -177,16 +177,18 @@ const App = {
               <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
               <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
               <div class="footer-social" aria-label="Follow Soft Life">
-                <a href="https://www.instagram.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Instagram">Instagram</a>
-                <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
                 <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
-                <a href="https://www.facebook.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on Facebook">Facebook</a>
+                <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
+                <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
               </div>
             </div>
-            <nav aria-label="Explore">
+            <nav aria-label="Explore" data-sl-surface="footer_explore">
               <b>Explore</b>
               <a href="/products/">Products</a>
               <a href="/consultation/">Business Audit</a>
+              <a href="/tools/">Free tools</a>
+              <a href="/about/">About</a>
+              <a href="/careers/">Careers</a>
               <a href="/blog/">The Journal</a>
               <a href="/blog/feed.xml">RSS feed</a>
               <a href="#/signup">Free app</a>
