@@ -2,9 +2,7 @@
 <html lang="en">
 <head>
 <!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
-<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
 <script>
-  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
   try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
 </script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
@@ -12,12 +10,7 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){ dataLayer.push(arguments); }
   gtag('js', new Date());
-  gtag('config', 'G-XT009WN744', {
-    send_page_view: false,   // we send page views manually for the hash-router SPA
-    currency: 'GHS'
-  });
-
-  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  gtag('config', 'G-XT009WN744', { send_page_view: false, currency: 'GHS' });
   function slPageView() {
     gtag('event', 'page_view', {
       page_path: location.pathname + (location.hash || '/'),
@@ -26,18 +19,14 @@
   }
   slPageView();
   window.addEventListener('hashchange', slPageView);
-
-  // Simple helper for our own events: slTrack('event_name', {param: value})
   window.slTrack = function (name, params) { gtag('event', name, params || {}); };
 </script>
 <!-- ============================== END GA4 ==================================== -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2a0f4a">
-<title>Products — The Soft Life System</title>
-<meta name="description" content="Start with The Soft Life System Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit."/>
-<meta property="og:description" content="Start with the Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit."/>
-<meta name="twitter:description" content="Start with the Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit.">
+<title>The Soft Life System — One Offer, 15 Hours a Week</title>
+<meta name="description" content="The Soft Life System helps founders build a business that runs in 15 hours a week — one premium offer, a repeatable delivery machine, and a 90-day plan. Free to start.">
 <meta name="author" content="Deon ChristoLove">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="https://soft.gabochie.com/products/">
@@ -48,56 +37,69 @@
 <link rel="stylesheet" href="/css/app.css">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="The Soft Life System">
-<meta property="og:title" content="Products — The Soft Life System">
-<meta property="og:description" content="Start with the Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit.">
+<meta property="og:title" content="The Soft Life System — One Offer, 15 Hours a Week">
+<meta property="og:description" content="The Soft Life System helps founders build a business that runs in 15 hours a week — one premium offer, a repeatable delivery machine, and a 90-day plan. Free to start.">
 <meta property="og:url" content="https://soft.gabochie.com/products/">
 <meta property="og:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Products — The Soft Life System">
-<meta name="twitter:description" content="Start with the Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit.">
+<meta name="twitter:title" content="The Soft Life System — One Offer, 15 Hours a Week">
+<meta name="twitter:description" content="The Soft Life System helps founders build a business that runs in 15 hours a week — one premium offer, a repeatable delivery machine, and a 90-day plan. Free to start.">
 <meta name="twitter:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
+      "@type": "Organization",
+      "@id": "https://soft.gabochie.com/#organization",
+      "name": "Gabochie Books",
+      "url": "https://soft.gabochie.com/",
+      "logo": "https://soft.gabochie.com/assets/icons/icon-512.png",
+      "sameAs": [
+        "https://www.youtube.com/@softlifesys",
+        "https://x.com/softlifesys",
+        "https://www.tiktok.com/@softlifesys"
+      ]
+    },
+    {
+      "@type": "Person",
+      "@id": "https://soft.gabochie.com/#founder",
+      "name": "Deon ChristoLove",
+      "jobTitle": "Founder & Author",
+      "worksFor": {"@type": "Organization", "@id": "https://soft.gabochie.com/#organization"}
+    },
+    {
       "@type": "WebPage",
       "@id": "https://soft.gabochie.com/products/#webpage",
       "url": "https://soft.gabochie.com/products/",
-      "name": "Products — The Soft Life System",
-      "description": "Start with The Soft Life System Complete bundle, watch for in-app implementation toolkits, or apply for a Soft Life Business Audit.",
-      "isPartOf": {"@type": "WebSite", "name": "The Soft Life System", "url": "https://soft.gabochie.com/"}
+      "name": "The Soft Life System — One Offer, 15 Hours a Week",
+      "description": "The Soft Life System helps founders build a business that runs in 15 hours a week — one premium offer, a repeatable delivery machine, and a 90-day plan. Free to start.",
+      "isPartOf": {"@type": "WebSite", "@id": "https://soft.gabochie.com/#website"},
+      "publisher": {"@id": "https://soft.gabochie.com/#organization"},
+      "author": {"@id": "https://soft.gabochie.com/#founder"}
     },
     {
-      "@type": "Product",
-      "name": "The Soft Life System — Complete bundle",
-      "description": "The complete book, all 15 audio chapters, the 90-day launch plan, worksheets and the monthly review ritual.",
-      "brand": {"@type": "Brand", "name": "The Soft Life System"},
-      "image": "https://soft.gabochie.com/assets/blog/soft-life-cover.jpg",
-      "url": "https://soft.gabochie.com/products/",
-      "offers": {
-        "@type": "Offer",
-        "url": "https://soft.gabochie.com/#/checkout",
-        "priceCurrency": "USD",
-        "price": "19.99",
-        "availability": "https://schema.org/InStock"
-      }
-    },
-    {
-      "@type": "Service",
-      "name": "The Soft Life Business Audit",
-      "description": "A 90-minute business audit with a written 90-day plan and a 14-day follow-up.",
-      "provider": {"@type": "Organization", "name": "Gabochie Books", "url": "https://soft.gabochie.com/"},
-      "url": "https://soft.gabochie.com/consultation/",
-      "offers": {
-        "@type": "Offer",
-        "url": "https://soft.gabochie.com/consultation/",
-        "priceCurrency": "USD",
-        "price": "99.00",
-        "availability": "https://schema.org/LimitedAvailability"
-      }
+      "@type": "FAQPage",
+      "@id": "https://soft.gabochie.com/products/#faqpage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Do I need to read the book first?",
+          "acceptedAnswer": {"@type": "Answer", "text": "No. The app includes the introduction audio and Chapter 1. The Complete bundle includes the full book and all 15 chapters."}
+        },
+        {
+          "@type": "Question",
+          "name": "Is the 15-hour workweek realistic?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes, for a focused service or digital-product business with one clear offer. It is not realistic if you are still selling five different things to five different audiences."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can I upgrade later?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. Start free, prove the system works for 30 days, then upgrade to the Complete bundle whenever you are ready."}
+        }
+      ]
     }
   ]
 }
@@ -111,133 +113,223 @@
       <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
       <div class="bar-actions">
         <nav aria-label="Main" data-sl-surface="web_header">
-          <a href="/products/">Products</a>
+          <a href="/products/" aria-current="page">Products</a>
           <a href="/tools/">Free tools</a>
           <a href="/about/">About</a>
           <a href="/#/signin">Sign in</a>
         </nav>
+        <a class="top-cta" href="/#/signup">Start free</a>
       </div>
     </div>
   </header>
 
   <main id="main">
     <section class="hero">
-      <div class="wrap">
-        <div class="kicker">Products · The Soft Life System</div>
-        <h1>Start with the system. <em>Add support when you need it.</em></h1>
-        <p class="lede">The book is the front door. The Complete bundle gives you the full library. The Business Audit gives you a plan for your own business.</p>
-        <div class="hero-cta">
-          <a class="btn gold big" href="/#/checkout">Get the Complete bundle — $19.99</a>
-          <a class="btn ghost big" href="/consultation/">See the Business Audit</a>
+      <div class="wrap center">
+        <div class="kicker">The Soft Life System</div>
+        <h1>The Soft Life System. <em>One offer. One process. 15 hours a week.</em></h1>
+        <p class="lede" style="max-width:720px;margin:0 auto">Build a business that buys your freedom — not one that eats your life. The app gives you one premium offer, a repeatable delivery machine, and a 90-day task plan. Free to start. Upgrade only when it proves itself.</p>
+        <div class="hero-cta" style="justify-content:center">
+          <a class="btn gold big" href="/#/signup">Start free — no card</a>
+          <a class="btn ghost big" href="/tools/">See the free tools →</a>
         </div>
-        <div class="hero-note">Prices in USD. 14-day refund policy. Everything lives in the app — nothing to download.</div>
+        <div class="hero-note">No card · No download · Your progress stays yours</div>
       </div>
     </section>
 
     <section>
       <div class="wrap">
-        <h2>Choose your next step</h2>
-        <p class="sub">Start free if you want to test the system. Buy the Complete bundle if you want the full library. Apply for the audit if you want a plan built around your business.</p>
+        <h2>The trap: a business that never closes</h2>
+        <p>You started because you wanted freedom. Then the business became a second household: always hungry, always open, always asking for more.</p>
+        <p>If revenue stops when you close your laptop, you don't have a business. You have a very demanding job with a logo. Every client is a custom project. Your best ideas live in your head. Your calendar is full but your life is empty.</p>
+        <blockquote style="margin:24px 0;padding:18px 22px;border-left:4px solid var(--pink);background:#fff;border-radius:0 14px 14px 0;box-shadow:var(--shadow);font-family:var(--serif);font-size:1.14rem;color:var(--royal);">
+          A business is not something you own because you registered a name. It's something you own because it can keep its promise without your constant supervision.
+        </blockquote>
+        <div class="hero-cta" style="justify-content:flex-start">
+          <a class="btn gold wide" href="/tools/audit.html">Take the 15-Hour Workweek Audit →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="pale">
+      <div class="wrap">
+        <h2>What the Soft Life System actually is</h2>
+        <p>Three parts. Nothing more.</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:.95rem">
+          <thead>
+            <tr style="text-align:left">
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">Part</th>
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">What it is</th>
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);"><b>One offer</b></td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">A single premium offer with one audience, one problem, one outcome</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Stops you from rebuilding the business every time someone says yes</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);"><b>Delivery machine</b></td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Templates, checklists, saved replies — the "business brain"</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Lets systems carry routine work instead of you</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 10px;"><b>90-day plan</b></td>
+              <td style="padding:12px 10px;">Preloaded task list in the app, week by week</td>
+              <td style="padding:12px 10px;">Moves you from idea to running system without guesswork</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin-top:14px">You don't need five offers. You need one that works, delivered the same way every time. The app turns this into tasks you can actually check off.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>How it works: the four jobs</h2>
+        <p>Every week has four jobs. The mistake is trying to do all four every day.</p>
         <div class="grid3">
           <div class="card">
-            <span class="tag">Free</span>
-            <h3>The free app</h3>
-            <p>Listen to the introduction and Chapter 1, start the 90-day task plan and use your affiliate link. No credit card.</p>
-            <div style="margin-top:16px"><a class="btn ghost" href="/#/signup">Create a free account</a></div>
+            <span class="tag">1 · Choose</span>
+            <h3>Decide who you serve</h3>
+            <p>One audience, one outcome, and what you will not do. Everything else is a distraction.</p>
           </div>
           <div class="card">
-            <span class="tag">Best place to start</span>
-            <h3>The Complete bundle</h3>
-            <p><b>$19.99</b> founding price · <s>$29.99</s> regular</p>
-            <p>All 15 audio chapters, the full book in the app, worksheets and the monthly review ritual.</p>
-            <div style="margin-top:16px"><a class="btn gold" href="/#/checkout">Get the Complete bundle</a></div>
+            <span class="tag">2 · Create</span>
+            <h3>Build the offer and experience</h3>
+            <p>Make the offer, the content, and the client experience that deliver the outcome.</p>
           </div>
           <div class="card">
-            <span class="tag">Guided</span>
-            <h3>The Business Audit</h3>
-            <p><b>$99</b> founding rate for the first five · <s>$197</s> standard</p>
-            <p>A 90-minute audit and a written 90-day plan for your own business.</p>
-            <div style="margin-top:16px"><a class="btn dark" href="/consultation/">See what's included</a></div>
+            <span class="tag">3 · Carry</span>
+            <h3>Build the systems that carry routine work</h3>
+            <p>Templates, automations, saved replies — the "business brain" that runs without you.</p>
+          </div>
+          <div class="card">
+            <span class="tag">4 · Check</span>
+            <h3>Review, adjust, protect the margin</h3>
+            <p>Review the numbers, the calendar, and the energy. Then adjust.</p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="pale">
-      <div class="wrap checkout-grid">
-        <div class="card">
-          <span class="tag">Complete bundle</span>
-          <h2>Everything in the system</h2>
-          <ul class="check-list">
-            <li>The complete Soft Life System book as read-aloud audio — all 15 chapters in the app</li>
-            <li>The full 3.8-hour listen — narrated, playable in the app</li>
-            <li>The 90-day launch plan, preloaded as tasks in the app</li>
-            <li>Worksheets, templates and the monthly review ritual</li>
-            <li>Updates we release to the app library while the service operates</li>
-          </ul>
-          <p class="note">One payment. Your free account stays free; the Complete bundle unlocks the full library inside it.</p>
-        </div>
-        <div class="card checkout-buy">
-          <span class="tag">Founding price</span>
-          <h3>$19.99 <s style="color:#9d87c4;font-size:.8em">$29.99</s></h3>
-          <p class="note">Checkout opens with Selar for Africa or Payhip for North America and the rest of the world. If neither is live yet, email us and we will send a secure payment link.</p>
-          <a class="btn gold wide" href="/#/checkout">Continue to checkout</a>
-          <a class="btn ghost wide" href="mailto:admin@gabochie.com?subject=Complete%20bundle%20%E2%80%94%20The%20Soft%20Life%20System">Email us about the bundle</a>
-          <p class="note center">14-day refund policy · Access while the service operates</p>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div class="wrap checkout-grid">
-        <div class="card">
-          <span class="tag">Toolkit library</span>
-          <h2>Implementation toolkits — inside the app</h2>
-          <p>Later toolkits will help you implement one part of the system — offer design, delivery, boundaries and the 15-hour week. They appear inside the app, never as downloads, so your library is always current.</p>
-          <ul class="check-list">
-            <li>Built from the same system as the book</li>
-            <li>Short, practical and designed to be used — not just read</li>
-            <li>Released only when the file and checkout are ready</li>
-            <li>Complete bundle buyers get first access to new releases</li>
-          </ul>
-        </div>
-        <div class="card checkout-buy">
-          <span class="tag">No pre-orders</span>
-          <h3>Toolkits ship after the test launch</h3>
-          <p class="note">We do not list a toolkit until a buyer can receive it automatically. Join the free app to get release notes and first access.</p>
-          <a class="btn gold wide" href="/#/signup">Start free and get release notes</a>
-          <p class="note center">No payment is collected for unreleased toolkits.</p>
-        </div>
+        <p class="note" style="margin-top:14px">When you know which job you're doing, you stop confusing motion with progress. A 15-hour week is simply a week where each job gets its proper share.</p>
       </div>
     </section>
 
     <section class="pale">
       <div class="wrap">
-        <h2>Questions about the products</h2>
-        <div class="post-faq">
-          <details><summary>What is the difference between the Complete bundle and the audit?</summary><div><p>The Complete bundle is the self-guided system: the book, audio, worksheets and 90-day plan. The Business Audit is a guided service where we apply the system to your business and write your 90-day plan with you.</p></div></details>
-          <details><summary>Are the toolkits available now?</summary><div><p>Not yet. The first toolkits arrive inside the app after the test launch. Complete bundle buyers get first access, and there are no pre-orders. Nothing is ever a download — your library updates in place.</p></div></details>
-          <details><summary>What does the Complete bundle cost?</summary><div><p>$19.99 at the founding price, then $29.99 regular. The price is in USD.</p></div></details>
-          <details><summary>What is the refund policy?</summary><div><p>The Complete bundle has a 14-day refund policy. Read the full <a href="/legal/refund/">refund policy</a>.</p></div></details>
-          <details><summary>Can I start free first?</summary><div><p>Yes. The free account includes the introduction and Chapter 1 audio, the 90-day task plan, progress tracking and an affiliate link. You can upgrade later.</p></div></details>
+        <h2>What you get when you start free</h2>
+        <div class="grid3">
+          <div class="card">
+            <span class="tag">🎧 · Introduction</span>
+            <h3>Chapter 1 audio</h3>
+            <p>The introduction to the book, read by a professional voice. Listen on your commute, while cooking, while the kids sleep.</p>
+          </div>
+          <div class="card">
+            <span class="tag">📋 · 90-day plan</h3>
+            <p>Preloaded, checkable tasks. Week 1: face your hustle hangover. Week 2: redesign your offer. Week 8: your first monthly review.</p>
+          </div>
+          <div class="card">
+            <span class="tag">📊 · Progress tracking</h3>
+            <p>Progress ring, streak counter, badges. You watch your business architecture rebuild itself.</p>
+          </div>
+          <div class="card">
+            <span class="tag">🧭 · Free tools</h3>
+            <p>Scorecard, 15-Hour Workweek Audit, One-Offer Clarity Worksheet. Each sends you a private, printable report.</p>
+          </div>
+        </div>
+        <p class="note" style="margin-top:14px">No credit card. No download. Your progress stays yours. Upgrade to the Complete bundle only when the system proves itself — all 15 chapters, worksheets, and the full 90-day plan.</p>
+        <div class="hero-cta" style="justify-content:flex-start">
+          <a class="btn gold big" href="/#/signup">Open the free app →</a>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Three ways to work with the system</h2>
+        <table style="width:100%;border-collapse:collapse;margin-top:14px;font-size:.95rem">
+          <thead>
+            <tr style="text-align:left">
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);width:25%"></th>
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">Free app</th>
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">Complete bundle</th>
+              <th style="padding:10px;border-bottom:2px solid var(--line);color:var(--royal-3);">Business Audit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);"><b>Cost</b></td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Free</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">$19.99 · one-time</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">$497 · one-time</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);"><b>What you get</b></td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Introduction audio, Chapter 1, first 30 days of tasks</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">All 15 chapters, worksheets, full 90-day plan</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">90-minute audit + written 90-day plan</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);"><b>Best for</b></td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Testing the system</td>
+              <td style="padding:12px 10px;border-bottom:1px solid var(--line);">Running it yourself</td>
+              <td style="padding:12px 10px;">Having Deon build it with you</td>
+            </tr>
+            <tr>
+              <td style="padding:12px 10px;"><b>Refund</b></td>
+              <td style="padding:12px 10px;">N/A</td>
+              <td style="padding:12px 10px;">14 days</td>
+              <td style="padding:12px 10px;">N/A</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin-top:14px">Start free. If the first 30 days prove the system works, upgrade to Complete. If you want it built for you, book the Business Audit.</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>This isn't for everyone</h2>
+        <div class="grid3">
+          <div class="card">
+            <span class="tag">✓ · Good fit</span>
+            <h3>Founders who are tired of being the bottleneck</h3>
+            <p>You know you're working too hard for the result you have. You want a calmer, clearer way to grow.</p>
+          </div>
+          <div class="card">
+            <span class="tag">✓ · Good fit</span>
+            <h3>One premium offer, one audience</h3>
+            <p>You sell one thing well and want a delivery machine that runs without your constant supervision.</p>
+          </div>
+          <div class="card">
+            <span class="tag">✗ · Not a fit</span>
+            <h3>Get-rich-quick seekers</h3>
+            <p>This is a system, not a scheme. It requires doing the work in the 90-day plan.</p>
+          </div>
+          <div class="card">
+            <span class="tag">✗ · Not a fit</span>
+            <h3>Ten offers at once</h3>
+            <p>If every client needs a custom scope, no amount of marketing will create freedom. Finish one offer first.</p>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="cta-band">
       <div class="wrap center">
-        <h2>Start with the system.</h2>
-        <p class="lede">Get the Complete bundle, or start free and decide when you are ready.</p>
-        <a class="btn gold big" href="/#/checkout">Get the Complete bundle — $19.99</a>
+        <h2>Ready to build the system, not just measure it?</h2>
+        <p class="lede">The free app gives you the introduction audio, Chapter 1, and your first 30 days of tasks. Upgrade only when the system proves itself.</p>
+        <a class="btn gold big" href="/#/signup">Start free — no card</a>
+        <p style="margin-top:14px"><a href="/consultation/" style="color:#fff;text-decoration:underline">Book a Business Audit →</a></p>
       </div>
     </section>
   </main>
 
   <nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
     <div class="wrap tabs">
-      <a href="/products/">Products</a>
+      <a href="/">Home</a>
+      <a href="/products/" aria-current="page">Products</a>
       <a href="/tools/">Free tools</a>
-      <a href="/#/signin">Sign in</a>
       <a href="/#/signup">Start free</a>
     </div>
   </nav>
@@ -251,7 +343,7 @@
         </div>
         <div class="footer-actions">
           <a class="btn gold big" href="/#/signup">Start free — no card</a>
-          <a class="btn ghost big" href="/products/">Compare the options</a>
+          <a class="btn ghost big" href="/consultation/">Book the Business Audit</a>
         </div>
       </div>
       <div class="footer-grid">
@@ -260,17 +352,18 @@
           <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
           <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
           <div class="footer-social" aria-label="Follow Soft Life">
-          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
-          <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
-          <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
-        </div>
+            <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
+            <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
+            <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+          </div>
         </div>
         <nav aria-label="Explore" data-sl-surface="footer_explore">
           <b>Explore</b>
           <a href="/products/">Products</a>
           <a href="/consultation/">Business Audit</a>
-          <a href="/about/">About</a>
           <a href="/tools/">Free tools</a>
+          <a href="/about/">About</a>
+          <a href="/careers/">Careers</a>
           <a href="/blog/">The Journal</a>
           <a href="/blog/feed.xml">RSS feed</a>
           <a href="/#/signup">Free app</a>
