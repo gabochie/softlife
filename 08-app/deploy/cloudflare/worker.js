@@ -1226,6 +1226,11 @@ async function trackEvent(request, env) {
 }
 
 async function serveAudio(request, env, url, slug) {
+  // Sec-Fetch-Site is browser-enforced: our <audio> elements send same-origin;
+  // direct navigation, curl, scripts and "Save As" do not.
+  if (request.headers.get("Sec-Fetch-Site") !== "same-origin") {
+    return json({ error: "audio must be played inside the app" }, 403);
+  }
   const user = await currentUser(request, env) || await currentAudioUser(env, url);
   if (!user) return json({ error: "unauthorized" }, 401);
   if (!/^[a-z0-9-]+$/.test(slug || "")) return json({ error: "not found" }, 404);
@@ -1242,7 +1247,8 @@ async function serveAudio(request, env, url, slug) {
     "Content-Type": "audio/mpeg",
     "Content-Length": String(size),
     "Accept-Ranges": "bytes",
-    "Cache-Control": "private, max-age=0"
+    "Content-Disposition": "inline",
+    "Cache-Control": "private, no-store"
   };
 
   const range = request.headers.get("Range") || "";
