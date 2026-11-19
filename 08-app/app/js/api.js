@@ -87,7 +87,12 @@ const API = {
       body: { ref_code: refCode, payment_method: paymentMethod, payout_reference: payoutReference },
       admin: true
     });
-  }
+  },
+
+  adminBlogPosts() { return this.request('/admin/blog/posts', { admin: true }); },
+  adminBlogCreate(body) { return this.request('/admin/blog/posts', { method: 'POST', body, admin: true }); },
+  adminBlogUpdate(id, body) { return this.request('/admin/blog/posts/' + id, { method: 'POST', body, admin: true }); },
+  adminBlogDelete(id) { return this.request('/admin/blog/posts/' + id, { method: 'DELETE', admin: true }); }
 };
 
 class ApiError extends Error {

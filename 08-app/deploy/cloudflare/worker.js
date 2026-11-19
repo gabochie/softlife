@@ -25,7 +25,8 @@ const ADMIN_CAPS = {
   affiliate_payout: new Set(["superadmin"]),
   careers: new Set(["superadmin", "sales", "support"]),
   geo: new Set(["superadmin", "sales", "support", "content"]),
-  goals: new Set(["superadmin", "sales"])
+  goals: new Set(["superadmin", "sales"]),
+  blog: new Set(["superadmin", "content"])
 };
 // Blog registry mirrors tools/build_blog.py POSTS (slug -> title).
 const BLOG_POSTS = [
@@ -115,6 +116,23 @@ export default {
       } catch (err) {
         console.error("softlife api error", err);
         return json({ error: "Something went wrong." }, 500);
+      }
+    }
+
+    // Public CMS blog post: /blog/<slug>/ served from D1 when no static asset exists.
+    const blogMatch = url.pathname.match(/^\/blog\/([a-z0-9-]+)\/$/);
+    if (blogMatch) {
+      const slug = blogMatch[1];
+      const row = await env.DB.prepare(
+        "SELECT slug, title, description, author, category, tags, canonical, body_html, faq_json, og_image, published, created_at, updated_at "
+        + "FROM softlife_blog_posts WHERE slug = ? AND published = 1"
+      ).bind(slug).first();
+      if (row) {
+        const html = renderCmsBlogPost(row);
+        return new Response(html, {
+          status: 200,
+          headers: { ...JSON_HEADERS, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate" }
+        });
       }
     }
 
@@ -1321,6 +1339,7 @@ function capForRoute(path) {
   if (path === "/api/admin/careers") return "careers";
   if (path === "/api/admin/geo") return "geo";
   if (path === "/api/admin/goals") return "goals";
+  if (path.startsWith("/api/admin/blog")) return "blog";
   return null;
 }
 
@@ -1418,6 +1437,121 @@ async function currentAdmin(request, env) {
     return { role: staff.role, name: staff.name || staff.email, actor: staff.email, staffId: staff.id };
   }
   return null;
+}
+
+function renderCmsBlogPost(row) {
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const canonical = row.canonical || (SITE_URL + "/blog/" + row.slug + "/");
+  const og = row.og_image || (SITE_URL + "/assets/blog/og-default.png");
+  const date = String(row.updated_at || row.created_at || "").slice(0, 10);
+  const dek = row.description || "";
+  const author = row.author || "Deon ChristoLove";
+  let faqHtml = "";
+  let faqSchema = "";
+  try {
+    const faqs = JSON.parse(row.faq_json || "[]");
+    if (faqs.length) {
+      faqHtml = '<section class="post-faq"><h2>Questions people ask</h2>' + faqs.map((f) =>
+        '<details><summary>' + esc(f.question) + '</summary><div><p>' + esc(f.answer) + '</p></div></details>'
+      ).join("") + '</section>';
+      faqSchema = ',{"@type":"FAQPage","mainEntity":' + JSON.stringify(faqs.map((f) => ({
+        "@type": "Question", "name": f.question,
+        "acceptedAnswer": { "@type": "Answer", "text": f.answer }
+      }))) + '}';
+    }
+  } catch (e) { /* ignore malformed faq */ }
+  const articleSchema = '{"@context":"https://schema.org","@type":"Article","headline":' + JSON.stringify(row.title)
+    + ',"description":' + JSON.stringify(dek) + ',"image":[' + JSON.stringify(og) + '],"datePublished":' + JSON.stringify(date)
+    + ',"dateModified":' + JSON.stringify(date) + ',"author":{"@type":"Person","name":' + JSON.stringify(author)
+    + '},"publisher":{"@type":"Organization","name":"Gabochie Books","url":"https://soft.gabochie.com"},"mainEntityOfPage":{"@type":"WebPage","@id":'
+    + JSON.stringify(canonical) + '},"keywords":' + JSON.stringify(row.tags || "") + ',"articleSection":' + JSON.stringify(row.category || "") + '}';
+  const crumbSchema = '{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://soft.gabochie.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://soft.gabochie.com/blog/"},{"@type":"ListItem","position":3,"name":' + JSON.stringify(row.title) + ',"item":' + JSON.stringify(canonical) + '}]}';
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a0f4a">
+<title>${esc(row.title)} — The Soft Life System</title>
+<meta name="description" content="${esc(dek)}">
+<meta name="author" content="${esc(author)}">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="${esc(canonical)}">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/css/app.css">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Soft Life System">
+<meta property="og:title" content="${esc(row.title)}">
+<meta property="og:description" content="${esc(dek)}">
+<meta property="og:url" content="${esc(canonical)}">
+<meta property="og:image" content="${esc(og)}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(row.title)}">
+<meta name="twitter:description" content="${esc(dek)}">
+<meta name="twitter:image" content="${esc(og)}">
+<script type="application/ld+json">${articleSchema}</script>
+<script type="application/ld+json">${crumbSchema}</script>${faqSchema ? '<script type="application/ld+json">' + faqSchema + '</script>' : ''}
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="blog-top"><div class="wrap blog-bar">
+<a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+<nav aria-label="Main" data-sl-surface="web_header"><a href="/products/">Products</a><a href="/tools/">Free tools</a><a href="/about/">About</a><a href="/#/signin">Sign in</a><a class="top-cta" href="/#/signup">Start free</a></nav>
+</div></header>
+<main id="main"><article>
+<header class="post-hero"><div class="wrap">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><a href="/blog/">Journal</a><span>/</span><span>${esc(row.category || "Article")}</span></nav>
+<span class="tag">${esc(row.category || "Journal")}</span>
+<h1>${esc(row.title)}</h1>
+<p class="post-dek">${esc(dek)}</p>
+<p class="post-meta">By <b>${esc(author)}</b> · <time datetime="${esc(date)}">${esc(date)}</time></p>
+</div></header>
+<div class="wrap post-layout"><div class="prose">
+${row.body_html}
+${faqHtml}
+<div class="post-author"><div class="author-mark">DC</div><div><b>${esc(author)}</b><p>Writer, systems thinker and author of <i>The Soft Life System</i>.</p></div></div>
+</div>
+<aside class="post-aside" aria-label="Related"><div class="card"><span class="tag">The book + app</span><h3>Build the business that fits your life.</h3><p>Start free with the introduction and Chapter 1, then work the 90-day plan inside the app.</p><a class="btn gold wide" href="/#/signup">Start free →</a></div></aside>
+</div></article>
+<section class="cta-band"><div class="wrap center"><h2>Your soft life needs a system, not more hustle.</h2><p class="lede">Start with the free app: intro + Chapter 1 audio, the 90-day task plan, and the first steps of the system.</p><a class="btn gold big" href="/#/signup">Create my free account →</a></div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div></div></footer>
+<script src="/js/nav-config.js"></script><script src="/js/nav.js" defer></script>
+</body></html>`;
+}
+
+function validateBlogPost(body) {
+  const title = cleanText(body.title, 160);
+  const slugRaw = String(body.slug || "").toLowerCase().trim();
+  const slug = slugRaw.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+  if (!title) return { error: "title is required" };
+  if (!slug) return { error: "slug is required" };
+  const bodyHtml = String(body.body_html || "").trim();
+  if (bodyHtml.length < 40) return { error: "body_html must be at least 40 characters" };
+  let faqJson = "[]";
+  if (Array.isArray(body.faq) && body.faq.length) {
+    const qs = body.faq.slice(0, 12).map((f) => ({
+      question: cleanText(f.question, 200),
+      answer: cleanText(f.answer, 1200)
+    })).filter((f) => f.question && f.answer);
+    faqJson = JSON.stringify(qs);
+  }
+  return {
+    slug,
+    title,
+    description: cleanText(body.description, 300),
+    author: cleanText(body.author, 80) || "Deon ChristoLove",
+    category: cleanText(body.category, 60),
+    tags: cleanText(body.tags, 200),
+    canonical: cleanText(body.canonical, 200) || (SITE_URL + "/blog/" + slug + "/"),
+    body_html: bodyHtml,
+    faq_json: faqJson,
+    og_image: cleanText(body.og_image, 200) || (SITE_URL + "/assets/blog/og-default.png"),
+    published: body.published === true || body.published === 1 || body.published === "1"
+  };
 }
 
 async function handleAdmin(request, env, url, path, admin = { role: "superadmin", actor: "superadmin" }) {
@@ -2034,6 +2168,55 @@ async function handleAdmin(request, env, url, path, admin = { role: "superadmin"
       + "GROUP BY ip ORDER BY c DESC LIMIT 50"
     ).all();
     return json({ visits: (rows.results || []).map((r) => ({ ip: r.ip, count: r.c, last_seen: r.last_seen })) });
+  }
+
+  // ---------- blog CMS ----------
+  if (path === "/api/admin/blog/posts" && request.method === "GET") {
+    const rows = await env.DB.prepare(
+      "SELECT id, slug, title, description, author, category, tags, canonical, og_image, "
+      + "published, created_at, updated_at FROM softlife_blog_posts ORDER BY updated_at DESC"
+    ).all();
+    return json({ posts: rows.results || [] });
+  }
+
+  if (path === "/api/admin/blog/posts" && request.method === "POST") {
+    const body = await readJson(request);
+    const post = validateBlogPost(body);
+    if (post.error) return json({ error: post.error }, 400);
+    const existing = await env.DB.prepare("SELECT id FROM softlife_blog_posts WHERE slug = ?").bind(post.slug).first();
+    if (existing) return json({ error: "A post with that slug already exists." }, 400);
+    await env.DB.prepare(
+      "INSERT INTO softlife_blog_posts (slug, title, description, author, category, tags, canonical, body_html, faq_json, og_image, published) "
+      + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).bind(post.slug, post.title, post.description, post.author, post.category, post.tags,
+      post.canonical, post.body_html, post.faq_json, post.og_image, post.published ? 1 : 0).run();
+    await audit(env, admin.actor, "blog_post_created", "blog:" + post.slug, {});
+    return json({ ok: true, slug: post.slug });
+  }
+
+  const blogEdit = path.match(/^\/api\/admin\/blog\/posts\/(\d+)$/);
+  if (blogEdit && request.method === "POST") {
+    const id = Number(blogEdit[1]);
+    const body = await readJson(request);
+    const post = validateBlogPost(body);
+    if (post.error) return json({ error: post.error }, 400);
+    const row = await env.DB.prepare("SELECT id FROM softlife_blog_posts WHERE id = ?").bind(id).first();
+    if (!row) return json({ error: "Post not found." }, 404);
+    await env.DB.prepare(
+      "UPDATE softlife_blog_posts SET slug = ?, title = ?, description = ?, author = ?, category = ?, "
+      + "tags = ?, canonical = ?, body_html = ?, faq_json = ?, og_image = ?, published = ?, updated_at = datetime('now') "
+      + "WHERE id = ?"
+    ).bind(post.slug, post.title, post.description, post.author, post.category, post.tags,
+      post.canonical, post.body_html, post.faq_json, post.og_image, post.published ? 1 : 0, id).run();
+    await audit(env, admin.actor, "blog_post_updated", "blog:" + post.slug, {});
+    return json({ ok: true });
+  }
+
+  if (blogEdit && request.method === "DELETE") {
+    const id = Number(blogEdit[1]);
+    await env.DB.prepare("DELETE FROM softlife_blog_posts WHERE id = ?").bind(id).run();
+    await audit(env, admin.actor, "blog_post_deleted", "blog:" + id, {});
+    return json({ ok: true });
   }
 
   // ---------- financial goals ----------

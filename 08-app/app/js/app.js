@@ -914,7 +914,7 @@ const App = {
     const safe = (p) => p.catch(() => null);
     const isSuper = (Store.adminRole() || 'superadmin') === 'superadmin';
     try {
-      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims, email, careers, geo, goals] = await Promise.all([
+      const [overview, users, audio, purchases, referrals, onboarding, anOv, anAu, anTasks, anOnb, anEn, team, hooks, anCt, sec, claims, email, careers, geo, goals, blogPosts] = await Promise.all([
         safe(API.adminOverview()),
         safe(API.adminUsers(q)),
         safe(API.adminAudio()),
@@ -934,10 +934,11 @@ const App = {
         (isSuper || Store.adminRole() === 'sales') ? safe(API.adminEmail()) : Promise.resolve(null),
         isSuper ? safe(API.adminCareers()) : Promise.resolve(null),
         isSuper ? safe(API.adminGeo()) : Promise.resolve(null),
-        isSuper ? safe(API.adminGoals()) : Promise.resolve(null)
+        isSuper ? safe(API.adminGoals()) : Promise.resolve(null),
+        safe(API.adminBlogPosts())
       ]);
       const analytics = { overview: anOv, audio: anAu, tasks: anTasks, onboarding: anOnb, engagement: anEn, content: anCt };
-      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email, careers, geo, goals);
+      box.innerHTML = this.adminDashboard(overview, users, audio, purchases, referrals, onboarding, analytics, team, hooks, sec, claims, email, careers, geo, goals, blogPosts);
       this.bindAdmin();
       this.refreshAdminSpy();
       this.renderAdminCharts(analytics);
@@ -1099,7 +1100,8 @@ const App = {
     return `<option value="${value}"${value === current ? ' selected' : ''}>${label}</option>`;
   },
 
-  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null, email = null, careers = null, geo = null, goals = null) {
+  adminDashboard(o, u, a, p, r, ob, an = {}, team = null, hooks = null, sec = null, claims = null, email = null, careers = null, geo = null, goals = null, blogPosts = null) {
+    this._blogPosts = blogPosts;
     const missing = a?.missing || [];
     const profiles = ob?.onboarding || [];
     const optedIn = profiles.filter((row) => row.whatsapp_consent);
@@ -1305,6 +1307,52 @@ const App = {
             ${email.log.map((l) => `<tr><td><small>${esc(l.created_at)}</small></td><td><small>${esc(l.to_email)}</small></td><td><small>${esc(l.subject)}</small></td><td><small>${esc(l.kind)}</small></td><td>${esc(l.status)}</td></tr>`).join('')}
           </tbody></table></div>` : ''}
         </div>`}
+
+      ${blogPosts === null ? '' : `
+      <div class="card" id="sec-blog">
+        <div class="admin-toolbar">
+          <div><span class="tag">Blog CMS</span><h3>Journal posts</h3>
+          <p class="note">Create, edit and publish posts. Published posts appear at <code>/blog/&lt;slug&gt;/</code> with full SEO schema and OG tags — no redeploy needed.</p></div>
+          <button class="btn dark" id="blogNew" type="button">+ New post</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Title</th><th>Slug</th><th>Category</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+            <tbody>
+              ${blogPosts.posts.length ? blogPosts.posts.map((post) => `
+              <tr>
+                <td><b>${esc(post.title)}</b></td>
+                <td><small>/blog/${esc(post.slug)}/</small></td>
+                <td><small>${esc(post.category || '—')}</small></td>
+                <td>${post.published ? '<span class="pill ok">Published</span>' : '<span class="pill warn">Draft</span>'}</td>
+                <td><small>${esc(String(post.updated_at).slice(0, 10))}</small></td>
+                <td>
+                  ${post.published ? `<a class="btn ghost sm" href="/blog/${esc(post.slug)}/" target="_blank" rel="noopener">View</a>` : ''}
+                  <button class="btn ghost sm" data-blog-edit="${post.id}" type="button">Edit</button>
+                  <button class="btn ghost sm" data-blog-del="${post.id}" type="button">Delete</button>
+                </td>
+              </tr>`).join('') : '<tr><td colspan="6" class="note">No posts yet. Click "+ New post" to write your first one.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+        <form id="blogForm" hidden style="display:grid;gap:10px;max-width:820px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)">
+          <input type="hidden" name="id" value="">
+          <div class="form-grid">
+            <label style="font-size:.8rem;font-weight:700">Title<input name="title" required maxlength="160" style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></label>
+            <label style="font-size:.8rem;font-weight:700">Slug<input name="slug" required maxlength="80" placeholder="my-post-slug" style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></label>
+          </div>
+          <div class="form-grid">
+            <label style="font-size:.8rem;font-weight:700">Category<input name="category" maxlength="60" style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></label>
+            <label style="font-size:.8rem;font-weight:700">Tags (comma-separated)<input name="tags" maxlength="200" style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></label>
+          </div>
+          <label style="font-size:.8rem;font-weight:700">Description / dek<textarea name="description" rows="2" maxlength="300" style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></textarea></label>
+          <label style="font-size:.8rem;font-weight:700">Body (HTML — p, h2, h3, ul, ol, strong, blockquote, a)<textarea name="body_html" rows="14" required style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:ui-monospace,monospace;font-size:.85rem"></textarea></label>
+          <label style="font-size:.8rem;font-weight:700">FAQ — one question + answer per line, separated by | (optional)<textarea name="faq" rows="4" placeholder="What is X?|The answer to X." style="width:100%;padding:10px;border:1px solid #e8ddef;border-radius:10px;font-family:inherit"></textarea></label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem"><input type="checkbox" name="published" value="1"> Publish now</label>
+          <div><button class="btn dark" type="submit">Save post</button> <button class="btn ghost" type="button" id="blogCancel">Cancel</button></div>
+          <p class="note" id="blogMsg"></p>
+        </form>
+      </div>`}
 
       ${careers === null ? '' : `
       <div class="card" id="sec-careers">
@@ -1628,6 +1676,71 @@ const App = {
         } catch (err) { alert(err.message); btn.disabled = false; }
       });
     });
+    const blogForm = document.getElementById('blogForm');
+    const blogNew = document.getElementById('blogNew');
+    const blogCancel = document.getElementById('blogCancel');
+    if (blogNew && blogForm) blogNew.addEventListener('click', () => {
+      blogForm.reset();
+      blogForm.querySelector('[name=id]').value = '';
+      blogForm.hidden = false;
+      blogForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      blogForm.querySelector('[name=title]').focus();
+    });
+    if (blogCancel && blogForm) blogCancel.addEventListener('click', () => { blogForm.hidden = true; });
+    document.querySelectorAll('[data-blog-edit]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.blogEdit;
+        const post = (this._blogPosts && this._blogPosts.posts || []).find((p) => String(p.id) === String(id));
+        if (!post) return;
+        blogForm.reset();
+        blogForm.querySelector('[name=id]').value = post.id;
+        blogForm.querySelector('[name=title]').value = post.title || '';
+        blogForm.querySelector('[name=slug]').value = post.slug || '';
+        blogForm.querySelector('[name=category]').value = post.category || '';
+        blogForm.querySelector('[name=tags]').value = post.tags || '';
+        blogForm.querySelector('[name=description]').value = post.description || '';
+        blogForm.querySelector('[name=body_html]').value = post.body_html || '';
+        if (post.published) blogForm.querySelector('[name=published]').checked = true;
+        blogForm.hidden = false;
+        blogForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    document.querySelectorAll('[data-blog-del]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Delete this post permanently?')) return;
+        try { await API.adminBlogDelete(btn.dataset.blogDel); await this.loadAdmin(); }
+        catch (err) { alert(err.message); }
+      });
+    });
+    if (blogForm) blogForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = blogForm.querySelector('button[type=submit]');
+      const msg = document.getElementById('blogMsg');
+      const fd = new FormData(blogForm);
+      const id = fd.get('id');
+      const faqLines = String(fd.get('faq') || '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+        const i = l.indexOf('|');
+        return i > -1 ? { question: l.slice(0, i).trim(), answer: l.slice(i + 1).trim() } : null;
+      }).filter(Boolean);
+      const payload = {
+        title: fd.get('title'), slug: fd.get('slug'), category: fd.get('category'),
+        tags: fd.get('tags'), description: fd.get('description'), body_html: fd.get('body_html'),
+        published: fd.get('published') ? 1 : 0, faq: faqLines
+      };
+      btn.disabled = true; btn.textContent = 'Saving…';
+      if (msg) msg.textContent = '';
+      try {
+        if (id) await API.adminBlogUpdate(id, payload);
+        else await API.adminBlogCreate(payload);
+        blogForm.hidden = true;
+        await this.loadAdmin();
+        this._auditFlash(id ? 'Post updated.' : 'Post created.');
+      } catch (err) {
+        if (msg) msg.textContent = err.message;
+        btn.disabled = false; btn.textContent = 'Save post';
+      }
+    });
+
     const goalForm = document.getElementById('goalForm');
     if (goalForm) goalForm.addEventListener('submit', async (e) => {
       e.preventDefault();

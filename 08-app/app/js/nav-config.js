@@ -96,7 +96,8 @@
           { id: 'security',  label: 'Security',  icon: 'shield',    roles: ['superadmin'] },
           { id: 'careers',   label: 'Careers',   icon: 'members',   roles: ['superadmin', 'sales', 'support'] },
           { id: 'geo',       label: 'Geo',       icon: 'audience',  roles: ['superadmin', 'sales', 'support', 'content'] },
-          { id: 'goals',     label: 'Goals',     icon: 'chart',     roles: ['superadmin', 'sales'] }
+          { id: 'goals',     label: 'Goals',     icon: 'chart',     roles: ['superadmin', 'sales'] },
+          { id: 'blog',      label: 'Blog',      icon: 'grid',      roles: ['superadmin', 'content'] }
         ]
       }
     }
