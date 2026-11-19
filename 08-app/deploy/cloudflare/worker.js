@@ -258,6 +258,8 @@ async function handleApi(request, env, url, ctx) {
   if (path === "/api/lead/audit" && request.method === "POST") return auditSubmit(request, env);
   if (path === "/api/lead/clarity" && request.method === "POST") return claritySubmit(request, env);
   if (path === "/api/lead/result" && request.method === "GET") return leadResult(request, env);
+  // Public: remote-team applications from /careers/ (before the auth gate).
+  if (path === "/api/careers/apply" && request.method === "POST") return careersApply(request, env);
   // Cron fallback: free plan has no spare cron trigger slots; an external
   // scheduler (cron-job.org) hits this daily with the webhook secret.
   if (path === "/api/email-cron" && request.method === "GET") {
@@ -390,6 +392,71 @@ async function handleApi(request, env, url, ctx) {
   }
 
   return json({ error: "not found" }, 404);
+}
+
+
+/* ---------- Careers: remote team applications (public, no account) ---------- */
+const CAREERS_ROLES = [
+  "Platform & Reliability Engineer",
+  "Customer Support & Onboarding Specialist",
+  "Content & SEO Marketer",
+  "QA & Release Tester",
+  "Finance & Operations Analyst",
+  "Community & Research Lead",
+  "Talent pool / general"
+];
+
+async function careersApply(request, env) {
+  const body = await readJson(request);
+  if (cleanText(body.website, 60)) return json({ ok: true }); // honeypot
+  const email = cleanText(body.email, 120).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return json({ error: "Enter a valid email address." }, 400);
+  }
+  if (body.consent !== true && body.consent !== 1 && body.consent !== "1") {
+    return json({ error: "Please tick the consent box so we can reply to you." }, 400);
+  }
+  const name = cleanText(body.name, 80);
+  const role = cleanChoice(body.role, CAREERS_ROLES);
+  const message = cleanText(body.message, 2000);
+  if (!name) return json({ error: "Enter your name." }, 400);
+  if (!role) return json({ error: "Choose a role." }, 400);
+  if (message.length < 20) return json({ error: "Tell us a little more about yourself (20 characters minimum)." }, 400);
+  const portfolio = cleanText(body.portfolio, 200);
+  const availability = cleanText(body.availability, 60);
+  const ip = clientIp(request);
+
+  try {
+    const recent = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM softlife_job_applications WHERE email = ? "
+      + "AND created_at >= datetime('now', '-1 hour')"
+    ).bind(email).first();
+    if (recent && recent.c >= 3) {
+      return json({ error: "We've already received your application. We'll be in touch." }, 429);
+    }
+    await env.DB.prepare(
+      "INSERT INTO softlife_job_applications (name, email, role, portfolio, availability, message, ip, consent) "
+      + "VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
+    ).bind(name, email, role, portfolio, availability, message, ip).run();
+  } catch (e) {
+    return json({ error: "We couldn't save that just now. Please email admin@gabochie.com instead." }, 500);
+  }
+
+  // Best-effort notification to the founder; never fail the applicant over email.
+  try {
+    const safe = (v) => String(v || "").replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    await sendPurchaseEmail(
+      env,
+      env.SUPPORT_EMAIL || "admin@gabochie.com",
+      `New application: ${role} — ${name}`,
+      `<h2>New remote-team application</h2><p><b>Role:</b> ${safe(role)}</p><p><b>Name:</b> ${safe(name)}<br><b>Email:</b> ${safe(email)}</p><p><b>Availability:</b> ${safe(availability)}</p><p><b>Portfolio:</b> ${safe(portfolio)}</p><p><b>Note:</b></p><p>${safe(message).replace(/\n/g, "<br>")}</p>`,
+      `Role: ${role}\nName: ${name}\nEmail: ${email}\nAvailability: ${availability}\nPortfolio: ${portfolio}\n\n${message}`,
+      "job_application"
+    );
+  } catch (e) { /* logged by sendPurchaseEmail */ }
+
+  return json({ ok: true });
 }
 
 async function signup(request, env) {

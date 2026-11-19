@@ -58,6 +58,8 @@
           { label: 'Business Audit', href: '/consultation/' },
           { label: 'Free tools',    href: '/tools/' },
           { label: 'About',         href: '/about/' },
+          { label: 'Careers',       href: '/careers/' },
+          { label: 'Careers',       href: '/careers/' },
           { label: 'The Journal',   href: '/blog/' },
           { label: 'RSS feed',      href: '/blog/feed.xml' },
           { label: 'Free app',      href: '/#/signup' }
