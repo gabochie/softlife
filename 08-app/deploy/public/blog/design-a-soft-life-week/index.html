@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a0f4a">
+<meta name="description" content="A step-by-step guide to designing a 15-hour workweek, with a sample schedule and a free 90-day plan you can adapt.">
+<meta name="author" content="Deon ChristoLove">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<title>How to Design a Soft Life Week (Free 90-Day Plan) — The Soft Life System</title>
+<link rel="canonical" href="https://soft.gabochie.com/blog/design-a-soft-life-week/">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="alternate" type="application/rss+xml" title="The Soft Life Journal RSS" href="/blog/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="The Soft Life Journal Atom" href="/blog/feed.atom">
+<link rel="alternate" type="application/feed+json" title="The Soft Life Journal JSON Feed" href="/blog/feed.json">
+<link rel="alternate" type="text/markdown" href="/blog/design-a-soft-life-week/index.md">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Soft Life System">
+<meta property="og:title" content="How to Design a Soft Life Week (Free 90-Day Plan)">
+<meta property="og:description" content="A step-by-step guide to designing a 15-hour workweek, with a sample schedule and a free 90-day plan you can adapt.">
+<meta property="og:url" content="https://soft.gabochie.com/blog/design-a-soft-life-week/">
+<meta property="og:image" content="https://soft.gabochie.com/assets/blog/og-design-a-soft-life-week.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to Design a Soft Life Week (Free 90-Day Plan)">
+<meta name="twitter:description" content="A step-by-step guide to designing a 15-hour workweek, with a sample schedule and a free 90-day plan you can adapt.">
+<meta name="twitter:image" content="https://soft.gabochie.com/assets/blog/og-design-a-soft-life-week.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"How to Design a Soft Life Week (Free 90-Day Plan)","description":"A step-by-step guide to designing a 15-hour workweek, with a sample schedule and a free 90-day plan you can adapt.","image":["https://soft.gabochie.com/assets/blog/og-design-a-soft-life-week.png"],"datePublished":"2026-11-06T00:00:00+00:00","dateModified":"2026-11-06T00:00:00+00:00","author":{"@type":"Person","name":"Deon ChristoLove","url":"https://soft.gabochie.com/#about"},"publisher":{"@type":"Organization","name":"Gabochie Books","url":"https://soft.gabochie.com","logo":{"@type":"ImageObject","url":"https://soft.gabochie.com/assets/icons/icon-512.png"}},"mainEntityOfPage":{"@type":"WebPage","@id":"https://soft.gabochie.com/blog/design-a-soft-life-week/"},"keywords":"soft life week, 90-day plan, time blocking, deep work","articleSection":"Systems","wordCount":847,"timeRequired":"PT10M","isAccessibleForFree":true,"speakable":{"@type":"SpeakableSpecification","cssSelector":[".post-dek",".prose p:first-of-type"]}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://soft.gabochie.com/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://soft.gabochie.com/blog/"},{"@type":"ListItem","position":3,"name":"How to Design a Soft Life Week (Free 90-Day Plan)","item":"https://soft.gabochie.com/blog/design-a-soft-life-week/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How many hours should I work in a soft life week?","acceptedAnswer":{"@type":"Answer","text":"Start with the hours your life can actually sustain, then design the business around the highest-value work. For many focused service businesses, 15 to 25 hours is a realistic range. The number matters less than the ratio of genius work to busywork."}},{"@type":"Question","name":"What goes in a 15-hour week?","acceptedAnswer":{"@type":"Answer","text":"A simple split is four hours of genius work, four hours of growth, four hours of delivery and operations, and three hours of review and margin. Adjust the ratio to your season, but protect the margin."}},{"@type":"Question","name":"What if I have a day job or caregiving responsibilities?","acceptedAnswer":{"@type":"Answer","text":"Design a smaller week first. Two deep-work blocks and one operations block can be enough to make progress. The point is to create a repeatable rhythm, not to copy someone else's schedule."}},{"@type":"Question","name":"How long before the plan feels natural?","acceptedAnswer":{"@type":"Answer","text":"Give it 90 days. The first 30 days are for choosing the offer and the process. The next 30 are for documenting and delegating. The final 30 are for protecting the calendar and measuring what actually creates value."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"HowTo","name":"How to design a soft life week","description":"A step-by-step guide to designing a 15-hour workweek, with a sample schedule and a free 90-day plan you can adapt.","totalTime":"P90D","step":[{"@type":"HowToStep","name":"Start with outcomes","text":"Name the outcome you sell, the three activities that create it, and what you will stop doing."},{"@type":"HowToStep","name":"Build the 15-hour skeleton","text":"Split the week into genius work, growth, delivery and operations, and margin."},{"@type":"HowToStep","name":"Protect the edges","text":"Decide in advance how you will handle urgent requests, scope creep and availability."},{"@type":"HowToStep","name":"Run the 90-day rollout","text":"Choose and simplify for 30 days, document and transfer for 30 days, then protect and measure for 30 days."}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="blog-top">
+  <div class="wrap blog-bar">
+    <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+    <nav aria-label="Main" data-sl-surface="web_header">
+      <a href="/products/">Products</a>
+      <a href="/tools/">Free tools</a>
+      <a href="/about/">About</a>
+      <a href="/#/signin">Sign in</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <article>
+    <header class="post-hero">
+      <div class="wrap">
+        <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><a href="/blog/">Journal</a><span>/</span><span>Systems</span></nav>
+        <span class="tag">Systems</span>
+        <h1>How to Design a Soft Life Week (Free 90-Day Plan)</h1>
+        <p class="post-dek">A week with room to breathe is not a reward for finishing everything. It is a structure you build on purpose.</p>
+        <p class="post-meta">By <b>Deon ChristoLove</b> · <time datetime="2026-11-06">November 6, 2026</time> · 10 min read</p>
+        
+<div class="post-share">
+  <span class="post-share-label">Share</span>
+  <a class="share-btn" href="https://twitter.com/intent/tweet?text=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29&amp;url=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on X" title="Share on X"><span class="share-ic share-x" aria-hidden="true"></span></a><a class="share-btn" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on Facebook" title="Share on Facebook"><span class="share-ic share-facebook" aria-hidden="true"></span></a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on LinkedIn" title="Share on LinkedIn"><span class="share-ic share-linkedin" aria-hidden="true"></span></a><a class="share-btn" href="https://wa.me/?text=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29%20%E2%80%94%20The%20Soft%20Life%20Journal%20https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on WhatsApp" title="Share on WhatsApp"><span class="share-ic share-whatsapp" aria-hidden="true"></span></a><a class="share-btn" href="mailto:?subject=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29&amp;body=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share by email" title="Share by email"><span class="share-ic share-email" aria-hidden="true"></span></a>
+  <button type="button" class="share-btn" data-share-copy aria-label="Copy link" title="Copy link"><span class="share-ic share-link" aria-hidden="true"></span></button>
+  <button type="button" class="share-btn" data-share-native aria-label="Share with your device" title="Share with your device" hidden><span class="share-ic share-native" aria-hidden="true"></span></button>
+  <span class="share-status sr-only" role="status" aria-live="polite"></span>
+</div>
+      </div>
+    </header>
+    <div class="wrap post-layout">
+      <div class="prose">
+        <p>A soft life week is not a week with nothing to do. It is a week where the important work has a home, the routine work has a system, and the human being running the business has room to breathe.</p>
+<p>Most time-management advice starts with the calendar. The Soft Life System starts with the business model. If the model is chaotic, the calendar will be too. You cannot schedule your way out of an offer that requires you to be everything to everyone.</p>
+<p>Here is a practical way to design a week that fits a real life — plus a 90-day plan for making it stick.</p>
+<h2>Step 1: Start with outcomes, not hours</h2>
+<p>Before you move a single meeting, answer three questions:</p>
+<ul>
+<li>What outcome am I selling?</li>
+<li>What are the three activities that actually create that outcome?</li>
+<li>What am I willing to stop doing so those three activities get protected?</li>
+</ul>
+<p>Write the answers down. Keep them short enough to remember on a difficult Tuesday.</p>
+<p>The point is not to fill every hour with productive work. The point is to make sure the work that matters is not crowded out by the work that merely feels urgent.</p>
+<h2>Step 2: Build the 15-hour skeleton</h2>
+<p>A simple 15-hour skeleton looks like this:</p>
+<ul>
+<li><strong>4 hours of genius work</strong> — the thinking, creating and transformation only you can do.</li>
+<li><strong>4 hours of growth</strong> — conversations, content, referrals and offers that bring the next right client.</li>
+<li><strong>4 hours of delivery and operations</strong> — keeping the promise, answering the right messages, improving the machine.</li>
+<li><strong>3 hours of margin</strong> — review, learning, rest, repair and the unexpected.</li>
+</ul>
+<p>You can move these hours around. You can shrink them in a busy season. You cannot remove the margin without paying for it later.</p>
+<h2>Step 3: Put the blocks in the calendar</h2>
+<p>Choose the days and times that fit your real life. If you have a day job, your genius block may be early morning. If you have small children, it may be nap time or a childcare day. If you are the primary caregiver for a parent, it may be a shorter, more frequent block.</p>
+<p>The goal is a repeatable rhythm, not a perfect aesthetic.</p>
+<p>A sample week:</p>
+<ul>
+<li><strong>Monday:</strong> 9:00–11:00 genius work. 11:00–12:00 admin and messages.</li>
+<li><strong>Tuesday:</strong> 9:00–12:00 delivery. 12:00–13:00 follow-ups.</li>
+<li><strong>Wednesday:</strong> 9:00–11:00 growth conversations. 11:00–12:00 content.</li>
+<li><strong>Thursday:</strong> 9:00–12:00 delivery and operations. 12:00–13:00 templates and systems.</li>
+<li><strong>Friday:</strong> 9:00–10:00 review. 10:00–11:00 learning. The rest is margin.</li>
+</ul>
+<p>That is 15 hours. Notice how much is missing: no daily commute to the inbox, no reactive all-day availability, no heroic evenings. The work is concentrated so the rest can be real.</p>
+<h2>Step 4: Protect the edges</h2>
+<p>A calendar is only a design until it meets a request.</p>
+<p>Decide in advance how you will handle the common edge cases: urgent client messages, family needs, scope creep, "quick calls", and the temptation to fill a quiet hour with busywork.</p>
+<p>You do not need a complicated policy. You need a few sentences you can repeat without negotiating:</p>
+<ul>
+<li>"I check messages at 11:00 and 15:00 on workdays."</li>
+<li>"New requests go through the intake form so I can scope them properly."</li>
+<li>"I do not take calls on Fridays."</li>
+<li>"This is outside the current scope; here is the option to add it."</li>
+</ul>
+<p>Boundaries are not a rejection of care. They are what make consistent care possible.</p>
+<h2>Step 5: The 90-day rollout</h2>
+<p>Do not try to change everything in one week. Build the rhythm in three 30-day layers.</p>
+<h3>Days 1–30: Choose and simplify</h3>
+<p>Pick one audience, one offer and one outcome. Write the promise in one sentence. Cut one offer, one service or one habit that is not supporting the promise.</p>
+<h3>Days 31–60: Document and transfer</h3>
+<p>Map the delivery process from intake to follow-up. Create three templates. Notice where you are the bottleneck. Move one repeated task into a system or a person.</p>
+<h3>Days 61–90: Protect and measure</h3>
+<p>Track your actual hours for one week. Compare them to the skeleton. Cut one thing that does not create value. Protect the margin you have created. Then repeat the cycle.</p>
+<h2>What to do when the week falls apart</h2>
+<p>It will. A client crisis, a sick child, a sudden opportunity or a low-energy week can break the design.</p>
+<p>The response is not to abandon the design. The response is to return to it. Ask: what broke? Was it a boundary, a process, a capacity issue or an unrealistic promise? Fix the smallest thing that will make the next week easier.</p>
+<p>The soft life is not a week without interruption. It is a week with a place to return to.</p>
+<blockquote><p>A calendar is not a cage. It is a promise you make to the work that matters.</p></blockquote>
+<p>The app turns this plan into a 90-day task list, with the book's launch steps already loaded. Start free, listen to the introduction and Chapter 1, and design your first soft life week.</p>
+<p><a href="/#/signup">Start your free Soft Life account</a></p>
+        <section class="post-faq"><h2>Questions people ask</h2><details><summary>How many hours should I work in a soft life week?</summary><div><p>Start with the hours your life can actually sustain, then design the business around the highest-value work. For many focused service businesses, 15 to 25 hours is a realistic range. The number matters less than the ratio of genius work to busywork.</p></div></details><details><summary>What goes in a 15-hour week?</summary><div><p>A simple split is four hours of genius work, four hours of growth, four hours of delivery and operations, and three hours of review and margin. Adjust the ratio to your season, but protect the margin.</p></div></details><details><summary>What if I have a day job or caregiving responsibilities?</summary><div><p>Design a smaller week first. Two deep-work blocks and one operations block can be enough to make progress. The point is to create a repeatable rhythm, not to copy someone else's schedule.</p></div></details><details><summary>How long before the plan feels natural?</summary><div><p>Give it 90 days. The first 30 days are for choosing the offer and the process. The next 30 are for documenting and delegating. The final 30 are for protecting the calendar and measuring what actually creates value.</p></div></details></section>
+        <div class="post-author">
+          <div class="author-mark">DC</div>
+          <div><b>Deon ChristoLove</b><p>Writer, systems thinker and author of <i>The Soft Life System</i>. Helping women build businesses that buy back their time.</p></div>
+        </div>
+        
+<div class="post-share share-panel">
+  <span class="post-share-label">Share this essay</span>
+  <a class="share-btn" href="https://twitter.com/intent/tweet?text=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29&amp;url=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on X" title="Share on X"><span class="share-ic share-x" aria-hidden="true"></span></a><a class="share-btn" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on Facebook" title="Share on Facebook"><span class="share-ic share-facebook" aria-hidden="true"></span></a><a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on LinkedIn" title="Share on LinkedIn"><span class="share-ic share-linkedin" aria-hidden="true"></span></a><a class="share-btn" href="https://wa.me/?text=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29%20%E2%80%94%20The%20Soft%20Life%20Journal%20https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share on WhatsApp" title="Share on WhatsApp"><span class="share-ic share-whatsapp" aria-hidden="true"></span></a><a class="share-btn" href="mailto:?subject=How%20to%20Design%20a%20Soft%20Life%20Week%20%28Free%2090-Day%20Plan%29&amp;body=https%3A%2F%2Fsoft.gabochie.com%2Fblog%2Fdesign-a-soft-life-week%2F" target="_blank" rel="noopener" aria-label="Share by email" title="Share by email"><span class="share-ic share-email" aria-hidden="true"></span></a>
+  <button type="button" class="share-btn" data-share-copy aria-label="Copy link" title="Copy link"><span class="share-ic share-link" aria-hidden="true"></span></button>
+  <button type="button" class="share-btn" data-share-native aria-label="Share with your device" title="Share with your device" hidden><span class="share-ic share-native" aria-hidden="true"></span></button>
+  <span class="share-status sr-only" role="status" aria-live="polite"></span>
+</div>
+      </div>
+      <aside class="post-aside" aria-label="Related">
+        <div class="card">
+          <span class="tag">The book + app</span>
+          <h3>Build the business that fits your life.</h3>
+          <p>Start free with the introduction and Chapter 1, then work the 90-day plan inside the app.</p>
+          <a class="btn gold wide" href="/#/signup">Start free →</a>
+          <a class="btn ghost wide" href="/#/checkout">Get the Complete bundle</a>
+        </div>
+        <div class="card">
+          <span class="tag">Keep reading</span>
+          <a class="aside-link" href="/blog/15-hour-workweek-for-women/"><b>The 15-Hour Workweek for Women Who Are Done Doing Everything</b><small>9 min read</small></a><a class="aside-link" href="/blog/hustle-hangover-signs/"><b>The Hustle Hangover: 7 Signs You Built a Job, Not a Business</b><small>8 min read</small></a>
+        </div>
+      </aside>
+    </div>
+  </article>
+  <section class="cta-band">
+    <div class="wrap center">
+      <h2>Your soft life needs a system, not more hustle.</h2>
+      <p class="lede">Start with the free app: intro + Chapter 1 audio, the 90-day task plan, and the first steps of the system.</p>
+      <a class="btn gold big" href="/#/signup">Create my free account →</a>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const url = window.location.href.split('#')[0];
+  const title = document.querySelector('meta[property="og:title"]')?.content || document.title;
+  const text = document.querySelector('meta[name="description"]')?.content || '';
+  const statusFor = (button) => button.closest('.post-share')?.querySelector('.share-status');
+  const fallbackCopy = (value) => {
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.setAttribute('readonly', '');
+    input.style.position = 'fixed';
+    input.style.opacity = '0';
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+  };
+  document.querySelectorAll('[data-share-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch (error) {
+        fallbackCopy(url);
+      }
+      const status = statusFor(button);
+      button.classList.add('is-done');
+      if (status) status.textContent = 'Link copied';
+      window.setTimeout(() => {
+        button.classList.remove('is-done');
+        if (status) status.textContent = '';
+      }, 2200);
+    });
+  });
+  const nativeButtons = document.querySelectorAll('[data-share-native]');
+  if (navigator.share) {
+    nativeButtons.forEach((button) => {
+      button.hidden = false;
+      button.addEventListener('click', () => {
+        navigator.share({ title, text, url }).catch(() => {});
+      });
+    });
+  }
+})();
+</script>
+<nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
+  <div class="wrap tabs">
+      <a href="/products/">Products</a>
+      <a href="/tools/">Free tools</a>
+      <a href="/#/signin">Sign in</a>
+      <a href="/#/signup">Start free</a>
+  </div>
+</nav>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-cta">
+      <div>
+        <div class="footer-kicker">The 15-hour promise</div>
+        <h2>Build a business that buys your freedom.</h2>
+        <p>Start free. Listen to the introduction, open your 90-day plan, and upgrade only when the system proves itself.</p>
+      </div>
+      <div class="footer-actions">
+        <a class="btn gold big" href="/#/signup">Start free — no card</a>
+        <a class="btn ghost big" href="/products/">Compare the options</a>
+      </div>
+    </div>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></a>
+        <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
+        <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
+        <div class="footer-social" aria-label="Follow Soft Life">
+          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
+          <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
+          <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+        </div>
+      </div>
+      <nav aria-label="Explore" data-sl-surface="footer_explore">
+        <b>Explore</b>
+        <a href="/products/">Products</a>
+        <a href="/consultation/">Business Audit</a>
+          <a href="/about/">About</a>
+        <a href="/tools/">Free tools</a>
+        <a href="/blog/">The Journal</a>
+        <a href="/blog/feed.xml">RSS feed</a>
+        <a href="/#/signup">Free app</a>
+      </nav>
+      <nav aria-label="Support">
+        <b>Support</b>
+        <a href="/#/affiliate">Affiliates</a>
+        <a href="/#/signin">Sign in</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+      <nav aria-label="Legal">
+        <b>Legal</b>
+        <a href="/legal/privacy/">Privacy</a>
+        <a href="/legal/terms/">Terms</a>
+        <a href="/legal/refund/">Refunds</a>
+        <a href="/legal/cookies/">Cookies</a>
+      </nav>
+    </div>
+    <div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div>
+  </div>
+</footer>
+<script src="/js/nav-config.js"></script>
+<script src="/js/nav.js" defer></script>
+</body>
+</html>

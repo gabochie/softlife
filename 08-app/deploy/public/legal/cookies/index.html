@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a0f4a">
+<meta name="description" content="How The Soft Life System uses cookies, local storage and similar technologies.">
+<meta name="author" content="Deon ChristoLove">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<title>Cookie Policy — The Soft Life System</title>
+<link rel="canonical" href="https://soft.gabochie.com/legal/cookies/">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="alternate" type="application/rss+xml" title="The Soft Life Journal RSS" href="/blog/feed.xml">
+<link rel="alternate" type="application/atom+xml" title="The Soft Life Journal Atom" href="/blog/feed.atom">
+<link rel="alternate" type="application/feed+json" title="The Soft Life Journal JSON Feed" href="/blog/feed.json">
+<link rel="alternate" type="text/markdown" href="/legal/cookies/index.md">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Soft Life System">
+<meta property="og:title" content="Cookie Policy">
+<meta property="og:description" content="How The Soft Life System uses cookies, local storage and similar technologies.">
+<meta property="og:url" content="https://soft.gabochie.com/legal/cookies/">
+<meta property="og:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cookie Policy">
+<meta name="twitter:description" content="How The Soft Life System uses cookies, local storage and similar technologies.">
+<meta name="twitter:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Cookie Policy","description":"How The Soft Life System uses cookies, local storage and similar technologies.","url":"https://soft.gabochie.com/legal/cookies/","dateModified":"2026-11-15T00:00:00+00:00","isPartOf":{"@type":"WebSite","name":"The Soft Life System","url":"https://soft.gabochie.com"},"publisher":{"@type":"Organization","name":"Gabochie Books","url":"https://soft.gabochie.com"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://soft.gabochie.com/"},{"@type":"ListItem","position":2,"name":"Cookie Policy","item":"https://soft.gabochie.com/legal/cookies/"}]}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="blog-top">
+  <div class="wrap blog-bar">
+    <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+    <nav aria-label="Main" data-sl-surface="web_header">
+      <a href="/products/">Products</a>
+      <a href="/tools/">Free tools</a>
+      <a href="/about/">About</a>
+      <a href="/#/signin">Sign in</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <header class="post-hero legal-hero">
+    <div class="wrap">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Home</a><span>/</span><span>Cookie Policy</span></nav>
+      <span class="tag">Trust &amp; transparency</span>
+      <h1>Cookie Policy</h1>
+      <p class="post-dek">How The Soft Life System uses cookies, local storage and similar technologies.</p>
+    </div>
+  </header>
+  <div class="wrap legal-layout">
+    <article class="prose legal-prose"><p><strong>Last updated: November 18, 2026</strong></p>
+<p>This Cookie Policy explains how The Soft Life System uses cookies and similar technologies. It should be read with our <a href="/legal/privacy/">Privacy Policy</a>.</p>
+<h2>The short version</h2>
+<p>We do not use advertising cookies or sell data. The app uses browser storage that is necessary to keep you signed in and remember your progress, plus Google Analytics cookies to understand how the site is used. Our hosting and checkout providers may set their own security or payment cookies when you use their services.</p>
+<h2>What cookies and local storage are</h2>
+<p>A cookie is a small file a website stores in your browser. Local storage and session storage are similar browser features that can store information without sending it with every request. They are often used to keep a service working.</p>
+<h2>What we use</h2>
+<p>The app currently uses:</p>
+<ul>
+<li><strong>Sign-in token</strong> (<code>softlife_token</code>) in local storage, so you stay signed in.</li>
+<li><strong>Basic profile cache</strong> (<code>softlife_user</code>) in local storage, so the app can show your name and tier while it loads.</li>
+<li><strong>Referral code</strong> (<code>softlife_ref</code>) in session storage, so a referral is not lost before you create an account.</li>
+<li><strong>First-touch acquisition details</strong> (<code>softlife_acquisition</code>) in local storage, such as referral code, UTM campaign tags and referring page, so we know how people found us.</li>
+<li><strong>Admin token</strong> (<code>softlife_admin_token</code>) in local storage, only after an admin signs in to the admin dashboard.</li>
+<li><strong>Service worker cache</strong> in your browser, so the app can load faster and work better on a weak connection.</li>
+</ul>
+<p>These are used for the service you requested, security, basic measurement and reliability. We do not use them to build advertising profiles.</p>
+<h2>Third-party cookies</h2>
+<p>Our service providers may set cookies or similar identifiers on their own domains:</p>
+<ul>
+<li><strong>Cloudflare</strong> for hosting, security and bot protection. Cloudflare may set security cookies such as <code>__cf_bm</code> or <code>cf_clearance</code>.</li>
+<li><strong>Selar</strong> or <strong>Payhip</strong> when you visit their checkout or download pages. Their cookies, payment processing and privacy policies apply on their domains.</li>
+<li><strong>Email and support providers</strong> when you open a link or reply to a service message, according to their own policies.</li>
+<li><strong>Google Analytics 4</strong> for site measurement. It may set <code>_ga</code> and <code>_ga_*</code> cookies on our domain and send usage data to Google. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's privacy policy</a>.</li>
+</ul>
+<p>We do not control third-party cookies. Check the provider's policy before paying or downloading.</p>
+<h2>Analytics and advertising</h2>
+<p>We use <strong>Google Analytics 4</strong> to measure how the site is used (pages visited, features used, approximate region and device). This is third-party analytics, but we do not enable Google advertising features, do not run advertising pixels and do not sell data. You can opt out below, and the setting is remembered in your browser.</p>
+<p><button type="button" id="slAnalyticsToggle" class="btn dark">Opt out of analytics</button> <span id="slAnalyticsState"></span></p>
+<script>
+(function () {
+  var key = 'sl_analytics_optout';
+  var label = document.getElementById('slAnalyticsState');
+  var btn = document.getElementById('slAnalyticsToggle');
+  function paint() {
+    var off = false; try { off = !!localStorage.getItem(key); } catch (e) {}
+    if (label) label.textContent = off ? 'Analytics is OFF for this browser.' : 'Analytics is ON for this browser.';
+    if (btn) btn.textContent = off ? 'Turn analytics back on' : 'Opt out of analytics';
+  }
+  if (btn) btn.addEventListener('click', function () {
+    var off = false; try { off = !!localStorage.getItem(key); } catch (e) {}
+    try { if (off) localStorage.removeItem(key); else localStorage.setItem(key, '1'); } catch (e) {}
+    document.cookie.split(';').forEach(function (c) {
+      var n = c.split('=')[0].trim();
+      if (n.indexOf('_ga') === 0) document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+    });
+    location.reload();
+  });
+  paint();
+})();
+</script>
+<h2>Managing cookies and storage</h2>
+<p>You can clear or block cookies and site data in your browser settings. Clearing the app's local storage will sign you out and may remove saved preferences. Blocking essential storage may stop the app from working.</p>
+<p>You can also use the opt-out button above, or install <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google's Analytics opt-out browser add-on</a>.</p>
+<p>On Android, you can clear site data from Chrome settings for <code>soft.gabochie.com</code>. On iPhone or iPad, use Safari's website data settings.</p>
+<h2>Do Not Track</h2>
+<p>Browsers may send a "Do Not Track" signal. There is no common standard for responding to it. We limit non-essential tracking as described above.</p>
+<h2>Changes</h2>
+<p>We may update this policy when our providers or features change. We will post the new date on this page.</p>
+<h2>Contact</h2>
+<p>Cookie questions: <strong>admin@gabochie.com</strong></p>
+<p>This policy is a production draft for The Soft Life System. It is not legal advice to you. We recommend having counsel review it for your specific markets before launch.</p></article>
+    <aside class="post-aside">
+      <div class="card">
+        <span class="tag">Need help?</span>
+        <h3>Talk to a human.</h3>
+        <p>Questions about privacy, terms, refunds or your account? Email us.</p>
+        <a class="btn gold wide" href="mailto:admin@gabochie.com">Email admin@gabochie.com</a>
+      </div>
+      <div class="card">
+        <span class="tag">Other policies</span>
+        <a class="aside-link" href="/legal/privacy/">Privacy Policy</a>
+        <a class="aside-link" href="/legal/terms/">Terms of Service</a>
+        <a class="aside-link" href="/legal/refund/">Refund Policy</a>
+        <a class="aside-link" href="/legal/cookies/">Cookie Policy</a>
+      </div>
+    </aside>
+  </div>
+</main>
+<nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
+  <div class="wrap tabs">
+      <a href="/products/">Products</a>
+      <a href="/tools/">Free tools</a>
+      <a href="/#/signin">Sign in</a>
+      <a href="/#/signup">Start free</a>
+  </div>
+</nav>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-cta">
+      <div>
+        <div class="footer-kicker">The 15-hour promise</div>
+        <h2>Build a business that buys your freedom.</h2>
+        <p>Start free. Listen to the introduction, open your 90-day plan, and upgrade only when the system proves itself.</p>
+      </div>
+      <div class="footer-actions">
+        <a class="btn gold big" href="/#/signup">Start free — no card</a>
+        <a class="btn ghost big" href="/products/">Compare the options</a>
+      </div>
+    </div>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="footer-logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></a>
+        <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
+        <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
+        <div class="footer-social" aria-label="Follow Soft Life">
+          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
+          <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
+          <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+        </div>
+      </div>
+      <nav aria-label="Explore" data-sl-surface="footer_explore">
+        <b>Explore</b>
+        <a href="/products/">Products</a>
+        <a href="/consultation/">Business Audit</a>
+          <a href="/about/">About</a>
+        <a href="/tools/">Free tools</a>
+        <a href="/blog/">The Journal</a>
+        <a href="/blog/feed.xml">RSS feed</a>
+        <a href="/#/signup">Free app</a>
+      </nav>
+      <nav aria-label="Support">
+        <b>Support</b>
+        <a href="/#/affiliate">Affiliates</a>
+        <a href="/#/signin">Sign in</a>
+        <a href="/contact/">Contact</a>
+      </nav>
+      <nav aria-label="Legal">
+        <b>Legal</b>
+        <a href="/legal/privacy/">Privacy</a>
+        <a href="/legal/terms/">Terms</a>
+        <a href="/legal/refund/">Refunds</a>
+        <a href="/legal/cookies/">Cookies</a>
+      </nav>
+    </div>
+    <div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div>
+  </div>
+</footer>
+<script src="/js/nav-config.js"></script>
+<script src="/js/nav.js" defer></script>
+</body>
+</html>

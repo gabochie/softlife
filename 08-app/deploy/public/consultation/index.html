@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
+<!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
+<script>
+  // Honour the opt-out toggle set from /legal/cookies/ before GA4 initialises.
+  try { if (localStorage.getItem('sl_analytics_optout')) window['ga-disable-G-XT009WN744'] = true; } catch (e) {}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XT009WN744"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-XT009WN744', {
+    send_page_view: false,   // we send page views manually for the hash-router SPA
+    currency: 'GHS'
+  });
+
+  // Send a page view on load and on every #/hash route change (our app is an SPA)
+  function slPageView() {
+    gtag('event', 'page_view', {
+      page_path: location.pathname + (location.hash || '/'),
+      page_title: document.title
+    });
+  }
+  slPageView();
+  window.addEventListener('hashchange', slPageView);
+
+  // Simple helper for our own events: slTrack('event_name', {param: value})
+  window.slTrack = function (name, params) { gtag('event', name, params || {}); };
+</script>
+<!-- ============================== END GA4 ==================================== -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2a0f4a">
+<title>The Soft Life Business Audit — A 90-day plan for your business</title>
+<meta name="description" content="A focused 90-minute audit and written 90-day plan for business owners who want more freedom without adding more hours. Founding rate $99 for the first five.">
+<meta name="author" content="Deon ChristoLove">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://soft.gabochie.com/consultation/">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/css/app.css">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="The Soft Life System">
+<meta property="og:title" content="The Soft Life Business Audit">
+<meta property="og:description" content="A 90-minute audit and written 90-day plan for your business. Founding rate $99 for the first five, then $197.">
+<meta property="og:url" content="https://soft.gabochie.com/consultation/">
+<meta property="og:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Soft Life Business Audit">
+<meta name="twitter:description" content="A 90-minute audit and written 90-day plan for your business. Founding rate $99 for the first five, then $197.">
+<meta name="twitter:image" content="https://soft.gabochie.com/assets/blog/og-default.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://soft.gabochie.com/consultation/#webpage",
+      "url": "https://soft.gabochie.com/consultation/",
+      "name": "The Soft Life Business Audit",
+      "description": "A focused 90-minute audit and written 90-day plan for business owners who want more freedom without adding more hours.",
+      "isPartOf": {"@type": "WebSite", "name": "The Soft Life System", "url": "https://soft.gabochie.com/"}
+    },
+    {
+      "@type": "Service",
+      "@id": "https://soft.gabochie.com/consultation/#service",
+      "name": "The Soft Life Business Audit",
+      "serviceType": "Business audit and 90-day planning intensive",
+      "description": "A pre-audit, 90-minute one-to-one session, a written 90-day plan, a recording, and a 14-day follow-up.",
+      "provider": {"@type": "Organization", "name": "Gabochie Books", "url": "https://soft.gabochie.com/"},
+      "areaServed": "Worldwide",
+      "availableChannel": {
+        "@type": "ServiceChannel",
+        "serviceUrl": "https://soft.gabochie.com/consultation/",
+        "availableLanguage": "English"
+      },
+      "offers": {
+        "@type": "Offer",
+        "url": "https://soft.gabochie.com/consultation/",
+        "priceCurrency": "USD",
+        "price": "99.00",
+        "availability": "https://schema.org/LimitedAvailability"
+      }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="app">
+  <header class="topbar">
+    <div class="wrap bar">
+      <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+      <div class="bar-actions">
+        <nav aria-label="Main" data-sl-surface="web_header">
+          <a href="/products/">Products</a>
+          <a href="/tools/">Free tools</a>
+          <a href="/about/">About</a>
+          <a href="/#/signin">Sign in</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <div class="kicker">The Soft Life Business Audit</div>
+        <h1>Bring your business. <em>Leave with a 90-day plan.</em></h1>
+        <p class="lede">A focused 90-minute audit for business owners who are working too hard for the result they have — and want a calmer, clearer way to grow.</p>
+        <div class="hero-cta">
+          <a class="btn gold big" href="mailto:admin@gabochie.com?subject=Soft%20Life%20Business%20Audit%20application&amp;body=Name%3A%0ABusiness%3A%0AWhat%20you%20sell%3A%0AWhat%20is%20not%20working%3A%0AWhat%20you%20want%20from%20the%20audit%3A">Apply for a founding spot</a>
+          <a class="btn ghost big" href="#included">See what's included</a>
+        </div>
+        <div class="hero-note">Founding rate $99 for the first five paid audits · $197 standard · Applications reviewed personally</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>This is for you if...</h2>
+        <p class="sub">You do not need another course. You need someone to look at the whole business and tell you what to simplify, what to fix and what to do next.</p>
+        <div class="grid3">
+          <div class="card"><span class="tag">Too many offers</span><h3>You sell everything to everyone</h3><p>You have skills, ideas and requests coming at you — but no clear premium offer that makes the next step obvious.</p></div>
+          <div class="card"><span class="tag">Busy, not free</span><h3>The business owns your calendar</h3><p>Delivery, admin and messages fill the week. You know systems would help, but you have not had the space to build them.</p></div>
+          <div class="card"><span class="tag">Ready to focus</span><h3>You want a plan, not more theory</h3><p>You are willing to answer honest questions, make decisions and leave with a written plan you can execute.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pale" id="included">
+      <div class="wrap checkout-grid">
+        <div class="card">
+          <span class="tag">What you get</span>
+          <h2>A complete audit, not a discovery call</h2>
+          <ul class="check-list">
+            <li><b>Pre-audit questionnaire</b> so we do not waste the call on background</li>
+            <li><b>90-minute one-to-one audit</b> of your offer, pricing, delivery, calendar and boundaries</li>
+            <li><b>Written 90-day plan</b> with priorities, owners and a realistic weekly schedule</li>
+            <li><b>Recording of the session</b> so you can revisit the decisions</li>
+            <li><b>14-day follow-up</b> to review your first moves and answer implementation questions</li>
+            <li><b>The Soft Life System toolkit</b> to support the plan</li>
+          </ul>
+        </div>
+        <div class="card checkout-buy">
+          <span class="tag">Founding audit</span>
+          <h3>$99 <s style="color:#9d87c4;font-size:.8em">$197</s></h3>
+          <p class="note">The founding rate applies to the first five paid audits. After that the standard rate is $197.</p>
+          <a class="btn gold wide" href="mailto:admin@gabochie.com?subject=Soft%20Life%20Business%20Audit%20application&amp;body=Name%3A%0ABusiness%3A%0AWhat%20you%20sell%3A%0AWhat%20is%20not%20working%3A%0AWhat%20you%20want%20from%20the%20audit%3A">Apply for a founding spot</a>
+          <p class="note center">No payment is collected on this page. We confirm fit first, then send a secure payment link and booking options.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>How it works</h2>
+        <p class="sub">A simple application and a focused session. You will know what to do next before we finish.</p>
+        <div class="grid3">
+          <div class="card"><span class="tag">1 · Apply</span><h3>Tell me about the business</h3><p>Send the short application. I read it personally and confirm whether the audit is the right fit.</p></div>
+          <div class="card"><span class="tag">2 · Prepare</span><h3>Complete the pre-audit</h3><p>You get a short questionnaire and a checklist. We use the call for decisions, not data collection.</p></div>
+          <div class="card"><span class="tag">3 · Audit</span><h3>Meet for 90 minutes</h3><p>We examine the offer, delivery, numbers, calendar and boundaries — and choose the next 90 days.</p></div>
+          <div class="card"><span class="tag">4 · Plan</span><h3>Receive your written plan</h3><p>You get the recording and a written 90-day plan with priorities and a realistic weekly schedule.</p></div>
+          <div class="card"><span class="tag">5 · Follow up</span><h3>Review the first moves</h3><p>Fourteen days later we review what you started, what got stuck and what needs adjusting.</p></div>
+          <div class="card"><span class="tag">6 · Keep going</span><h3>Use the system</h3><p>You leave with the toolkit and the plan. The free app gives you the task engine to keep moving.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pale">
+      <div class="wrap">
+        <div class="card">
+          <span class="tag">The guarantee</span>
+          <h2>Leave with a written 90-day plan you can use.</h2>
+          <p>Complete the pre-work, show up for the audit and engage honestly. If you leave without a written 90-day plan you can act on, email me within seven days and I will refund your fee.</p>
+          <p class="note">This is a planning intensive, not a done-for-you service. It is not a guarantee of income, clients or a specific business result.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <h2>Questions before you apply</h2>
+        <div class="post-faq">
+          <details><summary>Is this coaching or consulting?</summary><div><p>It is a one-to-one business audit. We review your business, make decisions and produce a written 90-day plan. It is not ongoing coaching or done-for-you delivery.</p></div></details>
+          <details><summary>What if I do not have a business yet?</summary><div><p>The audit works best when you already have an offer, a skill you sell or an early business to examine. If you are still at the idea stage, start with the Complete bundle and the free app first.</p></div></details>
+          <details><summary>How do I pay?</summary><div><p>After we confirm fit, I send a secure payment link and booking options. Your spot is confirmed when payment is received.</p></div></details>
+          <details><summary>What if we are not a fit?</summary><div><p>I will tell you before you pay. If the audit is not the right next step, I will point you to the product or resource that fits better.</p></div></details>
+          <details><summary>Is the fee refundable?</summary><div><p>Yes, under the written-plan guarantee above. Read the full <a href="/legal/refund/">refund policy</a> for the general terms.</p></div></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="wrap center">
+        <h2>Apply for a founding audit.</h2>
+        <p class="lede">Five founding spots at $99. After that, the standard rate is $197.</p>
+        <a class="btn gold big" href="mailto:admin@gabochie.com?subject=Soft%20Life%20Business%20Audit%20application&amp;body=Name%3A%0ABusiness%3A%0AWhat%20you%20sell%3A%0AWhat%20is%20not%20working%3A%0AWhat%20you%20want%20from%20the%20audit%3A">Apply for a founding spot</a>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
+    <div class="wrap tabs">
+      <a href="/products/">Products</a>
+      <a href="/tools/">Free tools</a>
+      <a href="/#/signin">Sign in</a>
+      <a href="/#/signup">Start free</a>
+    </div>
+  </nav>
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cta">
+        <div>
+          <div class="footer-kicker">The 15-hour promise</div>
+          <h2>Build a business that buys your freedom.</h2>
+          <p>Start free. Listen to the introduction, open your 90-day plan, and upgrade only when the system proves itself.</p>
+        </div>
+        <div class="footer-actions">
+          <a class="btn gold big" href="/#/signup">Start free — no card</a>
+          <a class="btn ghost big" href="/products/">Compare the options</a>
+        </div>
+      </div>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="footer-logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></a>
+          <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
+          <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
+          <div class="footer-social" aria-label="Follow Soft Life">
+          <a href="https://www.youtube.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on YouTube">YouTube</a>
+          <a href="https://x.com/softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on X">X</a>
+          <a href="https://www.tiktok.com/@softlifesys" target="_blank" rel="me noopener" aria-label="Soft Life on TikTok">TikTok</a>
+        </div>
+        </div>
+        <nav aria-label="Explore" data-sl-surface="footer_explore">
+          <b>Explore</b>
+          <a href="/products/">Products</a>
+          <a href="/consultation/">Business Audit</a>
+          <a href="/about/">About</a>
+          <a href="/tools/">Free tools</a>
+          <a href="/blog/">The Journal</a>
+          <a href="/blog/feed.xml">RSS feed</a>
+          <a href="/#/signup">Free app</a>
+        </nav>
+        <nav aria-label="Support">
+          <b>Support</b>
+          <a href="/#/affiliate">Affiliates</a>
+          <a href="/#/signin">Sign in</a>
+          <a href="/contact/">Contact</a>
+        </nav>
+        <nav aria-label="Legal">
+          <b>Legal</b>
+          <a href="/legal/privacy/">Privacy</a>
+          <a href="/legal/terms/">Terms</a>
+          <a href="/legal/refund/">Refunds</a>
+          <a href="/legal/cookies/">Cookies</a>
+        </nav>
+      </div>
+      <div class="footer-legal">© 2026 Deon ChristoLove · Gabochie Books. All rights reserved.</div>
+    </div>
+  </footer>
+</div>
+<script src="/js/nav-config.js"></script>
+<script src="/js/nav.js" defer></script>
+</body>
+</html>
