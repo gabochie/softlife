@@ -59,7 +59,9 @@
       } else if (surface === 'footer_explore') {
         node.innerHTML = '<b>Explore</b>' + links(def.items);
       }
-      // member_bottom and admin_bottom are rendered by app.js from the same config.
+      // Reveal only after this surface has been rendered once. Prevents the
+      // static HTML placeholder bar from flashing before nav.js swaps it.
+      node.classList.add('sl-rendered');
     });
   }
 

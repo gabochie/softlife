@@ -221,7 +221,7 @@ const App = {
       if (href === '/#/signup') return ['/signup', '/signin', '/checkout', '/onboarding'].includes(view);
       return view === href.replace(/\/$/, '') || view === href;
     };
-    return `<nav class="tabbar public-tabbar" aria-label="Quick navigation" data-sl-surface="public_bottom">
+    return `<nav class="tabbar public-tabbar sl-rendered" aria-label="Quick navigation" data-sl-surface="public_bottom">
       <div class="wrap tabs">
         ${items.map(({ label, href, icon, cta }) => {
           const active = isActive(href);

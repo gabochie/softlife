@@ -126,6 +126,8 @@ audio{width:100%}
 .member{padding:32px 0;min-height:60vh}
 .tabbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:62px;z-index:60}
 .public-tabbar{display:none}
+/* Never paint the static placeholder bar before nav.js has rendered the real one. */
+.public-tabbar:not(.sl-rendered){visibility:hidden}
 .tabs{display:flex;gap:2px;overflow-x:auto}
 .tabs a{padding:13px 18px;font-size:.85rem;color:#6d5f7a;text-decoration:none;white-space:nowrap;border-bottom:2.5px solid transparent;border-radius:0}
 .tabs a.active{color:var(--royal);border-color:var(--pink);font-weight:700}
