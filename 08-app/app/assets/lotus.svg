@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pink lotus">
+  <title>Pink lotus</title>
+  <defs>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#5ba86e"/><stop offset="1" stop-color="#2e6e4a"/></linearGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0f7"/><stop offset="1" stop-color="#f078a8"/></linearGradient>
+    <linearGradient id="mid" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f9c9dc"/><stop offset="1" stop-color="#e86096"/></linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fffafd"/><stop offset="1" stop-color="#f9c9dc"/></linearGradient>
+    <linearGradient id="pod" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fadc78"/><stop offset="1" stop-color="#c89632"/></linearGradient>
+  </defs>
+  <ellipse cx="32" cy="55" rx="26" ry="7" fill="url(#pad)"/>
+  <path d="M32 55 L52 49 L52 58Z" fill="url(#pad)"/>
+  <path d="M32 66 Q37.8 36.7 -5.3 42.7 Q26.2 55.3 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q40.7 39.2 4.9 31.3 Q23.3 52.8 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q42.4 42.4 17.7 24.4 Q21.6 49.6 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q43.0 46.0 32.0 22.0 Q21.0 46.0 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q42.4 49.6 46.3 24.4 Q21.6 42.4 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q40.7 52.8 59.1 31.3 Q23.3 39.2 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q37.8 55.3 69.3 42.7 Q26.2 36.7 32 66Z" fill="url(#back)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q39.2 39.1 5.6 38.7 Q24.8 52.9 32 66Z" fill="url(#mid)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q41.3 42.3 17.8 30.8 Q22.7 49.7 32 66Z" fill="url(#mid)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q42.0 46.0 32.0 28.0 Q22.0 46.0 32 66Z" fill="url(#mid)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q41.3 49.7 46.2 30.8 Q22.7 42.3 32 66Z" fill="url(#mid)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q39.2 52.9 58.4 38.7 Q24.8 39.1 32 66Z" fill="url(#mid)" stroke="#b83e6d" stroke-width="1"/>
+  <path d="M32 66 Q39.3 42.6 19.3 38.8 Q24.7 49.4 32 66Z" fill="url(#front)" stroke="#f078a8" stroke-width="1"/>
+  <path d="M32 66 Q40.0 46.0 32.0 36.0 Q24.0 46.0 32 66Z" fill="url(#front)" stroke="#f078a8" stroke-width="1"/>
+  <path d="M32 66 Q39.3 49.4 44.7 38.8 Q24.7 42.6 32 66Z" fill="url(#front)" stroke="#f078a8" stroke-width="1"/>
+  <circle cx="32" cy="66" r="7" fill="url(#pod)" stroke="#d9a94e" stroke-width="1.4"/>
+</svg>
