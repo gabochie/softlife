@@ -14,6 +14,15 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Optional deploy-time minifiers. Source files in app/ are never touched —
+# only the generated public/ copy is minified. If the packages are not
+# installed the deploy simply ships unminified assets (graceful fallback).
+try:
+    import rjsmin
+    import rcssmin
+except ImportError:
+    rjsmin = rcssmin = None
+
 PUBLIC = Path(__file__).resolve().parent / "public"
 BUILD = sys.argv[1] if len(sys.argv) > 1 else datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
 
@@ -76,9 +85,34 @@ def stamp_sw() -> bool:
     return False
 
 
+def minify_assets() -> tuple:
+    """Minify JS/CSS in the deploy copy only. Returns (js, css, bytes_saved)."""
+    if rjsmin is None or rcssmin is None:
+        return (0, 0, 0)
+    n_js = n_css = saved = 0
+    for path in PUBLIC.rglob("*"):
+        if not path.is_file() or path.suffix not in (".js", ".css"):
+            continue
+        original = path.read_text(encoding="utf-8")
+        if path.suffix == ".js":
+            minified = rjsmin.jsmin(original)
+            n_js += 1
+        else:
+            minified = rcssmin.cssmin(original)
+            n_css += 1
+        if minified and len(minified) < len(original):
+            saved += len(original) - len(minified)
+            path.write_text(minified, encoding="utf-8", newline="\n")
+    return (n_js, n_css, saved)
+
+
 if __name__ == "__main__":
     if not PUBLIC.is_dir():
         raise SystemExit(f"missing {PUBLIC} — copy app/ to public/ first")
     pages = stamp_html()
     sw = stamp_sw()
-    print(f"BUILD={BUILD} | html stamped: {pages} | sw stamped: {sw}")
+    n_js, n_css, saved = minify_assets()
+    print(
+        f"BUILD={BUILD} | html stamped: {pages} | sw stamped: {sw} | "
+        f"minified: {n_js} js + {n_css} css ({saved:,} bytes saved)"
+    )

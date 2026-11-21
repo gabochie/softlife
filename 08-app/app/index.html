@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+<link rel="dns-prefetch" href="https://www.google-analytics.com">
 <!-- ================= GOOGLE ANALYTICS 4 — THE SOFT LIFE SYSTEM ================= -->
 <!-- Paste immediately after <head> in every public page. Replace BOTH G-XT009WN744 with your real Measurement ID. -->
 <script>
@@ -45,6 +47,8 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<link rel="preload" as="image" href="/assets/hero-soft-life.webp" media="(min-width:861px)" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/hero-soft-life-square.webp" media="(max-width:860px)" fetchpriority="high">
 <link rel="stylesheet" href="css/app.css">
 <link rel="alternate" type="application/rss+xml" title="The Soft Life Journal RSS" href="/blog/feed.xml">
 <link rel="alternate" type="application/atom+xml" title="The Soft Life Journal Atom" href="/blog/feed.atom">
@@ -171,7 +175,7 @@
 <div id="app">
   <header class="topbar">
     <div class="wrap bar">
-      <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+      <a class="logo" href="/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife-header.webp" type="image/webp"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></picture></a>
       <div class="bar-actions">
         <nav aria-label="Main" data-sl-surface="web_header">
           <a href="/products/">Products</a>
@@ -199,7 +203,9 @@
         </div>
         <div class="hero-card">
           <picture class="hero-media">
+            <source media="(max-width:860px)" type="image/webp" srcset="/assets/hero-soft-life-square.webp">
             <source media="(max-width:860px)" srcset="/assets/hero-soft-life-square.jpg">
+            <source type="image/webp" srcset="/assets/hero-soft-life.webp">
             <img src="/assets/hero-soft-life.jpg" alt="A professional woman building a calmer, more flexible working life" width="1536" height="1024" fetchpriority="high" decoding="async">
           </picture>
         </div>
@@ -333,7 +339,7 @@
       </div>
       <div class="footer-grid">
         <div class="footer-brand">
-          <a class="footer-logo" href="/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></a>
+          <a class="footer-logo" href="/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife.webp" type="image/webp"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></picture></a>
           <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
           <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
           <div class="footer-social" aria-label="Follow Soft Life">

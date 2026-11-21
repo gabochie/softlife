@@ -173,7 +173,7 @@ const App = {
           </div>
           <div class="footer-grid">
             <div class="footer-brand">
-              <a class="footer-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></a>
+              <a class="footer-logo" href="#/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife.webp" type="image/webp"><img src="/assets/logo-softlife.png" alt="" width="632" height="300" loading="lazy" decoding="async"></picture></a>
               <p>One persona. One problem. One system: a business that works 15 hours a week.</p>
               <p class="footer-trust">Free to start · No credit card · 14-day refund on the Complete bundle</p>
               <div class="footer-social" aria-label="Follow Soft Life">
@@ -245,7 +245,7 @@ const App = {
     return `
       <header class="topbar">
         <div class="wrap bar">
-          <a class="logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+          <a class="logo" href="#/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife-header.webp" type="image/webp"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></picture></a>
           <div class="bar-actions"><nav data-sl-surface="web_header">${nav}${cta}</nav></div>
         </div>
       </header>
@@ -288,7 +288,9 @@ const App = {
             </div>
             <div class="hero-card">
               <picture class="hero-media">
+                <source media="(max-width:860px)" type="image/webp" srcset="/assets/hero-soft-life-square.webp">
                 <source media="(max-width:860px)" srcset="/assets/hero-soft-life-square.jpg">
+                <source type="image/webp" srcset="/assets/hero-soft-life.webp">
                 <img src="/assets/hero-soft-life.jpg" alt="A professional woman building a calmer, more flexible working life" width="1536" height="1024" fetchpriority="high" decoding="async">
               </picture>
             </div>
@@ -717,7 +719,7 @@ const App = {
     $app.innerHTML = `
       <div class="shell">
         <aside class="sidebar">
-          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife-header.webp" type="image/webp"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></picture></a>
           <nav class="side-nav" aria-label="Admin sections" data-sl-surface="admin_side">${navButtons}</nav>
           <a class="side-user ${role === 'superadmin' ? 'admin-user' : ''}" href="#/dashboard" aria-label="Back to the member app">
             <span class="dash-avatar sm sa">${initials}</span>
@@ -1847,7 +1849,7 @@ const App = {
     $app.innerHTML = `
       <div class="shell">
         <aside class="sidebar">
-          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></a>
+          <a class="side-logo" href="#/" aria-label="Soft Life by Gabochie home"><picture><source srcset="/assets/logo-softlife-header.webp" type="image/webp"><img src="/assets/logo-softlife-header.png" alt="Soft Life by Gabochie" width="316" height="150"></picture></a>
           <nav class="side-nav" aria-label="Member navigation" data-sl-surface="member_side">${links}</nav>
           <a class="side-user" href="#/account" aria-label="Your account">
             <span class="dash-avatar sm">${initials}</span>
